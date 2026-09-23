@@ -286,37 +286,36 @@
         </div>
 
         {{-- RINGKASAN ANGKA KUNCI ADMIN --}}
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-4 bg-primary text-white h-100 position-relative overflow-hidden">
-            <div class="position-relative" style="z-index: 2;">
-                <div class="small fw-bold opacity-75 text-uppercase mb-1">Total Dana Disetujui ({{ $tahun }})</div>
-                <h3 class="fw-bold mb-0">Rp {{ number_format($ringkasanLaporan['total_dana'] ?? 0, 0, ',', '.') }}</h3>
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-4 bg-primary text-white h-100 position-relative overflow-hidden">
+                    <div class="position-relative" style="z-index: 2;">
+                        <div class="small fw-bold opacity-75 text-uppercase mb-1">Total Dana Disetujui ({{ $tahun }})</div>
+                        <h3 class="fw-bold mb-0">Rp {{ number_format($ringkasanLaporan['total_dana'] ?? 0, 0, ',', '.') }}</h3>
+                    </div>
+                    <i class="bi bi-cash-stack position-absolute end-0 bottom-0 opacity-25 m-3" style="font-size: 3rem;"></i>
+                </div>
             </div>
-            <i class="bi bi-cash-stack position-absolute end-0 bottom-0 opacity-25 m-3" style="font-size: 3rem;"></i>
-        </div>
-    </div>
 
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-4 bg-success text-white h-100 position-relative overflow-hidden">
-            <div class="position-relative" style="z-index: 2;">
-                <div class="small fw-bold opacity-75 text-uppercase mb-1">Total Penerima Hibah</div>
-                <h3 class="fw-bold mb-0">{{ number_format($ringkasanLaporan['total_penerima'] ?? 0, 0, ',', '.') }} <span class="fs-6 fw-normal">Proposal</span></h3>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-4 bg-success text-white h-100 position-relative overflow-hidden">
+                    <div class="position-relative" style="z-index: 2;">
+                        <div class="small fw-bold opacity-75 text-uppercase mb-1">Total Penerima Hibah</div>
+                        <h3 class="fw-bold mb-0">{{ number_format($ringkasanLaporan['total_penerima'] ?? 0, 0, ',', '.') }} <span class="fs-6 fw-normal">Proposal</span></h3>
+                    </div>
+                    <i class="bi bi-people position-absolute end-0 bottom-0 opacity-25 m-3" style="font-size: 3rem;"></i>
+                </div>
             </div>
-            <i class="bi bi-people position-absolute end-0 bottom-0 opacity-25 m-3" style="font-size: 3rem;"></i>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm p-4 bg-warning text-dark h-100 position-relative overflow-hidden">
-            <div class="position-relative" style="z-index: 2;">
-                <div class="small fw-bold opacity-75 text-uppercase mb-1">Total Pengajuan Masuk</div>
-                <h3 class="fw-bold mb-0">{{ number_format($ringkasanLaporan['total_pengajuan'] ?? 0, 0, ',', '.') }} <span class="fs-6 fw-normal">Berkas</span></h3>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-4 bg-warning text-dark h-100 position-relative overflow-hidden">
+                    <div class="position-relative" style="z-index: 2;">
+                        <div class="small fw-bold opacity-75 text-uppercase mb-1">Total Pengajuan Masuk</div>
+                        <h3 class="fw-bold mb-0">{{ number_format($ringkasanLaporan['total_pengajuan'] ?? 0, 0, ',', '.') }} <span class="fs-6 fw-normal">Berkas</span></h3>
+                    </div>
+                    <i class="bi bi-file-earmark-text position-absolute end-0 bottom-0 opacity-25 m-3" style="font-size: 3rem;"></i>
+                </div>
             </div>
-            <i class="bi bi-file-earmark-text position-absolute end-0 bottom-0 opacity-25 m-3" style="font-size: 3rem;"></i>
         </div>
-    </div>
-</div>
     @endif
 
     {{-- ===================== PROGRESS STEPPER (Pengaju & Reviewer) ==================== --}}
@@ -416,7 +415,13 @@
                         <div class="icon-box bg-primary-subtle p-2 rounded">
                             <i class="bi {{ $item['icon'] }} text-primary fs-5"></i>
                         </div>
-                        <h4 class="fw-bold mb-0 text-dark">{{ $item['count'] }}</h4>
+                        {{--
+                            Hanya tampilkan angka jika role adalah admin.
+                            Untuk Pengaju & Reviewer, angka tidak akan muncul.
+                        --}}
+                        @if($role === 'admin')
+                            <h4 class="fw-bold mb-0 text-dark">{{ $item['count'] }}</h4>
+                        @endif
                     </div>
                     <h6 class="mb-0 text-muted small fw-bold text-uppercase" style="font-size: 10px;">{{ $item['title'] }}</h6>
                 </div>

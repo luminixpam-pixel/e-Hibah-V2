@@ -113,7 +113,7 @@ public function index(Request $request)
             'fakultas_prodi'  => 'required|exists:fakultas,id',
             'biaya'           => 'required',
             'anggota'         => 'nullable|array',
-            'file'            => 'required|file|mimes:pdf,doc,docx|max:10240', // Max 10MB
+            'file'            => 'required|file|mimes:pdf,doc,docx|max:102400', // Max 10MB
         ]);
 
         // 5. Olah Data
