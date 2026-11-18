@@ -10,12 +10,21 @@ use App\Http\Controllers\{
 };
 
 /* --- PUBLIC ROUTES --- */
-Route::get('/', function () {
-    return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
-});
 
-Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
+// Halaman utama / Landing Page E-Hibah
+Route::view('/', 'landing.index')->name('landing');
+
+// Login
+Route::get('/login', [AuthController::class, 'showLoginForm'])
+    ->name('login');
+
+Route::post('/login', [AuthController::class, 'login'])
+    ->name('login.post');
+
+// Forgot Password
+Route::get('/forgot-password', function () {
+    return view('auth.forgot-password');
+})->middleware('guest')->name('password.request');
 
 /* --- AUTH ROUTES (ALL USERS) --- */
 Route::middleware('auth')->group(function () {

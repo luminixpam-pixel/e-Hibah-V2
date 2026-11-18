@@ -5,6 +5,23 @@
 
 <div class="container mt-4 mb-5">
 
+    {{-- HEADER DASHBOARD --}}
+<div class="dashboard-welcome mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">
+            Selamat datang, {{ $user->name ?? 'Pengguna' }} 👋
+        </h4>
+
+        <p class="text-muted mb-0">
+            Kelola dan pantau aktivitas hibah Anda dengan mudah melalui E-Hibah Universitas YARSI.
+        </p>
+    </div>
+
+    <div class="welcome-icon">
+        <i class="bi bi-journal-check"></i>
+    </div>
+</div>
+
     {{-- ✅ FIX: fallback hitung total kartu kalau variabel dari controller belum keisi / salah --}}
     @php
         // =========================
@@ -342,35 +359,211 @@
             : [1 => 'Dikirim', 2 => 'Direview', 3 => 'Keputusan', 4 => 'Selesai'];
     @endphp
 
-    <div class="card p-4 mb-4 shadow-sm border-0">
-        <div class="mb-4">
-            <h6 class="mb-1 fw-bold text-dark">{{ $labelHeader }}</h6>
-            <p class="text-muted small mb-0">Pelacakan tahapan proposal secara real-time.</p>
+   <div class="progress-card mb-4">
+
+    <div class="progress-header">
+        <div>
+            <h6 class="fw-bold mb-1 text-dark">
+                {{ $labelHeader }}
+            </h6>
+            <p class="text-muted small mb-0">
+                Pantau perkembangan proposal Anda pada setiap tahapan.
+            </p>
         </div>
 
-        <div class="stepper position-relative">
-            @foreach($steps as $stepNum => $stepText)
-                @php
-                    $isDone = ($stepNum === 4) ? ($currentStep >= 4) : ($currentStep > $stepNum);
-                    $isActive = $currentStep === $stepNum;
-                    $dotClass = $isDone ? 'done' : ($isActive ? 'active' : 'todo');
-                @endphp
-                <div class="step">
-                    <div class="dot {{ $dotClass }}">
-                        @if($isDone)
-                            <i class="bi bi-check-lg"></i>
-                        @else
-                            <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i>
-                        @endif
-                    </div>
-                    <div class="label">{{ $stepText }}</div>
-                </div>
-                @if($stepNum < 4)
-                    <div class="line {{ $currentStep > $stepNum ? 'filled' : '' }}"></div>
-                @endif
-            @endforeach
+        <div class="progress-status-badge">
+            @if($currentStep === 4)
+                <i class="bi bi-check-circle-fill"></i> Tahap akhir
+            @elseif($currentStep === 3)
+                <i class="bi bi-hourglass-split"></i> Menunggu keputusan
+            @elseif($currentStep === 2)
+                <i class="bi bi-search"></i> Sedang diproses
+            @elseif($currentStep === 1)
+                <i class="bi bi-send-check"></i> Proposal dikirim
+            @else
+                <i class="bi bi-info-circle"></i> Belum ada pengajuan
+            @endif
         </div>
     </div>
+
+    <div class="stepper-modern">
+
+        @foreach($steps as $stepNum => $stepText)
+
+            @php
+                $isDone = ($stepNum === 4)
+                    ? ($currentStep >= 4)
+                    : ($currentStep > $stepNum);
+
+                $isActive = $currentStep === $stepNum;
+
+                $dotClass = $isDone
+                    ? 'done'
+                    : ($isActive ? 'active' : 'todo');
+            @endphp
+
+            <div class="step-modern">
+
+                <div class="step-circle {{ $dotClass }}">
+                    @if($isDone)
+                        <i class="bi bi-check-lg"></i>
+                    @elseif($isActive)
+                        <i class="bi bi-dot"></i>
+                    @else
+                        {{ $stepNum }}
+                    @endif
+                </div>
+
+                <div class="step-label {{ $isActive ? 'active-label' : '' }}">
+                    {{ $stepText }}
+                </div>
+
+            </div>
+
+            @if($stepNum < 4)
+                <div class="step-connector {{ $currentStep > $stepNum ? 'filled' : '' }}"></div>
+            @endif
+
+        @endforeach
+
+    </div>
+
+</div>
+@endif
+
+{{-- ===================== YANG PERLU DILAKUKAN ===================== --}}
+@if($role === 'pengaju' || $role === 'reviewer')
+
+    @php
+        $actionItems = [];
+
+        if ($role === 'pengaju') {
+
+            if (($direvisiFileCount ?? 0) > 0 || ($direvisiCount ?? 0) > 0) {
+                $actionItems[] = [
+                    'title' => 'Proposal Perlu Direvisi',
+                    'description' => 'Silakan periksa catatan revisi dan lengkapi proposal Anda.',
+                    'count' => $direvisiFileCount ?? $direvisiCount ?? 0,
+                    'route' => 'monitoring.proposalDirevisi',
+                    'icon' => 'bi-pencil-square',
+                    'class' => 'action-warning'
+                ];
+            }
+
+            if (($hasilRevisiCount ?? 0) > 0) {
+                $actionItems[] = [
+                    'title' => 'Hasil Revisi Proposal',
+                    'description' => 'Periksa kembali hasil revisi proposal Anda.',
+                    'count' => $hasilRevisiCount,
+                    'route' => 'monitoring.hasilRevisi',
+                    'icon' => 'bi-send-check',
+                    'class' => 'action-info'
+                ];
+            }
+
+        } elseif ($role === 'reviewer') {
+
+            if (($perluDireviewCount ?? 0) > 0) {
+                $actionItems[] = [
+                    'title' => 'Proposal Menunggu Review',
+                    'description' => 'Terdapat proposal yang perlu Anda review.',
+                    'count' => $perluDireviewCount,
+                    'route' => 'monitoring.proposalPerluDireview',
+                    'icon' => 'bi-envelope-paper',
+                    'class' => 'action-primary'
+                ];
+            }
+
+            if (($sedangDireviewCount ?? 0) > 0) {
+                $actionItems[] = [
+                    'title' => 'Review Sedang Berlangsung',
+                    'description' => 'Lanjutkan proses review proposal yang sedang Anda kerjakan.',
+                    'count' => $sedangDireviewCount,
+                    'route' => 'monitoring.proposalSedangDireview',
+                    'icon' => 'bi-arrow-repeat',
+                    'class' => 'action-info'
+                ];
+            }
+        }
+    @endphp
+
+    @if(count($actionItems) > 0)
+
+        <div class="action-card mb-4">
+
+            <div class="action-header">
+                <div>
+                    <h6 class="fw-bold mb-1">
+                        <i class="bi bi-lightning-charge-fill me-1"></i>
+                        Yang Perlu Dilakukan
+                    </h6>
+                    <p class="text-muted small mb-0">
+                        Aktivitas yang membutuhkan perhatian Anda.
+                    </p>
+                </div>
+
+                <span class="action-total">
+                    {{ count($actionItems) }} aktivitas
+                </span>
+            </div>
+
+            <div class="action-list">
+
+                @foreach($actionItems as $action)
+
+                    <a href="{{ route($action['route']) }}"
+                       class="action-item text-decoration-none">
+
+                        <div class="action-icon {{ $action['class'] }}">
+                            <i class="bi {{ $action['icon'] }}"></i>
+                        </div>
+
+                        <div class="action-content">
+                            <div class="action-title">
+                                {{ $action['title'] }}
+                            </div>
+
+                            <div class="action-description">
+                                {{ $action['description'] }}
+                            </div>
+                        </div>
+
+                        <div class="action-count">
+                            {{ $action['count'] }}
+                        </div>
+
+                        <i class="bi bi-chevron-right action-arrow"></i>
+
+                    </a>
+
+                @endforeach
+
+            </div>
+
+        </div>
+
+    @else
+
+        <div class="action-card action-empty mb-4">
+
+            <div class="empty-icon">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+
+            <div>
+                <h6 class="fw-bold mb-1">
+                    Tidak ada tindakan yang diperlukan
+                </h6>
+
+                <p class="text-muted small mb-0">
+                    Semua aktivitas Anda saat ini sudah tertangani.
+                </p>
+            </div>
+
+        </div>
+
+    @endif
+
 @endif
 
     {{-- ===================== MONITORING CARDS ==================== --}}
@@ -569,5 +762,358 @@
     /* Table & Badges */
     .bg-success-subtle { background-color: #e8f5e9; color: #2e7d32; }
     .bg-primary-subtle { background-color: #eef6ff; }
+
+    .dashboard-welcome {
+    background: linear-gradient(135deg, #ffffff, #f1fff4);
+    border: 1px solid #e8f0ea;
+    border-radius: 16px;
+    padding: 22px 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 15px rgba(0,0,0,.05);
+}
+
+.dashboard-welcome h4 {
+    color: #1f2937;
+}
+
+.welcome-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #1fbd4c;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 23px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 576px) {
+    .dashboard-welcome {
+        padding: 18px;
+    }
+
+    .dashboard-welcome h4 {
+        font-size: 18px;
+    }
+
+    .welcome-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 19px;
+    }
+}
+
+/* =================================
+   MODERN PROGRESS STEPPER
+================================= */
+
+.progress-card {
+    background: #fff;
+    border: 1px solid #edf0f2;
+    border-radius: 16px;
+    padding: 22px 24px;
+    box-shadow: 0 4px 15px rgba(0,0,0,.05);
+}
+
+.progress-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 28px;
+}
+
+.progress-status-badge {
+    padding: 7px 12px;
+    border-radius: 20px;
+    background: #f0fdf4;
+    color: #15803d;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.progress-status-badge i {
+    margin-right: 4px;
+}
+
+/* Stepper */
+
+.stepper-modern {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.step-modern {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 85px;
+}
+
+.step-circle {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    border: 3px solid #e5e7eb;
+    background: #fff;
+    color: #9ca3af;
+    position: relative;
+    z-index: 2;
+    transition: all .25s ease;
+}
+
+.step-circle.done {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: #fff;
+}
+
+.step-circle.active {
+    background: #fff;
+    border-color: #2563eb;
+    color: #2563eb;
+    box-shadow: 0 0 0 5px rgba(37,99,235,.10);
+}
+
+.step-circle.todo {
+    background: #fff;
+    border-color: #e5e7eb;
+    color: #9ca3af;
+}
+
+.step-label {
+    margin-top: 9px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.step-label.active-label {
+    color: #2563eb;
+    font-weight: 700;
+}
+
+.step-connector {
+    height: 3px;
+    background: #e5e7eb;
+    flex: 1;
+    margin: 0 -2px;
+    margin-bottom: 27px;
+    border-radius: 5px;
+    transition: background .25s ease;
+}
+
+.step-connector.filled {
+    background: #16a34a;
+}
+
+/* Mobile */
+
+@media (max-width: 576px) {
+
+    .progress-card {
+        padding: 18px 14px;
+    }
+
+    .progress-header {
+        align-items: flex-start;
+        flex-direction: column;
+        margin-bottom: 24px;
+    }
+
+    .progress-status-badge {
+        font-size: 10px;
+    }
+
+    .step-modern {
+        min-width: 55px;
+    }
+
+    .step-circle {
+        width: 34px;
+        height: 34px;
+        font-size: 12px;
+    }
+
+    .step-label {
+        font-size: 9px;
+        white-space: normal;
+        line-height: 1.3;
+    }
+
+    .step-connector {
+        margin-bottom: 27px;
+    }
+}
+
+/* =================================
+   YANG PERLU DILAKUKAN
+================================= */
+
+.action-card {
+    background: #fff;
+    border: 1px solid #edf0f2;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,.05);
+}
+
+.action-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.action-header h6 {
+    color: #1f2937;
+}
+
+.action-total {
+    padding: 5px 10px;
+    border-radius: 20px;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.action-item {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 13px;
+    border-radius: 12px;
+    border: 1px solid #f0f1f3;
+    transition: all .2s ease;
+}
+
+.action-item:hover {
+    background: #f9fafb;
+    transform: translateX(3px);
+}
+
+.action-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+}
+
+.action-primary {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.action-info {
+    background: #ecfeff;
+    color: #0891b2;
+}
+
+.action-warning {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.action-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.action-title {
+    color: #374151;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.action-description {
+    color: #9ca3af;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.action-count {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 20px;
+    background: #f3f4f6;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.action-arrow {
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.action-empty {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.empty-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #f0fdf4;
+    color: #16a34a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+}
+
+@media (max-width: 576px) {
+
+    .action-card {
+        padding: 16px;
+    }
+
+    .action-header {
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .action-description {
+        font-size: 10px;
+    }
+
+    .action-icon {
+        width: 36px;
+        min-width: 36px;
+        height: 36px;
+        font-size: 15px;
+    }
+}
 </style>
 @endpush

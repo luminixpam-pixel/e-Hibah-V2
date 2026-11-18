@@ -19,69 +19,467 @@
     {{-- FullCalendar --}}
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css' rel='stylesheet' />
 
-    <style>
-        body { font-family:'Poppins',sans-serif; background: linear-gradient(135deg,#d9fcd4,#f6fef7); min-height:100vh; }
-        /* Navbar */
-        #mainNavbar{background-color:#1fbd4c; z-index:3100;}
-        #mainNavbar .nav-link,#mainNavbar .navbar-brand{color:#fff !important;}
-        #mainNavbar .nav-link i{font-size:1.3rem;}
-        #mainNavbar .nav-link.main-nav-link{border-radius:999px;padding:6px 14px;font-weight:500;transition:.15s;}
-        #mainNavbar .nav-link.main-nav-link:hover{background:rgba(255,255,255,0.18);}
-        #mainNavbar .nav-link.main-nav-link-active{background:rgba(15,23,42,0.25);box-shadow:0 0 0 2px rgba(255,255,255,.45);}
-        #mainNavbar .nav-link.main-nav-link-active:hover{background:rgba(15,23,42,0.32);}
+   <style>
+    /* =========================================================
+       GLOBAL
+       ========================================================= */
 
-        /* Content */
-        #mainContent{padding:20px; backdrop-filter: blur(10px); background-color: rgba(255,255,255,0.8); border-radius:15px; margin-top:20px;}
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(135deg, #d9fcd4, #f6fef7);
+        min-height: 100vh;
+    }
 
-        /* Popup Proposal */
-        .popup-overlay{
-            display:none;
-            position:fixed;
-            top:0;left:0;width:100%;height:100%;
-            background:transparent; /* ✅ hilangin shadow background */
-            z-index:5000;
-            justify-content:center; align-items:center;
+    /* =========================================================
+       NAVBAR E-HIBAH
+       ========================================================= */
+
+    #mainNavbar {
+        background: #1fbd4c;
+        min-height: 68px;
+        z-index: 3100;
+        border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+
+    #mainNavbar .navbar-brand {
+        color: #fff !important;
+        text-decoration: none;
+        min-width: 170px;
+    }
+
+    #mainNavbar .nav-link {
+        color: #fff !important;
+    }
+
+    #mainNavbar .nav-link i {
+        font-size: 1.1rem;
+    }
+
+    /* Brand */
+
+    .brand-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,.15);
+        color: #fff;
+        font-size: 18px;
+    }
+
+    .brand-title {
+        font-size: 16px;
+        line-height: 1.1;
+    }
+
+    .brand-subtitle {
+        font-size: 9px;
+        opacity: .75;
+        font-weight: 400;
+        letter-spacing: .2px;
+    }
+
+    /* Menu utama */
+
+    #mainNavbar .main-nav-link {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        border-radius: 8px;
+        padding: 8px 9px !important;
+        font-size: 12.5px;
+        font-weight: 500;
+        color: rgba(255,255,255,.92) !important;
+        white-space: nowrap;
+        transition: background-color .2s ease, color .2s ease;
+    }
+
+    #mainNavbar .main-nav-link:hover {
+        background: rgba(255,255,255,.12);
+        color: #fff !important;
+    }
+
+    #mainNavbar .main-nav-link-active {
+        background: rgba(15,23,42,.20);
+        color: #fff !important;
+        box-shadow: 0 0 0 1px rgba(255,255,255,.20);
+    }
+
+    /* Dropdown */
+
+    #mainNavbar .smooth-dropdown {
+        border: 0;
+        border-radius: 12px;
+        padding: 7px;
+        min-width: 235px;
+        box-shadow: 0 12px 35px rgba(0,0,0,.14);
+
+        animation: dropdownSmooth .16s ease-out;
+    }
+
+    #mainNavbar .dropdown-item {
+        border-radius: 8px;
+        padding: 9px 11px;
+        font-size: 13px;
+
+        transition:
+            background-color .18s ease,
+            padding-left .18s ease;
+    }
+
+    #mainNavbar .dropdown-item:hover {
+        padding-left: 15px;
+    }
+
+    #mainNavbar .dropdown-item i {
+        width: 19px;
+        text-align: center;
+    }
+
+    @keyframes dropdownSmooth {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
         }
-        .popup-overlay.active{display:flex;}
-        .popup-content{background:#fff;padding:20px;border-radius:12px; max-width:500px;width:90%; box-shadow:0 5px 15px rgba(0,0,0,0.3); position:relative;}
-        .close-popup{position:absolute;top:10px;right:10px;font-size:1.5rem;cursor:pointer;}
 
-        /* Notifikasi */
-        .notif-popup-overlay{
-            display:none;
-            position:fixed;
-            inset:0;
-            background:transparent; /* ✅ ga ada shadow belakang */
-            z-index:4000;
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
-        .notif-popup{
-            background:#fff;border-radius:12px;width:350px;max-height:80vh;overflow:hidden;
-            display:flex;flex-direction:column;
-            box-shadow:0 5px 15px rgba(0,0,0,0.3);
-            position:fixed;
-            top:0; left:0; right:auto;
-            margin:0 !important;
-            transform:none !important;
+    }
+
+    /* User */
+
+    .user-menu {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: #fff !important;
+        font-size: 13px;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,.15);
+    }
+
+    .user-name {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-info {
+        min-width: 190px;
+    }
+
+    /* Notifikasi */
+
+    .notification-link {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+
+        color: #fff !important;
+
+        transition:
+            background-color .2s ease,
+            transform .2s ease;
+    }
+
+    .notification-link:hover {
+        background: rgba(255,255,255,.12);
+        transform: translateY(-1px);
+    }
+
+    /* Menu yang belum tersedia */
+
+    .menu-coming-soon {
+        color: #777 !important;
+        cursor: default;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .menu-coming-soon:hover {
+        background: transparent !important;
+        padding-left: 11px !important;
+    }
+
+    .coming-badge {
+        margin-left: auto;
+        font-size: 9px;
+        padding: 3px 7px;
+        border-radius: 20px;
+        background: #f1f3f5;
+        color: #888;
+    }
+
+    /* =========================================================
+       CONTENT
+       ========================================================= */
+
+    #mainContent {
+        padding: 20px;
+
+        backdrop-filter: blur(10px);
+
+        background-color: rgba(255,255,255,.80);
+
+        border-radius: 15px;
+
+        margin-top: 20px;
+    }
+
+    /* =========================================================
+       POPUP PROPOSAL
+       ========================================================= */
+
+    .popup-overlay {
+        display: none;
+
+        position: fixed;
+
+        top: 0;
+        left: 0;
+
+        width: 100%;
+        height: 100%;
+
+        background: transparent;
+
+        z-index: 5000;
+
+        justify-content: center;
+        align-items: center;
+    }
+
+    .popup-overlay.active {
+        display: flex;
+    }
+
+    .popup-content {
+        background: #fff;
+
+        padding: 20px;
+
+        border-radius: 12px;
+
+        max-width: 500px;
+        width: 90%;
+
+        box-shadow: 0 5px 15px rgba(0,0,0,.30);
+
+        position: relative;
+    }
+
+    .close-popup {
+        position: absolute;
+
+        top: 10px;
+        right: 10px;
+
+        font-size: 1.5rem;
+
+        cursor: pointer;
+    }
+
+    /* =========================================================
+       NOTIFIKASI
+       ========================================================= */
+
+    .notif-popup-overlay {
+        display: none;
+
+        position: fixed;
+
+        inset: 0;
+
+        background: transparent;
+
+        z-index: 4000;
+    }
+
+    .notif-popup {
+        background: #fff;
+
+        border-radius: 12px;
+
+        width: 350px;
+        max-height: 80vh;
+
+        overflow: hidden;
+
+        display: flex;
+        flex-direction: column;
+
+        box-shadow: 0 5px 15px rgba(0,0,0,.30);
+
+        position: fixed;
+
+        top: 0;
+        left: 0;
+
+        right: auto;
+
+        margin: 0 !important;
+
+        transform: none !important;
+    }
+
+    .notif-popup.large {
+        width: 600px;
+        max-height: 90vh;
+    }
+
+    .notif-header {
+        padding: 10px 15px;
+
+        border-bottom: 1px solid #ddd;
+
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .notif-list {
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .notif-item {
+        padding: 10px 15px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .notif-item.unread {
+        background: #eef7ff;
+        border-left: 4px solid #0d6efd;
+    }
+
+    .notif-item.unread .notif-title {
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .notif-item.read {
+        background: #f8f8f8;
+        color: #999;
+    }
+
+    .notif-item.read .notif-title {
+        font-weight: 500;
+    }
+
+    .mark-read {
+        cursor: pointer;
+        color: #0d6efd;
+        font-size: .9rem;
+    }
+
+    .mark-read.disabled {
+        color: gray;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    /* =========================================================
+       KALENDER
+       ========================================================= */
+
+    #calendar {
+        max-width: 100%;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 12px;
+    }
+
+    /* =========================================================
+       TOAST FILE ERROR
+       ========================================================= */
+
+    #toastFileError {
+        position: fixed;
+
+        top: 70px;
+        right: 20px;
+
+        z-index: 99999;
+
+        display: none;
+    }
+
+    /* =========================================================
+       MOBILE / TABLET
+       ========================================================= */
+
+    @media (max-width: 1199.98px) {
+
+        #mainNavbar .navbar-nav {
+            padding-top: 8px;
+            padding-bottom: 8px;
         }
-        .notif-popup.large{width:600px;max-height:90vh;}
-        .notif-header{padding:10px 15px;border-bottom:1px solid #ddd; display:flex; justify-content:space-between; align-items:center;}
-        .notif-list{overflow-y:auto; flex:1;}
-        .notif-item{padding:10px 15px;border-bottom:1px solid #eee;}
 
-        .notif-item.unread{ background:#eef7ff; border-left:4px solid #0d6efd; }
-        .notif-item.unread .notif-title{ font-weight:700; color:#111827; }
-        .notif-item.read{ background:#f8f8f8; color:#999; }
-        .notif-item.read .notif-title{ font-weight:500; }
+        #mainNavbar .main-nav-link {
+            width: 100%;
+        }
 
-        .mark-read{cursor:pointer;color:#0d6efd;font-size:0.9rem;}
-        .mark-read.disabled{color:gray; cursor:default; pointer-events:none;}
+        #mainNavbar .dropdown-menu {
+            box-shadow: none;
+            border: 1px solid rgba(0,0,0,.06);
+        }
 
-        /* Kalender */
-        #calendar{max-width:100%;margin:0 auto;background:#fff;border-radius:12px;}
+        .user-name {
+            max-width: none;
+        }
 
-        /* Toast file error */
-        #toastFileError{position:fixed;top:70px;right:20px;z-index:99999; display:none;}
-    </style>
+        #mainNavbar .navbar-left {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+
+        #mainContent {
+            padding: 12px;
+            margin-top: 12px;
+            border-radius: 10px;
+        }
+
+        .brand-subtitle {
+            display: none !important;
+        }
+
+        #mainNavbar .navbar-brand {
+            min-width: auto;
+        }
+
+        .notif-popup {
+            width: calc(100vw - 20px);
+        }
+    }
+    .brand-logo img {
+    width: 180px;
+    height: 65px;
+    object-fit: contain;
+    display: block;
+    margin-left: -200px;
+}
+</style>
 
     @stack('styles')
 </head>
@@ -104,119 +502,590 @@
     $isRiwayatMenuActive = ($routeName === 'admin.riwayatDosen' || $routeName === 'admin.dosen.detail');
 @endphp
 
-{{-- Alert placeholder --}}
-<div id="alertPlaceholder" class="position-fixed top-0 end-0 p-3" style="z-index:9999;"></div>
-
-{{-- Navbar --}}
-<nav id="mainNavbar" class="navbar navbar-expand-lg shadow-sm">
+{{-- =========================
+     NAVBAR E-HIBAH
+     ========================= --}}
+<nav id="mainNavbar" class="navbar navbar-expand-xl shadow-sm">
     <div class="container-fluid px-4">
-        <a class="navbar-brand fw-semibold">E-Hibah</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
-            <span class="navbar-toggler-icon text-white"></span>
+
+        {{-- BRAND --}}
+        <a class="navbar-brand fw-semibold d-flex align-items-center gap-2"
+           href="{{ route('dashboard') }}">
+
+         <a href="{{ route('landing') }}" class="brand-logo">
+            <img
+                src="{{ asset('image/logo-e-hibah.png') }}"
+                alt="Logo E-Hibah YARSI"
+            >
+        </a>
+        </a>
+
+        {{-- MOBILE BUTTON --}}
+        <button class="navbar-toggler border-0 shadow-none"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarContent">
+
+            <i class="bi bi-list fs-2 text-white"></i>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarContent">
-            <ul class="navbar-nav navbar-left">
+
+            {{-- =========================
+                 MENU KIRI
+                 ========================= --}}
+            <ul class="navbar-nav navbar-left align-items-xl-center gap-xl-1">
+
+                {{-- DASHBOARD --}}
                 <li class="nav-item">
-                    <a class="nav-link main-nav-link {{ $routeName==='dashboard'?'main-nav-link-active':'' }}" href="{{ route('dashboard') }}">
-                        <i class="bi bi-house-door"></i> Dashboard
+                    <a class="nav-link main-nav-link
+                        {{ $routeName === 'dashboard' ? 'main-nav-link-active' : '' }}"
+                       href="{{ route('dashboard') }}">
+
+                        <i class="bi bi-grid-1x2"></i>
+                        <span>Dashboard</span>
                     </a>
                 </li>
 
-               {{--UNGGAH--}}
+
+                {{-- INFORMASI --}}
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                        <i class="bi bi-upload"></i> Unggah
+
+                    <a class="nav-link dropdown-toggle main-nav-link"
+                       href="#"
+                       data-bs-toggle="dropdown">
+
+                        <i class="bi bi-megaphone"></i>
+                        <span>Informasi</span>
                     </a>
-                   <ul class="dropdown-menu dropdown-menu-end">
-                        @if(in_array(Auth::user()->role, ['pengaju', 'reviewer']))
-                            <li><a class="dropdown-item" href="#" id="openPopupBtn">Unggah Proposal</a></li>
-                            <li><a class="dropdown-item" href="{{ route('laporan.kemajuan.index') }}">Unggah Laporan Kemajuan</a></li>
-                            <li><a class="dropdown-item" href="{{ route('laporan.akhir.index') }}">Unggah Laporan Akhir</a></li>
-                        @endif
+
+                    <ul class="dropdown-menu smooth-dropdown">
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('proposal.pengumuman') }}">
+
+                                <i class="bi bi-megaphone me-2"></i>
+                                Pengumuman Hibah
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('monitoring.kalender') }}">
+
+                                <i class="bi bi-calendar3 me-2"></i>
+                                Kalender Hibah
+                            </a>
+                        </li>
+
+                    </ul>
+                </li>
+
+
+                {{-- PENGAJUAN --}}
+                @if(in_array(Auth::user()->role, ['pengaju', 'reviewer']))
+
+                <li class="nav-item dropdown">
+
+                    <a class="nav-link dropdown-toggle main-nav-link"
+                       href="#"
+                       data-bs-toggle="dropdown">
+
+                        <i class="bi bi-file-earmark-plus"></i>
+                        <span>Pengajuan</span>
+                    </a>
+
+                    <ul class="dropdown-menu smooth-dropdown">
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="#"
+                               id="openPopupBtn">
+
+                                <i class="bi bi-plus-circle me-2"></i>
+                                Ajukan Proposal
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('proposal.index') }}">
+
+                                <i class="bi bi-folder2-open me-2"></i>
+                                Proposal Saya
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('dosen.cek-kuota') }}">
+
+                                <i class="bi bi-speedometer2 me-2"></i>
+                                Cek Kuota Pengajuan
+                            </a>
+                        </li>
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('laporan.kemajuan.index') }}">
+
+                                <i class="bi bi-file-earmark-arrow-up me-2"></i>
+                                Laporan Kemajuan
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('laporan.akhir.index') }}">
+
+                                <i class="bi bi-file-earmark-check me-2"></i>
+                                Laporan Akhir
+                            </a>
+                        </li>
+
+                    </ul>
+                </li>
+
+                @endif
+
+
+                {{-- VERIFIKASI --}}
+                @if(Auth::user()->role === 'admin')
+
+                <li class="nav-item dropdown">
+
+                    <a class="nav-link dropdown-toggle main-nav-link"
+                       href="#"
+                       data-bs-toggle="dropdown">
+
+                        <i class="bi bi-check2-square"></i>
+                        <span>Verifikasi</span>
+                    </a>
+
+                    <ul class="dropdown-menu smooth-dropdown">
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('proposal.index') }}">
+
+                                <i class="bi bi-file-earmark-text me-2"></i>
+                                Daftar Proposal
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('monitoring.proposalDisetujui') }}">
+
+                                <i class="bi bi-check-circle me-2"></i>
+                                Proposal Disetujui
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('monitoring.proposalDirevisi') }}">
+
+                                <i class="bi bi-arrow-repeat me-2"></i>
+                                Perlu Revisi
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('monitoring.proposalDitolak') }}">
+
+                                <i class="bi bi-x-circle me-2"></i>
+                                Proposal Ditolak
+                            </a>
+                        </li>
+
+                    </ul>
+                </li>
+
+                @endif
+
+
+                {{-- REVIEW --}}
+                @if(Auth::user()->role !== 'pengaju')
+
+                <li class="nav-item dropdown">
+
+                    <a class="nav-link dropdown-toggle main-nav-link
+                        {{ $isReviewerMenuActive ? 'main-nav-link-active' : '' }}"
+                       href="#"
+                       data-bs-toggle="dropdown">
+
+                        <i class="bi bi-search"></i>
+                        <span>Review</span>
+                    </a>
+
+                    <ul class="dropdown-menu smooth-dropdown">
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('monitoring.proposalPerluDireview') }}">
+
+                                <i class="bi bi-inbox me-2"></i>
+                                Perlu Direview
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('monitoring.proposalSedangDireview') }}">
+
+                                <i class="bi bi-hourglass-split me-2"></i>
+                                Sedang Direview
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('monitoring.reviewSelesai') }}">
+
+                                <i class="bi bi-check2-circle me-2"></i>
+                                Review Selesai
+                            </a>
+                        </li>
 
                         @if(Auth::user()->role === 'admin')
-                            <li><a class="dropdown-item" href="{{ route('laporan.kemajuan.index') }}">Monitoring Laporan Kemajuan</a></li>
-                            <li><a class="dropdown-item" href="{{ route('laporan.akhir.index') }}">Monitoring Laporan Akhir</a></li>
 
+                        <li>
                             <hr class="dropdown-divider">
-                            <li><a class="dropdown-item" href="{{ route('admin.dokumen.index') }}">Upload Dokumen/Template Dokumen</a></li>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('admin.reviewer.index') }}">
+
+                                <i class="bi bi-person-check me-2"></i>
+                                Kelola Reviewer
+                            </a>
+                        </li>
+
                         @endif
+
                     </ul>
                 </li>
 
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle main-nav-link {{ $isMonitoringMenuActive?'main-nav-link-active':'' }}" href="#" data-bs-toggle="dropdown">
-                        <i class="bi bi-bar-chart"></i> Monitoring & Data
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ route('proposal.index') }}">Daftar Monitoring Proposal</a></li>
-                        @if(Auth::user()->role!=='pengaju')
-                            <li><a class="dropdown-item" href="{{ route('monitoring.proposalPerluDireview') }}">Daftar Review Proposal</a></li>
-                            <li><a class="dropdown-item" href="{{ route('monitoring.proposalSedangDireview') }}">Daftar Proposal Sedang Direview</a></li>
-                        @endif
-                        <li><a class="dropdown-item" href="{{ route('monitoring.reviewSelesai') }}">Daftar Review Selesai</a></li>
-                        <li><a class="dropdown-item" href="{{ route('monitoring.proposalDisetujui') }}">Daftar Proposal Disetujui</a></li>
-                        <li><a class="dropdown-item" href="{{ route('monitoring.proposalDitolak') }}">Daftar Proposal Ditolak</a></li>
-                        <li><a class="dropdown-item" href="{{ route('monitoring.proposalDirevisi') }}">Daftar Proposal Direvisi</a></li>
-                        <li><a class="dropdown-item" href="{{ route('monitoring.hasilRevisi') }}">Hasil Revisi Proposal</a></li>
-                    </ul>
-                </li>
-
-                <li class="nav-item">
-                    <a class="nav-link main-nav-link {{ $routeName==='monitoring.kalender'?'main-nav-link-active':'' }}" href="{{ route('monitoring.kalender') }}">
-                        <i class="bi bi-calendar3"></i> Kalender
-                    </a>
-                </li>
-
-                @if(Auth::user()->role === 'admin')
-                <li class="nav-item">
-                    <a class="nav-link main-nav-link {{ $isReviewerMenuActive ? 'main-nav-link-active' : '' }}" href="{{ route('admin.reviewer.index') }}">
-                        <i class="bi bi-person-check"></i> Pilih Reviewer
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link main-nav-link {{ $isRiwayatMenuActive ? 'main-nav-link-active' : '' }}" href="{{ route('admin.riwayatDosen') }}">
-                        <i class="bi bi-person-vcard"></i> Riwayat Dosen
-                    </a>
-                </li>
                 @endif
+
+
+                {{-- MONITORING --}}
+                <li class="nav-item dropdown">
+
+                    <a class="nav-link dropdown-toggle main-nav-link
+                        {{ $isMonitoringMenuActive ? 'main-nav-link-active' : '' }}"
+                       href="#"
+                       data-bs-toggle="dropdown">
+
+                        <i class="bi bi-graph-up-arrow"></i>
+                        <span>Monitoring</span>
+                    </a>
+
+                    <ul class="dropdown-menu smooth-dropdown">
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('proposal.index') }}">
+
+                                <i class="bi bi-list-check me-2"></i>
+                                Status Proposal
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('monitoring.hasilRevisi') }}">
+
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                Hasil Revisi
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('monitoring.kalender') }}">
+
+                                <i class="bi bi-calendar-event me-2"></i>
+                                Jadwal & Kalender
+                            </a>
+                        </li>
+
+                    </ul>
+                </li>
+
+
+                {{-- PELAPORAN --}}
+                <li class="nav-item dropdown">
+
+                    <a class="nav-link dropdown-toggle main-nav-link"
+                       href="#"
+                       data-bs-toggle="dropdown">
+
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+                        <span>Pelaporan</span>
+                    </a>
+
+                    <ul class="dropdown-menu smooth-dropdown">
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('laporan.kemajuan.index') }}">
+
+                                <i class="bi bi-file-earmark-arrow-up me-2"></i>
+                                Laporan Kemajuan
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('laporan.akhir.index') }}">
+
+                                <i class="bi bi-file-earmark-check me-2"></i>
+                                Laporan Akhir
+                            </a>
+                        </li>
+
+                    </ul>
+                </li>
+
+
+                {{-- DATA HIBAH --}}
+                <li class="nav-item dropdown">
+
+                    <a class="nav-link dropdown-toggle main-nav-link"
+                       href="#"
+                       data-bs-toggle="dropdown">
+
+                        <i class="bi bi-database"></i>
+                        <span>Data Hibah</span>
+                    </a>
+
+                    <ul class="dropdown-menu smooth-dropdown">
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('proposal.index') }}">
+
+                                <i class="bi bi-folder2-open me-2"></i>
+                                Database Proposal
+                            </a>
+                        </li>
+
+                        @if(Auth::user()->role === 'admin')
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('admin.riwayatDosen') }}">
+
+                                <i class="bi bi-person-vcard me-2"></i>
+                                Riwayat Dosen
+                            </a>
+                        </li>
+
+                        @endif
+
+                    </ul>
+                </li>
+
+
+                {{-- LAINNYA --}}
+                <li class="nav-item dropdown">
+
+                    <a class="nav-link dropdown-toggle main-nav-link"
+                       href="#"
+                       data-bs-toggle="dropdown">
+
+                        <i class="bi bi-three-dots"></i>
+                        <span>Lainnya</span>
+                    </a>
+
+                    <ul class="dropdown-menu dropdown-menu-end smooth-dropdown">
+
+                        <li>
+                            <span class="dropdown-item menu-coming-soon">
+                                <i class="bi bi-file-earmark-ruled me-2"></i>
+                                Penetapan & Kontrak
+                                <span class="coming-badge">Segera</span>
+                            </span>
+                        </li>
+
+                        <li>
+                            <span class="dropdown-item menu-coming-soon">
+                                <i class="bi bi-wallet2 me-2"></i>
+                                Pendanaan & Keuangan
+                                <span class="coming-badge">Segera</span>
+                            </span>
+                        </li>
+
+                        <li>
+                            <span class="dropdown-item menu-coming-soon">
+                                <i class="bi bi-award me-2"></i>
+                                Luaran & Dampak
+                                <span class="coming-badge">Segera</span>
+                            </span>
+                        </li>
+
+                        <li>
+                            <span class="dropdown-item menu-coming-soon">
+                                <i class="bi bi-bar-chart-line me-2"></i>
+                                Analitik Institusi
+                                <span class="coming-badge">Segera</span>
+                            </span>
+                        </li>
+
+                        <li>
+                            <span class="dropdown-item menu-coming-soon">
+                                <i class="bi bi-question-circle me-2"></i>
+                                Panduan & Layanan
+                                <span class="coming-badge">Segera</span>
+                            </span>
+                        </li>
+
+                        @if(Auth::user()->role === 'admin')
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('admin.dokumen.index') }}">
+
+                                <i class="bi bi-gear me-2"></i>
+                                Administrasi Sistem
+                            </a>
+                        </li>
+
+                        @endif
+
+                    </ul>
+                </li>
+
             </ul>
 
-            <ul class="navbar-nav ms-auto">
+
+            {{-- =========================
+                 MENU KANAN
+                 ========================= --}}
+            <ul class="navbar-nav ms-auto align-items-xl-center">
+
+                {{-- NOTIFIKASI --}}
                 <li class="nav-item">
-                    {{-- ✅ Bell + Badge --}}
+
                     @php
                         $bellCount = $notif_unread_count ?? 0;
                         $bellText  = $bellCount > 99 ? '99+' : $bellCount;
                     @endphp
-                    <a id="notifBell" class="nav-link position-relative" style="cursor:pointer;">
+
+                    <a id="notifBell"
+                       class="nav-link notification-link position-relative"
+                       style="cursor:pointer;"
+                       title="Notifikasi">
+
                         <i class="bi bi-bell"></i>
 
                         <span id="notifCount"
                               class="position-absolute badge rounded-pill bg-danger"
-                              style="display: {{ $bellCount > 0 ? 'inline-block' : 'none' }};font-size:10px;padding:4px 6px;top:2px;right:2px;">
+                              style="
+                                display: {{ $bellCount > 0 ? 'inline-block' : 'none' }};
+                                font-size:10px;
+                                padding:4px 6px;
+                                top:2px;
+                                right:2px;
+                              ">
                             {{ $bellText }}
                         </span>
+
                     </a>
                 </li>
 
+
+                {{-- PROFIL --}}
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                        <i class="bi bi-person-circle"></i> {{ Auth::user()->name ?? 'Pengguna' }}
+
+                    <a class="nav-link dropdown-toggle user-menu"
+                       href="#"
+                       data-bs-toggle="dropdown">
+
+                        <span class="user-avatar">
+                            <i class="bi bi-person"></i>
+                        </span>
+
+                        <span class="user-name">
+                            {{ Auth::user()->name ?? 'Pengguna' }}
+                        </span>
+
                     </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ route('profile.show') }}">Profil</a></li>
+
+                    <ul class="dropdown-menu dropdown-menu-end smooth-dropdown">
+
                         <li>
-                            <form action="{{ route('logout') }}" method="POST">@csrf
-                                <button class="dropdown-item text-danger" type="submit">Logout</button>
-                            </form>
+                            <div class="px-3 py-2 user-info">
+
+                                <small class="text-muted d-block">
+                                    Masuk sebagai
+                                </small>
+
+                                <strong>
+                                    {{ Auth::user()->name ?? 'Pengguna' }}
+                                </strong>
+
+                            </div>
                         </li>
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('profile.show') }}">
+
+                                <i class="bi bi-person-circle me-2"></i>
+                                Profil Saya
+                            </a>
+                        </li>
+
+                        <li>
+
+                            <form action="{{ route('logout') }}" method="POST">
+
+                                @csrf
+
+                                <button class="dropdown-item text-danger"
+                                        type="submit">
+
+                                    <i class="bi bi-box-arrow-right me-2"></i>
+                                    Keluar
+
+                                </button>
+
+                            </form>
+
+                        </li>
+
                     </ul>
+
                 </li>
+
             </ul>
+
         </div>
     </div>
 </nav>
+
+{{-- Alert placeholder --}}
+<div id="alertPlaceholder" class="position-fixed top-0 end-0 p-3" style="z-index:9999;"></div>
+
+
 
 {{-- Content --}}
 <div id="mainContent" class="container content-wrapper mt-3">
