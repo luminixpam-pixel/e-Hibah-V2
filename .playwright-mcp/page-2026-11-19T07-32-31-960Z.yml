@@ -1,0 +1,37 @@
+- generic [ref=f2e2]:
+  - generic [ref=f2e4]:
+    - generic [ref=f2e5]:
+      - generic [ref=f2e6]:
+        - generic [ref=f2e7]: 
+        - text: SISTEM INFORMASI MANAJEMEN HIBAH INTERNAL (E-HIBAH)
+      - heading "E-HIBAH" [level=1] [ref=f2e8]
+      - paragraph [ref=f2e9]: Masuk untuk mengelola data dan layanan Sistem Informasi Manajemen Hibah Internal (E-Hibah) Universitas YARSI.
+    - img "Ilustrasi E-Hibah Universitas YARSI" [ref=f2e11]
+    - generic [ref=f2e12]: Universitas YARSI · Sistem Informasi Pengelolaan Hibah
+  - generic [ref=f2e14]:
+    - img "Logo E-Hibah" [ref=f2e15]
+    - generic [ref=f2e16]:
+      - generic [ref=f2e17]:
+        - heading "Selamat Datang di E-Hibah" [level=2] [ref=f2e18]
+        - paragraph [ref=f2e19]: Masukkan informasi login Anda untuk melanjutkan
+      - generic [ref=f2e20]:
+        - generic [ref=f2e21]:
+          - generic [ref=f2e22]: Nama Pengguna
+          - textbox "Nama Pengguna" [active] [ref=f2e24]:
+            - /placeholder: Masukkan nama pengguna
+        - generic [ref=f2e25]:
+          - generic [ref=f2e26]: Kata Sandi
+          - generic [ref=f2e27]:
+            - textbox "Kata Sandi" [ref=f2e28]:
+              - /placeholder: Masukkan kata sandi
+            - button "Tampilkan atau sembunyikan password" [ref=f2e29] [cursor=pointer]:
+              - generic [ref=f2e30]: 
+        - link "Lupa Password?" [ref=f2e32] [cursor=pointer]:
+          - /url: http://e-hibah-v2.test/forgot-password
+        - button "Masuk " [ref=f2e33] [cursor=pointer]:
+          - text: Masuk
+          - generic [ref=f2e34]: 
+      - generic [ref=f2e35]:
+        - generic [ref=f2e36]: 
+        - text: Login aman dan terlindungi
+    - generic [ref=f2e37]: © 2026 E-Hibah Universitas YARSI. All Rights Reserved.

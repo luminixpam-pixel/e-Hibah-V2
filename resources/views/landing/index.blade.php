@@ -13,18 +13,18 @@
 
     <style>
         :root {
-            --green: #20BF55;
-            --primary: #16A34A;
+            --green: #16A34A;
+            --primary: #15803D;
             --dark: #064E2B;
             --deep: #04351E;
-            --soft: #DDF5E4;
-            --light: #EFF9F1;
+            --soft: #DCFCE7;
+            --light: #F0FDF4;
             --text: #172B20;
-            --muted: #647469;
-            --border: #DCE9DF;
+            --muted: #526357;
+            --border: #D1E7D7;
             --white: #FFFFFF;
             --background: #F8FAF8;
-            --shadow: 0 8px 25px rgba(6,78,43,.07);
+            --shadow: 0 10px 30px rgba(6,78,43,.08);
         }
 
         * {
@@ -278,7 +278,6 @@
         }
 
         .hero-visual {
-            min-height: 370px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -286,82 +285,171 @@
             animation: fadeIn .9s ease both;
         }
 
-        .visual-main {
-            width: 340px;
-            height: 310px;
+        .hero-portal-window {
+            width: 100%;
+            max-width: 440px;
+            background: #ffffff;
+            border-radius: 18px;
+            border: 1px solid #D1E7D7;
+            box-shadow: 0 16px 40px rgba(6, 78, 43, 0.12);
+            overflow: hidden;
+            transition: transform .3s ease, box-shadow .3s ease;
+        }
+
+        .hero-portal-window:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 22px 50px rgba(6, 78, 43, 0.16);
+        }
+
+        .portal-window-bar {
+            background: #F1F8F3;
+            border-bottom: 1px solid #E1EEE4;
+            padding: 10px 14px;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: white;
-            border-radius: 28px;
-            background: linear-gradient(145deg,#064E2B,#16A34A,#20BF55);
-            box-shadow: 0 25px 55px rgba(6,78,43,.25);
-            animation: floatVisual 6s ease-in-out infinite;
+            gap: 10px;
         }
 
-        .visual-main i {
-            font-size: 85px;
-            margin-bottom: 17px;
+        .window-dots {
+            display: flex;
+            gap: 5px;
         }
 
-        .visual-main strong {
-            font-size: 23px;
+        .window-dots span {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+        }
+
+        .window-dots span:nth-child(1) { background: #FDA4AF; }
+        .window-dots span:nth-child(2) { background: #FDE047; }
+        .window-dots span:nth-child(3) { background: #86EFAC; }
+
+        .window-url {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #DCE9DF;
+            border-radius: 6px;
+            padding: 3px 9px;
+            font-size: 10px;
+            color: #526357;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .portal-window-body {
+            padding: 18px;
+        }
+
+        .portal-header-card {
+            background: linear-gradient(135deg, #064E2B 0%, #15803D 100%);
+            color: #ffffff;
+            padding: 15px 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        .portal-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .portal-header-badge {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: .8px;
+            color: #DCFCE7;
+            text-transform: uppercase;
+        }
+
+        .portal-header-status {
+            font-size: 9px;
+            background: rgba(255,255,255,0.18);
+            padding: 2px 8px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+        }
+
+        .portal-header-card h3 {
+            font-size: 16px;
             font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 3px;
+            line-height: 1.3;
         }
 
-        .visual-main span {
+        .portal-header-card p {
             font-size: 11px;
-            opacity: .9;
-            margin-top: 6px;
+            color: #D1E7D7;
+            line-height: 1.5;
+            margin-bottom: 0;
         }
 
-        .floating-card {
-            position: absolute;
-            display: flex;
-            align-items: center;
-            gap: 11px;
-            padding: 13px 16px;
-            background: white;
-            border: 1px solid #E1EEE4;
-            border-radius: 13px;
-            box-shadow: var(--shadow);
-        }
-
-        .floating-card i {
-            width: 38px;
-            height: 38px;
+        .portal-services-grid {
             display: grid;
-            place-items: center;
-            border-radius: 10px;
-            background: var(--soft);
-            color: var(--dark);
-            font-size: 19px;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
         }
 
-        .floating-card strong {
+        .portal-service-item {
+            background: #F8FAF8;
+            border: 1px solid #E1EEE4;
+            padding: 12px;
+            border-radius: 10px;
+            transition: all .2s ease;
+        }
+
+        .portal-service-item:hover {
+            border-color: #16A34A;
+            background: #F0FDF4;
+        }
+
+        .portal-service-item i {
+            font-size: 18px;
+            color: #15803D;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+
+        .portal-service-item strong {
             display: block;
             font-size: 11px;
-            color: var(--dark);
+            font-weight: 700;
+            color: #064E2B;
+            margin-bottom: 2px;
         }
 
-        .floating-card small {
+        .portal-service-item span {
             display: block;
             font-size: 9px;
-            color: var(--muted);
+            color: #526357;
+            line-height: 1.4;
         }
 
-        .float-one {
-            top: 30px;
-            left: -5px;
-            animation: floatOne 5s ease-in-out infinite;
+        .portal-flow-bar {
+            background: #F1F8F3;
+            border: 1px solid #DCE9DF;
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #064E2B;
+            font-weight: 700;
         }
 
-        .float-two {
-            right: -10px;
-            bottom: 25px;
-            animation: floatTwo 5.5s ease-in-out infinite;
+        .portal-flow-bar span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
 
         /* SECTION UMUM */
@@ -860,16 +948,8 @@
             .hero-grid { grid-template-columns: 1fr; }
             .hero h1 { font-size: 39px; letter-spacing: -1.5px; }
             .hero-description { font-size: 13px; }
-            .hero-visual { min-height: 300px; }
-
-            .visual-main {
-                width: 270px;
-                height: 245px;
-            }
-
-            .visual-main i { font-size: 65px; }
-            .float-one { left: 0; }
-            .float-two { right: 0; }
+            .hero-visual { min-height: auto; padding: 20px 0; }
+            .hero-portal-window { max-width: 100%; }
 
             .feature-grid,
             .announcement-grid,
@@ -930,9 +1010,9 @@
 
 .footer-main {
     display: grid;
-    grid-template-columns: 1.3fr 1fr 1fr 1fr;
-    align-items: center;
-    gap: 28px;
+    grid-template-columns: 1.1fr 1.6fr 1.1fr 1fr;
+    align-items: flex-start;
+    gap: 24px;
     padding-bottom: 24px;
 }
 
@@ -987,10 +1067,18 @@
     margin-bottom: 2px;
 }
 
-.footer-contact span {
+.footer-contact span,
+.footer-contact a {
     color: #c9e4d1;
     font-size: 9px;
     line-height: 1.5;
+    text-decoration: none;
+    transition: color .2s ease;
+}
+
+.footer-contact a:hover {
+    color: #ffffff;
+    text-decoration: underline;
 }
 
 .footer-bottom {
@@ -1103,7 +1191,7 @@
                 <a href="#informasi">Informasi Hibah</a>
                 <a href="#pengumuman">Pengumuman</a>
                 <a href="#alur">Alur Pengajuan</a>
-                <a href="#tim">Tim Pengembang</a>
+                <a href="#kontak-layanan">Kontak</a>
             </nav>
 
             <a href="{{ route('login') }}" class="btn-login">
@@ -1120,7 +1208,7 @@
             <div>
                 <div class="hero-badge">
                     <span></span>
-                    PORTAL HIBAH UNIVERSITAS YARSI
+                    PORTAL RESMI LPPM UNIVERSITAS YARSI
                 </div>
 
                 <h1>
@@ -1130,10 +1218,9 @@
                 </h1>
 
                 <p class="hero-description">
-                    E-Hibah Universitas YARSI merupakan platform digital
-                    untuk mendukung pengelolaan hibah penelitian dan
-                    pengabdian kepada masyarakat secara terintegrasi,
-                    transparan, efektif, dan akuntabel.
+                    Sistem informasi terpadu pengelolaan hibah penelitian dan pengabdian
+                    kepada masyarakat Universitas YARSI. Akuntabel dari penerimaan usulan,
+                    verifikasi administrasi, review bertingkat, hingga pelaporan luaran.
                 </p>
 
                 <div class="hero-actions">
@@ -1150,25 +1237,56 @@
             </div>
 
             <div class="hero-visual">
-                <div class="visual-main">
-                    <i class="bi bi-mortarboard"></i>
-                    <strong>E-HIBAH YARSI</strong>
-                    <span>Research & Community Development</span>
-                </div>
-
-                <div class="floating-card float-one">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <div>
-                        <strong>Pengajuan Proposal</strong>
-                        <small>Proses lebih terstruktur</small>
+                {{-- ponytail: clean portal system mockup frame; upgrade to live period counts when API ready --}}
+                <div class="hero-portal-window">
+                    <div class="portal-window-bar">
+                        <div class="window-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <div class="window-url">
+                            <i class="bi bi-lock-fill" style="color: #16A34A; font-size: 9px;"></i>
+                            <span>e-hibah.yarsi.ac.id/portal</span>
+                        </div>
                     </div>
-                </div>
 
-                <div class="floating-card float-two">
-                    <i class="bi bi-graph-up-arrow"></i>
-                    <div>
-                        <strong>Monitoring Hibah</strong>
-                        <small>Pantau perkembangan</small>
+                    <div class="portal-window-body">
+                        <div class="portal-header-card">
+                            <div class="portal-header-top">
+                                <span class="portal-header-badge">LPPM UNIVERSITAS YARSI</span>
+                                <span class="portal-header-status">
+                                    <span style="width: 5px; height: 5px; border-radius: 50%; background: #4ADE80;"></span>
+                                    Sistem Aktif
+                                </span>
+                            </div>
+                            <h3>E-Hibah Penelitian & Pengabdian</h3>
+                            <p>Sistem tata kelola hibah internal berbasis transparansi & akuntabilitas.</p>
+                        </div>
+
+                        <div class="portal-services-grid">
+                            <div class="portal-service-item">
+                                <i class="bi bi-mortarboard"></i>
+                                <strong>Hibah Penelitian</strong>
+                                <span>Peningkatan mutu riset dan publikasi ilmiah dosen.</span>
+                            </div>
+
+                            <div class="portal-service-item">
+                                <i class="bi bi-people"></i>
+                                <strong>Hibah Pengabdian</strong>
+                                <span>Penerapan IPTEK langsung bagi kemaslahatan masyarakat.</span>
+                            </div>
+                        </div>
+
+                        <div class="portal-flow-bar">
+                            <span><i class="bi bi-1-circle-fill" style="color: #16A34A;"></i> Usulan</span>
+                            <i class="bi bi-chevron-right" style="font-size: 8px; color: #84968B;"></i>
+                            <span><i class="bi bi-2-circle-fill" style="color: #16A34A;"></i> Review</span>
+                            <i class="bi bi-chevron-right" style="font-size: 8px; color: #84968B;"></i>
+                            <span><i class="bi bi-3-circle-fill" style="color: #16A34A;"></i> Penetapan</span>
+                            <i class="bi bi-chevron-right" style="font-size: 8px; color: #84968B;"></i>
+                            <span><i class="bi bi-4-circle-fill" style="color: #16A34A;"></i> Monev</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1506,29 +1624,28 @@
             <div class="footer-contact">
                 <i class="bi bi-geo-alt-fill"></i>
                 <div>
-                    <strong>Lokasi</strong>
-                    <span>Universitas YARSI</span>
-                    <span>Jakarta, Indonesia</span>
+                    <strong>Lokasi Kampus</strong>
+                    <span>Menara YARSI, Kav. 13, Jl. Letjen Suprapto, Cempaka Putih Timur, Kec. Cempaka Putih, Kota Jakarta Pusat, DKI Jakarta 10510</span>
                 </div>
             </div>
 
-            <!-- EMAIL -->
-            <div class="footer-contact">
+            <!-- KONTAK -->
+            <div class="footer-contact" id="kontak-layanan">
                 <i class="bi bi-envelope-fill"></i>
                 <div>
-                    <strong>Informasi</strong>
-                    <span>Informasi dan layanan</span>
-                    <span>E-Hibah Universitas YARSI</span>
+                    <strong>Kontak & Layanan</strong>
+                    <a href="mailto:registrar@yarsi.ac.id">registrar@yarsi.ac.id</a>
+                    <a href="tel:+62214206675">+62 (21) 4206675</a>
                 </div>
             </div>
 
-            <!-- WEBSITE -->
+            <!-- WEBSITE / PORTAL -->
             <div class="footer-contact">
                 <i class="bi bi-globe"></i>
                 <div>
-                    <strong>Portal</strong>
+                    <strong>Portal Resmi</strong>
+                    <a href="https://www.yarsi.ac.id/" target="_blank" rel="noopener">www.yarsi.ac.id <i class="bi bi-box-arrow-up-right" style="font-size: 8px;"></i></a>
                     <span>Universitas YARSI</span>
-                    <span>Portal Informasi Hibah</span>
                 </div>
             </div>
 
@@ -1537,14 +1654,13 @@
         <!-- COPYRIGHT -->
         <div class="footer-bottom">
             <p>
-                &copy; {{ date('Y') }} E-Hibah Universitas YARSI.
-                All Rights Reserved.
+                &copy; {{ date('Y') }} E-Hibah Universitas YARSI — TriLumina. All Rights Reserved.
             </p>
 
             <div class="footer-links">
                 <a href="#dokumen">Panduan</a>
-                <a href="#pengumuman">FAQ</a>
-                <a href="mailto:lppm@yarsi.ac.id">Kontak</a>
+                <a href="https://www.yarsi.ac.id/" target="_blank" rel="noopener">FAQ</a>
+                <a href="#kontak-layanan">Kontak</a>
             </div>
         </div>
 

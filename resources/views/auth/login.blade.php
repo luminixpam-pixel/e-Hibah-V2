@@ -20,23 +20,24 @@
         body {
             min-height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 25px;
-            background: #eaf5ed;
+            margin: 0;
+            padding: 0;
+            background: #eff9f2;
             font-family: 'Inter', sans-serif;
             color: #173b29;
+            overflow-x: hidden;
         }
 
         .login-container {
-            width: 100%;
-            max-width: 1120px;
-            min-height: 650px;
+            width: 100vw;
+            max-width: 100%;
+            min-height: 100vh;
             display: grid;
-            grid-template-columns: 60% 40%;
+            grid-template-columns: 58% 42%;
             background: #eff9f2;
-            overflow: hidden;
-            box-shadow: 0 20px 60px rgba(5, 75, 37, .13);
+            overflow: visible;
+            box-shadow: none;
+            border-radius: 0;
             animation: appear .7s ease;
         }
 
@@ -44,14 +45,15 @@
         .brand-panel {
             position: relative;
             overflow: hidden;
-            padding: 42px;
+            padding: 40px 55px;
             color: white;
             background:
                 radial-gradient(circle at 85% 10%, rgba(255,255,255,.2), transparent 18%),
                 linear-gradient(145deg, #087b43, #009653 60%, #08713d);
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: center;
+            align-items: center;
         }
 
         .brand-panel::before,
@@ -61,6 +63,7 @@
             border: 1px solid rgba(255,255,255,.17);
             border-radius: 50%;
             pointer-events: none;
+            z-index: 0;
         }
 
         .brand-panel::before {
@@ -77,35 +80,20 @@
             bottom: 20px;
         }
 
-      .institution-logo {
-    width: 230px;
-    height: 95px;
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    background: transparent;
-    border-radius: 0;
-}
-
-.institution-logo img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    object-position: left center;
-}
-
-        .institution-logo span {
-            color: #173b29;
-            font-size: 20px;
-            font-weight: 800;
-            line-height: 1.4;
+        .brand-content {
+            width: 100%;
+            max-width: 580px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 2;
         }
 
         .panel-content {
             position: relative;
             z-index: 2;
-            margin-top: 28px;
+            margin-top: 0;
+            margin-bottom: 20px;
         }
 
         .system-label {
@@ -130,7 +118,7 @@
         }
 
         .panel-content p {
-            max-width: 400px;
+            max-width: 440px;
             color: rgba(255,255,255,.88);
             font-size: 13px;
             line-height: 1.8;
@@ -140,97 +128,34 @@
         .illustration {
             position: relative;
             z-index: 2;
-            height: 280px;
             display: flex;
             justify-content: center;
-            align-items: center;
-            margin-top: 15px;
+            align-items: flex-end;
+            margin-top: 0;
+            margin-bottom: 18px;
+            width: 100%;
         }
 
-        .illustration-circle {
-            position: absolute;
-            width: 245px;
-            height: 245px;
-            border-radius: 50%;
-            background: rgba(255,255,255,.13);
-            border: 1px solid rgba(255,255,255,.2);
-        }
-
-        .illustration-person {
-            position: relative;
-            z-index: 2;
-            width: 180px;
-            height: 190px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            color: #e9f2dc;
-            animation: float 4s ease-in-out infinite;
-        }
-
-        .illustration-person .head {
-            width: 76px;
-            height: 76px;
-            border-radius: 50%;
-            background: #dce8cf;
-            color: #526d52;
-            display: grid;
-            place-items: center;
-            font-size: 48px;
-            margin-bottom: -5px;
-        }
-
-        .illustration-person .body {
-            width: 150px;
-            height: 105px;
-            border-radius: 75px 75px 15px 15px;
-            background: #c5d5b8;
-            color: #5d785d;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 48px;
-        }
-
-        .illustration-laptop {
-            position: absolute;
-            z-index: 3;
-            bottom: 8px;
-            font-size: 65px;
-            color: #dce4dc;
-            text-shadow: 0 5px 8px rgba(0,0,0,.2);
-        }
-
-        .decor-icon {
-            position: absolute;
-            color: rgba(255,255,255,.8);
-            font-size: 42px;
-            animation: float 5s ease-in-out infinite;
-        }
-
-        .decor-one {
-            left: 8%;
-            bottom: 60px;
-        }
-
-        .decor-two {
-            right: 12%;
-            top: 25px;
-            font-size: 34px;
-        }
-
-        .decor-three {
-            right: 8%;
-            bottom: 55px;
-            font-size: 38px;
+        .login-cover-img {
+            max-width: 560px;
+            width: 100%;
+            height: auto;
+            max-height: 420px;
+            object-fit: contain;
+            object-position: bottom center;
+            filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.16));
+            animation: none !important;
+            transform: none !important;
+            display: block;
         }
 
         .panel-bottom {
             position: relative;
             z-index: 2;
-            font-size: 10px;
+            font-size: 11px;
             color: rgba(255,255,255,.75);
+            margin-top: 36px;
+            text-align: left;
         }
 
         /* PANEL KANAN */
@@ -494,50 +419,34 @@
 ===================================== */
 
 body {
-    padding: 16px;
-    background: #eaf5ed;
+    padding: 0;
+    margin: 0;
+    background: #eff9f2;
 }
 
 .login-container {
-    width: 100%;
-    max-width: 1440px;
-    min-height: calc(100vh - 32px);
-    grid-template-columns: 60% 40%;
+    width: 100vw;
+    max-width: 100%;
+    min-height: 100vh;
+    grid-template-columns: 58% 42%;
     border-radius: 0;
-    box-shadow: 0 12px 45px rgba(5, 75, 37, .10);
+    box-shadow: none;
 }
 
 /* LEFT PANEL */
 .brand-panel {
-    padding: 50px;
-    justify-content: flex-start;
-}
-
-.institution-logo {
-    min-width: 256px;
-    min-height: 66px;
-    padding: 10px 18px;
-    gap: 13px;
-    border-radius: 11px;
-}
-
-.institution-logo img {
-    width: 40px;
-    height: 40px;
-}
-
-.institution-logo span {
-    font-size: 12px;
-    line-height: 1.5;
+    padding: 40px 55px;
+    justify-content: center;
+    align-items: center;
 }
 
 .panel-content {
-    margin-top: 36px;
+    margin-top: 0;
 }
 
 .system-label {
     padding: 10px 17px;
-    margin-bottom: 29px;
+    margin-bottom: 24px;
     font-size: 11px;
 }
 
@@ -553,46 +462,9 @@ body {
     line-height: 1.9;
 }
 
-/* ILLUSTRATION */
-.illustration {
-    height: 285px;
-    margin-top: 25px;
-}
-
-.illustration-circle {
-    width: 295px;
-    height: 295px;
-}
-
-.illustration-person {
-    transform: scale(1.12);
-}
-
-.decor-icon {
-    opacity: .9;
-}
-
-.decor-one {
-    left: 8%;
-    bottom: 45px;
-    font-size: 48px;
-}
-
-.decor-two {
-    right: 12%;
-    top: 20px;
-    font-size: 40px;
-}
-
-.decor-three {
-    right: 9%;
-    bottom: 40px;
-    font-size: 42px;
-}
-
 .panel-bottom {
-    margin-top: auto;
-    padding-top: 20px;
+    margin-top: 27px;
+    padding-top: 0;
     font-size: 11px;
 }
 
@@ -800,41 +672,32 @@ body {
     <!-- PANEL KIRI -->
     <section class="brand-panel">
 
-        <div class="panel-content">
-            <div class="system-label">
-                <i class="fa-solid fa-shield-halved"></i>
-                SISTEM INFORMASI MANAJEMEN HIBAH INTERNAL (E-HIBAH)
-            </div>
-
-            <h1>E-HIBAH</h1>
-
-            <p>
-                Masuk untuk mengelola data dan layanan Sistem Informasi
-                Manajemen Hibah Internal (E-Hibah) Universitas YARSI.
-            </p>
-
-            <div class="illustration">
-                <div class="illustration-circle"></div>
-
-                <i class="fa-solid fa-gear decor-icon decor-one"></i>
-                <i class="fa-solid fa-coins decor-icon decor-two"></i>
-                <i class="fa-solid fa-lightbulb decor-icon decor-three"></i>
-
-                <div class="illustration-person">
-                    <div class="head">
-                        <i class="fa-solid fa-user-tie"></i>
-                    </div>
-                    <div class="body">
-                        <i class="fa-solid fa-laptop"></i>
-                    </div>
+        <div class="brand-content">
+            <div class="panel-content">
+                <div class="system-label">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    SISTEM INFORMASI MANAJEMEN HIBAH INTERNAL (E-HIBAH)
                 </div>
 
-                <i class="fa-solid fa-laptop illustration-laptop"></i>
-            </div>
-        </div>
+                <h1>E-HIBAH</h1>
 
-        <div class="panel-bottom">
-            Universitas YARSI · Sistem Informasi Pengelolaan Hibah
+                <p>
+                    Masuk untuk mengelola data dan layanan Sistem Informasi
+                    Manajemen Hibah Internal (E-Hibah) Universitas YARSI.
+                </p>
+            </div>
+
+            <div class="illustration">
+                <img
+                    src="{{ asset('image/login-image.png') }}?v={{ file_exists(public_path('image/login-image.png')) ? filemtime(public_path('image/login-image.png')) : time() }}"
+                    alt="Ilustrasi E-Hibah Universitas YARSI"
+                    class="login-cover-img"
+                >
+            </div>
+
+            <div class="panel-bottom">
+                Universitas YARSI · Sistem Informasi Pengelolaan Hibah
+            </div>
         </div>
 
     </section>

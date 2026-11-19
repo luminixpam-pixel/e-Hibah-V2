@@ -31,30 +31,20 @@ class AuthController extends Controller
         // 2. Cek Login LDAP
         try {
             if (Auth::attempt(['uid' => $request->username, 'password' => $request->password])) {
-                $ldapUser = Auth::user();
+                $user = Auth::user();
 
-                // Sinkronisasi data LDAP ke Database Lokal
-                $user = User::updateOrCreate(
-                    ['username' => $request->username],
-                    [
-                        'name'          => $ldapUser->displayname[0] ?? $request->username,
-                        'email'         => $ldapUser->mail[0] ?? null,
-                        'nidn'          => $ldapUser->description[0] ?? null,
-                        'fakultas'      => $ldapUser->department[0] ?? null,
-                        'program_studi' => $ldapUser->title[0] ?? null,
-                        'jabatan'       => $ldapUser->physicaldeliveryofficename[0] ?? null,
-                        'guid'          => $ldapUser->getConvertedGuid(),
-                        'domain'        => 'default',
-                        'role'          => $userLokal ? $userLokal->role : 'pengaju',
-                    ]
-                );
+                if (!$user->role) {
+                    $user->role = 'pengaju';
+                    $user->save();
+                }
 
-                Auth::login($user);
                 $request->session()->regenerate();
                 return redirect()->intended('/dashboard');
             }
-        } catch (\Exception $e) {
-            // Log::error($e->getMessage());
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('LDAP login error: ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
         }
 
         return back()->withErrors(['username' => 'Kredensial salah atau server LDAP tidak merespon.']);

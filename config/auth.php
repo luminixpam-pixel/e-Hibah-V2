@@ -66,13 +66,16 @@ return [
         'locate_users_by' => 'uid',
         'rules' => [],
         'database' => [
-            'model' =>App\Models\User::class, // Model Eloquent (DB Lokal)
+            'model' => App\Models\User::class, // Model Eloquent (DB Lokal)
             'sync_passwords' => true,
             'sync_attributes' => [
-                // 'kolom_di_db' => 'atribut_di_ldap'
                 'name' => 'cn',
                 'username' => 'uid',
-                //'email' => 'mail',
+                'email' => 'mail',
+                'nidn' => 'description',
+                'fakultas' => 'department',
+                'program_studi' => 'title',
+                'jabatan' => 'physicaldeliveryofficename',
             ],
         ],
     ],

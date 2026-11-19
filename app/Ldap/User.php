@@ -2,8 +2,6 @@
 
 namespace App\Ldap;
 
-namespace App\Ldap;
-
 use LdapRecord\Models\OpenLDAP\User as LdapUser;
 
 class User extends LdapUser
