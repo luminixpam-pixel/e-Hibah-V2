@@ -18,7 +18,7 @@
         <div class="col-md-4">
             <div class="card"><div class="card-body">
                 <h6 class="text-muted">Antrean Verifikasi</h6>
-                <h3 class="fw-bold mb-0">{{ $antrean ?? 0 }}</h3>
+                <h3 class="fw-bold mb-0">{{ $antrean_count ?? 0 }}</h3>
             </div></div>
         </div>
         <div class="col-md-4">

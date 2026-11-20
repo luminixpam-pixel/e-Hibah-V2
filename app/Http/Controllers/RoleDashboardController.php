@@ -134,9 +134,9 @@ class RoleDashboardController extends Controller
         $antrean = Proposal::where('status', 'Dikirim')->with('user')->latest()->get();
 
         $stats = [
-            'antrean' => $antrean->count(),
-            'lolos'   => Proposal::where('status', 'Lolos Administrasi')->count(),
-            'revisi'  => Proposal::where('status', 'Revisi Administrasi')->count(),
+            'antrean_count' => $antrean->count(),
+            'lolos'         => Proposal::where('status', 'Lolos Administrasi')->count(),
+            'revisi'        => Proposal::where('status', 'Revisi Administrasi')->count(),
         ];
 
         return view('dashboard.verifikator', array_merge(
