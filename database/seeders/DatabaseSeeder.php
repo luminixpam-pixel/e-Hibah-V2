@@ -27,6 +27,9 @@ public function run(): void
         ]
     );
 
+    // Akun tes 1 per role (admin, pengaju, reviewer, verifikator, lppm, dekan, kepala_lppm)
+    $this->call(AkunRoleSeeder::class);
+
     // Jalankan Sinkronisasi LDAP
     //$this->call(LdapDosenSeeder::class);
 }
