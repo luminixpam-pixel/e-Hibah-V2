@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -290,17 +289,6 @@
         .btn-login:hover {
             transform: translateY(-2px);
             box-shadow: 0 9px 20px rgba(22,163,74,.28);
-        }
-
-        .error {
-            padding: 11px 13px;
-            margin-bottom: 17px;
-            border: 1px solid #ffd2d2;
-            border-radius: 9px;
-            background: #fff0f0;
-            color: #d12d2d;
-            font-size: 11px;
-            line-height: 1.6;
         }
 
         .security-info {
@@ -662,6 +650,95 @@ body {
     }
 }
 
+/* POPUP ERROR LOGIN */
+.error-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(23, 59, 41, .55);
+    backdrop-filter: blur(3px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    z-index: 100;
+    animation: fadeIn .25s ease;
+}
+.error-modal {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    background: #fff;
+    border-radius: 22px;
+    padding: 32px 28px 28px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .25);
+    animation: popIn .3s ease;
+}
+.error-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: #f1f5f2;
+    color: #77847b;
+    font-size: 13px;
+    cursor: pointer;
+}
+.error-modal-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    font-size: 26px;
+}
+.error-modal-icon.danger {
+    background: rgba(209, 45, 45, .10);
+    color: #d12d2d;
+}
+.error-modal-icon.warning {
+    background: rgba(217, 119, 6, .12);
+    color: #b45309;
+}
+.error-modal h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: #17251c;
+    margin-bottom: 8px;
+}
+.error-modal p {
+    font-size: 13px;
+    color: #77847b;
+    line-height: 1.7;
+    margin-bottom: 22px;
+}
+.error-modal-btn {
+    width: 100%;
+    height: 48px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #20bd59, #11843c);
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 5px 13px rgba(22, 163, 74, .18);
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes popIn {
+    from { opacity: 0; transform: scale(.92) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
     </style>
 </head>
 
@@ -720,15 +797,6 @@ body {
                     <h2>Selamat Datang di E-Hibah</h2>
                     <p>Masukkan informasi login Anda untuk melanjutkan</p>
                 </div>
-
-                @if ($errors->any())
-                    <div class="error">
-                        <i class="fa-solid fa-circle-exclamation"></i>
-                        @foreach ($errors->all() as $error)
-                            <div>{{ $error }}</div>
-                        @endforeach
-                    </div>
-                @endif
 
                 <form method="POST" action="{{ route('login.post') }}">
                     @csrf
@@ -804,6 +872,30 @@ body {
 
 </div>
 
+{{-- Popup error login --}}
+@if ($errors->any())
+    @php
+        $isLdapError = $errors->has('ldap');
+        $errorTitle = $isLdapError ? 'Server Tidak Merespon' : 'Login Gagal';
+        $errorMessage = $isLdapError
+            ? $errors->first('ldap')
+            : ($errors->has('login') ? $errors->first('login') : $errors->first());
+    @endphp
+    <div class="error-modal-overlay" id="errorModal" onclick="closeErrorModal(event)">
+        <div class="error-modal">
+            <button type="button" class="error-modal-close" onclick="closeErrorModal()" aria-label="Tutup">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="error-modal-icon {{ $isLdapError ? 'warning' : 'danger' }}">
+                <i class="fa-solid {{ $isLdapError ? 'fa-triangle-exclamation' : 'fa-circle-exclamation' }}"></i>
+            </div>
+            <h3>{{ $errorTitle }}</h3>
+            <p>{{ $errorMessage }}</p>
+            <button type="button" class="error-modal-btn" onclick="closeErrorModal()">Tutup</button>
+        </div>
+    </div>
+@endif
+
 <script>
     function togglePassword() {
         const password = document.getElementById('password');
@@ -819,6 +911,20 @@ body {
             icon.classList.add('fa-eye');
         }
     }
+
+    function closeErrorModal(event) {
+        const modal = document.getElementById('errorModal');
+        if (!modal) return;
+        if (event && event.target.id !== 'errorModal') return;
+        modal.remove();
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('errorModal');
+            if (modal) modal.remove();
+        }
+    });
 </script>
 
 </body>

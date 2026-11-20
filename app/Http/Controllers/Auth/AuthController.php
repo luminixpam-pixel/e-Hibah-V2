@@ -41,13 +41,21 @@ class AuthController extends Controller
                 $request->session()->regenerate();
                 return redirect()->intended('/dashboard');
             }
+
+            // LDAP merespon, tapi username/password salah
+            return back()->withErrors([
+                'login' => 'Username atau kata sandi salah. Periksa kembali dan coba lagi.',
+            ])->withInput($request->only('username'));
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('LDAP login error: ' . $e->getMessage(), [
                 'exception' => $e
             ]);
-        }
 
-        return back()->withErrors(['username' => 'Kredensial salah atau server LDAP tidak merespon.']);
+            // Server LDAP tidak merespon
+            return back()->withErrors([
+                'ldap' => 'Server LDAP tidak merespon. Silakan coba lagi nanti atau hubungi pihak YARSI.',
+            ])->withInput($request->only('username'));
+        }
     }
 public function adminUpdate(Request $request, $id)
 {

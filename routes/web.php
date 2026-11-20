@@ -24,7 +24,7 @@ Route::post('/login', [AuthController::class, 'login'])
 // Forgot Password
 Route::get('/forgot-password', function () {
     return view('auth.forgot-password');
-})->middleware('guest')->name('password.request');
+})->name('password.request');
 
 /* --- AUTH ROUTES (ALL USERS) --- */
 Route::middleware('auth')->group(function () {
