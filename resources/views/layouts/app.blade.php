@@ -1476,19 +1476,20 @@ document.addEventListener("DOMContentLoaded",()=>{
         if (notifPopup && notifPopup.style.display === 'block') positionNotifBox();
     }, true);
 
-    // ✅ MARK ALL AS READ (PAKAI ROUTE AJAX BYPASS CSRF)
+    // ✅ MARK ALL AS READ (pakai route POST + token CSRF)
     if(markReadBtn){
         markReadBtn.addEventListener("click", async (e) => {
             e.preventDefault();
             e.stopPropagation();
 
             try {
-                const res = await fetch("{{ route('notifications.markAllAsReadAjax') }}", {
+                const res = await fetch("{{ route('notifications.markAllAsRead') }}", {
                     method: "POST",
                     credentials: "include",
                     headers: {
                         "Accept": "application/json",
-                        "X-Requested-With": "XMLHttpRequest"
+                        "X-Requested-With": "XMLHttpRequest",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
                 });
 
