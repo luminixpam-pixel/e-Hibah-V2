@@ -1,64 +1,133 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# E-Hibah V2 — Sistem Informasi E-Hibah Universitas YARSI
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi web untuk mengelola proses pengajuan, verifikasi, review, persetujuan, monitoring, dan pelaporan hibah penelitian di Universitas YARSI.
 
-## About Laravel
+## Teknologi
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Laravel 12, PHP ^8.2
+- MySQL
+- Filament 3.3, Jetstream + Fortify + Sanctum
+- LDAP — login dosen memakai akun kampus YARSI
+- Vite + Tailwind CSS 4
+- Dompdf — cetak PDF
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Syarat
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.2+ (disarankan lewat [Laravel Herd](https://herd.laravel.com))
+- Composer
+- MySQL
+- Node.js + npm
 
-## Learning Laravel
+## Cara Menjalankan
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+# 1. Clone repo
+git clone https://github.com/luminixpam-pixel/e-Hibah-V2.git
+cd e-Hibah-V2
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+# 2. Install dependency PHP
+composer install
 
-## Laravel Sponsors
+# 3. Salin file environment, lalu isi pengaturan database & LDAP
+cp .env.example .env
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# 4. Generate application key
+php artisan key:generate
 
-### Premium Partners
+# 5. Migrasi database + isi data awal (termasuk akun tes 7 role)
+php artisan migrate --seed
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# 6. Buat symlink storage (file proposal disimpan di disk public)
+php artisan storage:link
 
-## Contributing
+# 7. Install dependency JS lalu build aset
+npm install
+npm run build
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# 8. Jalankan aplikasi
+# - Via Herd: buka http://e-hibah-v2.test
+# - Atau: php artisan serve, lalu buka http://127.0.0.1:8000
+```
 
-## Code of Conduct
+Saat pengembangan, jalankan `npm run dev` agar aset Vite ter-compile otomatis.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Pengaturan `.env` yang wajib diisi
 
-## Security Vulnerabilities
+| Key | Isi |
+| --- | --- |
+| `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | Koneksi MySQL |
+| `LDAP_HOST`, `LDAP_PORT`, `LDAP_BASE_DN`, `LDAP_USERNAME`, `LDAP_PASSWORD` | Server LDAP kampus YARSI |
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Contoh lengkap ada di `.env.example`. **Jangan pernah commit file `.env` ke repo.**
 
-## License
+## Akun Tes (1 per Role)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# hibah-project
-# hibah-project
-# hibah-project
-# hibah-project
-# test
+Akun dummy untuk mencoba login tiap role. Dibuat oleh `AkunRoleSeeder` (jalan otomatis lewat `php artisan db:seed`).
+
+| Role | Username | Password |
+| --- | --- | --- |
+| Administrator TI | `admin` | `admin123` |
+| Pengaju (Dosen) | `pengaju` | `password123` |
+| Reviewer | `reviewer` | `password123` |
+| Verifikator Administrasi | `verifikator` | `password123` |
+| Pengelola LPPM | `lppm` | `password123` |
+| Pimpinan Fakultas (Dekan) | `dekan` | `password123` |
+| Kepala LPPM | `kepala_lppm` | `password123` |
+
+Setiap akun login akan mendarat di dashboard-nya masing-masing (`/dashboard/<role>`).
+
+Akun asli (dosen YARSI) login lewat **LDAP** memakai akun kampus. Saat login LDAP pertama kali dan belum punya role, sistem memberi role `pengaju` — role sesuai jabatan diatur oleh admin lewat menu **Kelola Pengguna**. Akun dummy di atas bisa dihapus setelah akun asli dipakai.
+
+## Skill & Aturan untuk AI Agent
+
+Proyek ini memakai dua skill untuk agen AI (misalnya di Antigravity / Claude Code / Cursor) supaya hasil kerjanya konsisten dengan aturan proyek.
+
+### 1. Laravel Boost — skill & panduan Laravel
+
+Sudah terpasang (`laravel/boost` di `composer.json`). Panduannya ada di file **`AGENTS.md`** di root repo: ikuti konvensi kode yang sudah ada, cek file sejenis sebelum membuat file baru, pakai named route + `route()`, dan jangan membuat file dokumentasi baru kecuali diminta.
+
+Perbarui panduannya bila perlu:
+
+```bash
+php artisan boost:install
+```
+
+### 2. Ponytail — aturan "lazy senior dev"
+
+Skill agen (oleh Dietrich Gebert, lisensi MIT) yang membuat agen mengambil **perubahan sekecil mungkin** yang menyelesaikan tugas: jangan buat fitur yang tidak diminta, pakai dulu yang sudah ada di codebase, lalu standard library / fitur bawaan, lalu dependency yang sudah terpasang — baru tulis kode baru seminimal mungkin. Validasi, error handling, keamanan, dan yang diminta user tidak boleh dipotong.
+
+Install ke proyek:
+
+```bash
+npx skills add https://github.com/dietrichgebert/ponytail --skill ponytail
+```
+
+Level aturan (default: `full`):
+
+| Level | Perilaku |
+| --- | --- |
+| `lite` | Menyebutkan opsi yang lebih kecil, user yang memilih |
+| `full` | Menerapkan aturan (default) |
+| `ultra` | Juga mempertanyakan bagian request yang tidak perlu |
+
+Ganti level dengan perintah `/ponytail lite|full|ultra`. Aturan berlaku selama sesi sampai dimatikan (`stop ponytail`).
+
+Alternatif install: sebagai plugin di Claude Code / Codex (`/plugin marketplace add DietrichGebert/ponytail`, lalu `/plugin install ponytail@ponytail`), atau salin `SKILL.md`-nya ke proyek.
+
+## Perintah yang Sering Dipakai
+
+```bash
+php artisan migrate            # jalankan migrasi baru
+php artisan db:seed            # isi data awal (termasuk akun tes 7 role)
+php artisan db:seed --class=AkunRoleSeeder   # hanya akun tes 7 role
+php artisan route:clear        # bersihkan cache route
+php artisan view:clear         # bersihkan cache view (wajib setelah ubah Blade)
+php artisan config:clear       # bersihkan cache config
+php artisan test               # jalankan test
+```
+
+## Catatan
+
+- File `.env` tidak boleh di-commit. Database SQLite (`e_hibah`, `laravel`) dan file sensitif lain tidak boleh masuk repo.
+- Role pengguna disimpan di kolom `users.role`. Daftar role: `admin`, `pengaju`, `reviewer`, `verifikator`, `lppm`, `dekan`, `kepala_lppm`.
+- Setiap dosen maksimal terlibat dalam 3 proposal (sebagai ketua atau anggota).
