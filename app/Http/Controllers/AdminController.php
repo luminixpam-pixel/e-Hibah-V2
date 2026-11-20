@@ -16,8 +16,11 @@ class AdminController extends Controller
      */
     public function hasilReview()
     {
-        $reviews = []; // contoh
-        return view('admin.hasil-review', compact('reviews'));
+        // Ambil review asli (dulu $reviews = [] kosong dan view-nya
+        // 'admin.hasil-review' tidak ada di disk -> halaman 500).
+        $reviews = \App\Models\Review::with(['proposal', 'reviewer'])->latest()->get();
+
+        return view('proposal.admin.hasil-review', compact('reviews'));
     }
 
     /**
@@ -25,7 +28,9 @@ class AdminController extends Controller
      */
     public function calendar()
     {
-        return view('admin.calendar');
+        // View 'admin.calendar' tidak ada di disk -> halaman 500.
+        // File yang ada: 'proposal/admin/calendar.blade.php'.
+        return view('proposal.admin.calendar');
     }
 
     /**
@@ -120,7 +125,7 @@ class AdminController extends Controller
         $request->validate([
             'name'     => 'required|string|max:255',
             'username' => ['required', 'string', Rule::unique('users')->ignore($user->id)],
-            'role'     => 'required|in:admin,reviewer,pengaju',
+            'role'     => 'required|in:admin,pengaju,reviewer,verifikator,lppm,dekan,kepala_lppm',
             'password' => 'nullable|min:8|confirmed', // 'confirmed' berarti butuh input password_confirmation
         ]);
 

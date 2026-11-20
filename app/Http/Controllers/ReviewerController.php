@@ -59,7 +59,9 @@ class ReviewerController extends Controller
             ->orderBy('review_deadline', 'asc')
             ->get();
 
-        return view('proposal-perlu-direview', compact('proposals'));
+        // View 'proposal-perlu-direview' tidak ada di disk -> halaman 500.
+        // File yang ada: 'proposal/proposal-perlu-direview.blade.php'.
+        return view('proposal.proposal-perlu-direview', compact('proposals'));
     }
 
     /**

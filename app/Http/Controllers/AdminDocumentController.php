@@ -66,6 +66,23 @@ class AdminDocumentController extends Controller
     /**
      * Proses Download
      */
+    /**
+     * Hapus dokumen (file + record).
+     * (Route DELETE /admin/dokumen/{id} — dulu method ini tidak ada, route 500.)
+     */
+    public function destroy($id)
+    {
+        $doc = AdminDocument::findOrFail($id);
+
+        if ($doc->file_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($doc->file_path)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($doc->file_path);
+        }
+
+        $doc->delete();
+
+        return back()->with('success', 'Dokumen berhasil dihapus.');
+    }
+
     public function download($id)
     {
         $doc = AdminDocument::findOrFail($id);

@@ -35,7 +35,7 @@ class User extends Authenticatable implements LdapAuthenticatable
 
     protected $casts = [
     'email_verified_at' => 'datetime',
-    // 'password' => 'hashed', // <--- KOMENTARI ATAU HAPUS BARIS INI
+    'password' => 'hashed',
 ];
     /*
     |--------------------------------------------------------------------------
@@ -76,9 +76,13 @@ class User extends Authenticatable implements LdapAuthenticatable
     public function getRoleLabelAttribute()
     {
         return match ($this->role) {
-            'admin' => 'Admin',
+            'admin' => 'Administrator TI',
             'reviewer' => 'Reviewer Proposal',
             'pengaju' => 'Pengaju Penelitian',
+            'verifikator' => 'Verifikator Administrasi',
+            'lppm' => 'Pengelola LPPM',
+            'dekan' => 'Pimpinan Fakultas',
+            'kepala_lppm' => 'Kepala LPPM',
             default => ucfirst($this->role),
         };
     }

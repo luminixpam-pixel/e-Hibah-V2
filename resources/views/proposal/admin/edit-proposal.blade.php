@@ -11,7 +11,7 @@
         </div>
     @endif
 
-    <form action="{{ route('admin.proposals.update', $proposal->id) }}" method="POST">
+    <form action="{{ route('proposal.update', $proposal->id) }}" method="POST">
         @csrf
         @method('PUT')
 
@@ -55,7 +55,7 @@
             <button type="submit" class="btn btn-primary">
                 <i class="bi bi-save"></i> Simpan Perubahan
             </button>
-            <a href="{{ route('admin.proposals.index') }}" class="btn btn-secondary">
+            <a href="{{ route('proposal.index') }}" class="btn btn-secondary">
                 <i class="bi bi-arrow-left"></i> Kembali
             </a>
         </div>

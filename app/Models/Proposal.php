@@ -26,8 +26,6 @@ class Proposal extends Model
         'file_laporan',
         'keterangan',
         'status_pendanaan',
-        'file_laporan',
-        'keterangan',
         'laporan_kemajuan',
         'laporan_akhir',
         'file_laporan_akhir',

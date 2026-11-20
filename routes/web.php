@@ -6,8 +6,52 @@ use App\Http\Controllers\{
     DashboardController, ProposalController, ReviewerController,
     AdminController, NotificationController, CalendarController,
     ProposalReviewerController, LaporanKemajuanController, ProfileController,
-    AdminDocumentController, TemplateController, LaporanAkhirController
+    AdminDocumentController, TemplateController, LaporanAkhirController,
+    RoleDashboardController
 };
+
+/*
+|--------------------------------------------------------------------------
+| E-Hibah — routes/web.php (VERSI RAPI)
+|--------------------------------------------------------------------------
+| Ditulis ulang dari routes/web.php lama (281 baris, 96 route) yang
+| penuh duplikat: 11 URI ganda, 15 nama route ganda, 8 route memanggil
+| method yang tidak ada, 1 blok notifikasi tanpa middleware auth,
+| dan middleware('admin') tanpa parameter (= 403 untuk semua orang).
+|
+| Prinsip versi ini: SATU route = SATU definisi. Tidak ada lagi
+| route yang sama didaftarkan dua kali, dan semua method yang
+| dipanggil sudah ada di controller-nya.
+|
+| Perubahan dibanding file lama:
+|  - Blok notifikasi digabung jadi SATU (dulu 3 blok, satu tanpa auth).
+|  - Blok dokumen admin digabung jadi SATU dengan role:admin
+|    (dulu ada 2, satu pakai middleware('admin') yang selalu 403).
+|  - Blok reviewer admin digabung jadi SATU dengan role:admin.
+|  - Route '/proposal-perlu-direview' hanya SATU, memanggil
+|    ProposalController@perluDireview (dulu ada 2 dengan controller
+|    berbeda, dan yang satu memanggil method yang tidak ada).
+|  - Grup '/monitoring' ber-prefix DIHAPUS — isinya duplikat dari
+|    route monitoring flat (/proposal-disetujui, /daftar-proposal,
+|    dst.) yang sudah dipakai semua view.
+|  - Route '/review/{id}/isi' dan '/review/{id}/submit' DIHAPUS —
+|    duplikat dari '/reviewer/isi-review/{id}'.
+|  - Route POST '/mark-as-read' DIHAPUS — duplikat nama
+|    notifications.markAllAsRead dari '/notifications/mark-all-read'.
+|  - Route '/notifications/mark-all-read-ajax' DIHAPUS — endpoint
+|    ini sengaja bypass CSRF. Pakai '/notifications/mark-all-read'
+|    dengan token CSRF (bawaan Laravel) dari JavaScript.
+|  - Method yang tidak ada DIPERBAIKI namanya:
+|      proposalPerluDireview -> perluDireview
+|      ReviewerController@remove -> removeReviewer
+|      ReviewerController@set -> setReviewer
+|    dan method yang belum ada DIBUAT di controller-nya:
+|      ProposalController@create, @pengumumanPendanaan, @cekKuota
+|      AdminDocumentController@destroy
+|  - Route PUT '/user/profile/{user}' hanya SATU (dulu 2 baris identik).
+|  - Ditambah 7 route dashboard per role (RoleDashboardController).
+|--------------------------------------------------------------------------
+*/
 
 /* --- PUBLIC ROUTES --- */
 
@@ -15,11 +59,8 @@ use App\Http\Controllers\{
 Route::view('/', 'landing.index')->name('landing');
 
 // Login
-Route::get('/login', [AuthController::class, 'showLoginForm'])
-    ->name('login');
-
-Route::post('/login', [AuthController::class, 'login'])
-    ->name('login.post');
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
 // Forgot Password
 Route::get('/forgot-password', function () {
@@ -30,8 +71,27 @@ Route::get('/forgot-password', function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // Dashboard & Profile
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Dashboard — dialihkan ke dashboard sesuai role
+    Route::get('/dashboard', [RoleDashboardController::class, 'home'])->name('dashboard');
+
+    // Dashboard per role (satu dashboard untuk tiap role).
+    // Middleware role: hanya role yang cocok yang bisa membukanya.
+    Route::get('/dashboard/admin', [RoleDashboardController::class, 'admin'])
+        ->middleware('role:admin')->name('dashboard.admin');
+    Route::get('/dashboard/pengaju', [RoleDashboardController::class, 'pengaju'])
+        ->middleware('role:pengaju')->name('dashboard.pengaju');
+    Route::get('/dashboard/reviewer', [RoleDashboardController::class, 'reviewer'])
+        ->middleware('role:reviewer')->name('dashboard.reviewer');
+    Route::get('/dashboard/verifikator', [RoleDashboardController::class, 'verifikator'])
+        ->middleware('role:verifikator')->name('dashboard.verifikator');
+    Route::get('/dashboard/lppm', [RoleDashboardController::class, 'lppm'])
+        ->middleware('role:lppm')->name('dashboard.lppm');
+    Route::get('/dashboard/dekan', [RoleDashboardController::class, 'dekan'])
+        ->middleware('role:dekan')->name('dashboard.dekan');
+    Route::get('/dashboard/kepala-lppm', [RoleDashboardController::class, 'kepalaLppm'])
+        ->middleware('role:kepala_lppm')->name('dashboard.kepala-lppm');
+
+    // Profil (dashboard lama tetap bisa dipakai lewat DashboardController)
     Route::post('/dashboard/update', [DashboardController::class, 'updateProfile'])->name('dashboard.updateProfile');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -43,31 +103,24 @@ Route::middleware('auth')->group(function () {
     Route::get('/cek-kuota-dosen', [ProposalController::class, 'cekKuota'])->name('dosen.cek-kuota');
 
     // Proposal Actions (General)
-Route::controller(ProposalController::class)->group(function () {
-    // 1. Menampilkan Daftar (GET)
-    Route::get('/proposal', 'index')->name('proposal.index');
-    Route::get('/daftar-proposal', 'index')->name('monitoring.proposalDikirim');
+    Route::controller(ProposalController::class)->group(function () {
+        Route::get('/proposal', 'index')->name('proposal.index');
+        Route::get('/daftar-proposal', 'index')->name('monitoring.proposalDikirim');
+        Route::get('/proposal/{id}/edit', 'edit')->name('proposal.edit');
+        Route::put('/proposal/{id}', 'update')->name('proposal.update');
+        Route::get('/proposal/download/{id}', 'download')->name('proposal.download');
+        Route::delete('/proposal/{id}', 'destroy')->name('proposal.destroy');
+        Route::get('/proposal/{id}/tinjau', 'tinjau')->name('proposal.tinjau');
+        Route::patch('/proposal/{id}/keputusan', 'keputusan')->name('proposal.keputusan');
 
-    // 2. Menampilkan Form Edit (HARUS GET)
-    Route::get('/proposal/{id}/edit', 'edit')->name('proposal.edit');
-
-    // 3. Proses Update Data (PUT)
-    Route::put('/proposal/{id}', 'update')->name('proposal.update');
-
-    // 4. Fitur Lainnya
-    Route::get('/proposal/download/{id}', 'download')->name('proposal.download');
-    Route::delete('/proposal/{id}', 'destroy')->name('proposal.destroy');
-    Route::get('/proposal/{id}/tinjau', 'tinjau')->name('proposal.tinjau');
-    Route::patch('/proposal/{id}/keputusan', 'keputusan')->name('proposal.keputusan');
-
-    // Monitoring Statuses (GET)
-    Route::get('/proposal-disetujui', 'proposalDisetujui')->name('monitoring.proposalDisetujui');
-    Route::get('/proposal-ditolak', 'proposalDitolak')->name('monitoring.proposalDitolak');
-    Route::get('/proposal-selesai', 'reviewSelesai')->name('monitoring.reviewSelesai');
-    Route::get('/proposal-direvisi', 'proposalDirevisi')->name('monitoring.proposalDirevisi');
-    Route::get('/hasil-review', 'hasilRevisi')->name('monitoring.hasilRevisi');
-    Route::get('/review/{id}/pdf', 'downloadReviewPdf')->name('review.pdf');
-});
+        // Monitoring Statuses
+        Route::get('/proposal-disetujui', 'proposalDisetujui')->name('monitoring.proposalDisetujui');
+        Route::get('/proposal-ditolak', 'proposalDitolak')->name('monitoring.proposalDitolak');
+        Route::get('/proposal-selesai', 'reviewSelesai')->name('monitoring.reviewSelesai');
+        Route::get('/proposal-direvisi', 'proposalDirevisi')->name('monitoring.proposalDirevisi');
+        Route::get('/hasil-review', 'hasilRevisi')->name('monitoring.hasilRevisi');
+        Route::get('/review/{id}/pdf', 'downloadReviewPdf')->name('review.pdf');
+    });
 
     // Laporan (Kemajuan & Akhir)
     Route::get('/laporan-kemajuan', [LaporanKemajuanController::class, 'index'])->name('laporan.kemajuan.index');
@@ -78,27 +131,49 @@ Route::controller(ProposalController::class)->group(function () {
     Route::post('/laporan-akhir/store', [LaporanAkhirController::class, 'store'])->name('laporan.akhir.store');
     Route::get('/laporan-akhir/download/{id}', [LaporanAkhirController::class, 'download'])->name('laporan.akhir.download');
 
-  // Rute untuk melihat halaman (Admin, Pengaju, Reviewer)
-Route::get('/dokumen', [AdminDocumentController::class, 'index'])->name('dokumen.index');
-Route::get('/dokumen/download/{id}', [AdminDocumentController::class, 'download'])->name('dokumen.download');
+    // Dokumen (lihat & unduh — semua role yang login)
+    Route::get('/dokumen', [AdminDocumentController::class, 'index'])->name('dokumen.index');
+    Route::get('/dokumen/download/{id}', [AdminDocumentController::class, 'download'])->name('dokumen.download');
 
-// Rute khusus aksi Admin (Upload, Toggle Status, Hapus)
-Route::middleware(['auth', 'admin'])->group(function () {
-    Route::post('/admin/dokumen/store', [AdminDocumentController::class, 'store'])->name('admin.dokumen.store');
-    Route::patch('/admin/dokumen/toggle/{id}', [AdminDocumentController::class, 'toggleVisibility'])->name('admin.dokumen.toggle');
-    Route::delete('/admin/dokumen/destroy/{id}', [AdminDocumentController::class, 'destroy'])->name('admin.dokumen.destroy');
-});
+    // Notifikasi — SATU definisi saja, semua di belakang auth
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/fetch', [NotificationController::class, 'fetch'])->name('fetch');
+        Route::get('/count', [NotificationController::class, 'count'])->name('count');
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('markAllAsRead');
+        Route::get('/deadline-check', [NotificationController::class, 'deadlineCheck'])->name('deadlineCheck');
+        Route::post('/send-to-all', [NotificationController::class, 'sendToAll'])->name('sendToAll');
+        Route::post('/send-to-user', [NotificationController::class, 'sendToUser'])->name('sendToUser');
+    });
 
-    // Notifikasi
-    Route::controller(NotificationController::class)->group(function () {
-        Route::get('/notifications/fetch', 'fetch')->name('notifications.fetch');
-        Route::get('/notifications/count', 'count')->name('notifications.count');
-        Route::post('/notifications/mark-all-read', 'markAllAsRead')->name('notifications.markAllAsRead');
+    // Notifikasi API (dipakai JavaScript)
+    Route::get('/api/notifications', function () {
+        $userId = auth()->user()->id;
 
-        // ✅ TAMBAHAN: endpoint khusus AJAX (bypass CSRF) + name unik (biar gak ketabrak route dobel)
-        Route::post('/notifications/mark-all-read-ajax', 'markAllAsRead')
-            ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-            ->name('notifications.markAllAsReadAjax');
+        return \App\Models\Notification::where('user_id', $userId)
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->map(function ($n) {
+                return [
+                    'title'    => $n->title,
+                    'message'  => $n->message,
+                    'is_read'  => (bool) $n->is_read,
+                    'time_ago' => $n->created_at->diffForHumans(),
+                ];
+            });
+    });
+
+    // Update profil user (dipakai modal edit admin).
+    // CATATAN KEAMANAN (temuan lama, belum diperbaiki): method
+    // AuthController@update tidak mengecek kepemilikan — user yang
+    // login bisa mengubah profil user lain lewat ID di URL.
+    // Perbaiki di AuthController@update bila sudah siap.
+    Route::put('/user/profile/{user}', [AuthController::class, 'update'])->name('admin.user.update');
+
+    // Penugasan reviewer oleh admin (pencarian + submit)
+    Route::prefix('admin/proposal')->group(function () {
+        Route::get('/search-reviewer', [ProposalReviewerController::class, 'search'])->name('admin.proposal.search-reviewer');
+        Route::post('/{id}/assign', [ProposalReviewerController::class, 'assign'])->name('admin.proposal.assign');
     });
 });
 
@@ -118,16 +193,17 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // Reviewer Management
     Route::controller(ReviewerController::class)->group(function () {
         Route::get('/admin/reviewer', 'index')->name('admin.reviewer.index');
+        Route::get('/admin/reviewer/search', 'searchReviewer')->name('admin.reviewer.search');
         Route::post('/admin/reviewer/{user}', 'setReviewer')->name('admin.reviewer.set');
         Route::post('/admin/reviewer/{user}/remove', 'removeReviewer')->name('reviewer.remove');
     });
 
-    // Dokumen Management
-    // Cari bagian Dokumen Management di dalam middleware admin dan ganti dengan ini:
+    // Dokumen Management (upload, toggle, hapus)
     Route::get('/admin/dokumen', [AdminDocumentController::class, 'index'])->name('admin.dokumen.index');
     Route::post('/admin/dokumen/store', [AdminDocumentController::class, 'store'])->name('admin.dokumen.store');
     Route::patch('/admin/dokumen/toggle/{id}', [AdminDocumentController::class, 'toggleVisibility'])->name('admin.dokumen.toggle');
     Route::delete('/admin/dokumen/{id}', [AdminDocumentController::class, 'destroy'])->name('admin.dokumen.destroy');
+
     // Template Management
     Route::post('/admin/template/upload', [TemplateController::class, 'store'])->name('admin.template.upload');
     Route::delete('/admin/template/{id}', [TemplateController::class, 'destroy'])->name('admin.template.destroy');
@@ -151,131 +227,6 @@ Route::middleware(['auth', 'role:reviewer'])->group(function () {
 
 /* --- ROLE: ADMIN & REVIEWER (SHARED MONITORING) --- */
 Route::middleware(['auth', 'role:admin,reviewer'])->group(function () {
-    Route::get('/proposal-perlu-direview', [ProposalController::class, 'proposalPerluDireview'])->name('monitoring.proposalPerluDireview');
+    Route::get('/proposal-perlu-direview', [ProposalController::class, 'perluDireview'])->name('monitoring.proposalPerluDireview');
     Route::get('/proposal-sedang-direview', [ProposalController::class, 'proposalSedangDireview'])->name('monitoring.proposalSedangDireview');
 });
-
-/* --- NOTIFIKASI --- */
-Route::controller(NotificationController::class)->group(function () {
-    Route::get('/notifications/fetch', 'fetch')->name('notifications.fetch');
-    Route::get('/notifications/count', 'count')->name('notifications.count');
-
-    // TAMBAHKAN BARIS INI (yang menyebabkan error)
-    Route::get('/notifications/deadline-check', 'deadlineCheck')->name('notifications.deadlineCheck');
-
-    Route::post('/notifications/mark-all-read', 'markAllAsRead')->name('notifications.markAllAsRead');
-});
-
-Route::middleware(['auth'])->group(function () {
-
-    // --- FITUR ADMIN (Manajemen User menjadi Reviewer) ---
-    Route::prefix('admin')->group(function () {
-        Route::get('/reviewer', [ReviewerController::class, 'index'])->name('admin.reviewer.index');
-        Route::get('/search-reviewer', [ReviewerController::class, 'searchReviewer'])->name('admin.reviewer.search');
-        Route::post('/reviewer/{user}', [ReviewerController::class, 'setReviewer'])->name('admin.reviewer.set');
-        Route::post('/reviewer/{user}/remove', [ReviewerController::class, 'removeReviewer'])->name('admin.reviewer.remove');
-    });
-
-    // --- FITUR REVIEWER (Proses Penilaian Proposal) ---
-    Route::get('/proposal-perlu-direview', [ReviewerController::class, 'index'])->name('reviewer.index');
-    Route::get('/review/{id}/isi', [ReviewerController::class, 'isiReview'])->name('reviewer.isiReview');
-    Route::post('/review/{id}/submit', [ReviewerController::class, 'submitReview'])->name('reviewer.submitReview');
-});
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | NOTIFICATION SYSTEM (Bell & Popups)
-    |--------------------------------------------------------------------------
-    */
-
-Route::middleware(['auth'])->group(function () {
-
-    // Grouping khusus notifikasi
-    Route::prefix('notifications')->name('notifications.')->group(function () {
-
-        // --- Fungsi Dasar (AJAX Fetch & Mark Read) ---
-        Route::get('/fetch', [NotificationController::class, 'fetch'])->name('fetch');
-        Route::get('/count', [NotificationController::class, 'count'])->name('count');
-        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('markAllAsRead');
-
-        // --- Fungsi Deadline (Khusus Reviewer) ---
-        Route::get('/deadline-check', [NotificationController::class, 'deadlineCheck'])->name('deadlineCheck');
-
-        // --- Fungsi Admin (Kirim Notifikasi Manual) ---
-        Route::post('/send-to-all', [NotificationController::class, 'sendToAll'])->name('sendToAll');
-        Route::post('/send-to-user', [NotificationController::class, 'sendToUser'])->name('sendToUser');
-    });
-
-});
-
-Route::middleware(['auth'])->group(function () {
-
-    /*
-    |--------------------------------------------------------------------------
-    | ADMIN: PROPOSAL REVIEWER ASSIGNMENT
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('admin/proposal')->group(function () {
-
-        // Rute untuk mencari reviewer via AJAX (Autocomplete)
-        // URL: /admin/proposal/search-reviewer?q=nama
-        Route::get('/search-reviewer', [ProposalReviewerController::class, 'search'])->name('admin.proposal.search-reviewer');
-
-        // Rute untuk submit penugasan 2 reviewer dan tenggat waktu
-        // URL: /admin/proposal/{id}/assign
-        Route::post('/{id}/assign', [ProposalReviewerController::class, 'assign'])->name('admin.proposal.assign');
-
-    });
-
-});
-
-Route::post('/mark-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
-
-// Di dalam routes/web.php, pastikan ada grup monitoring seperti ini:
-Route::middleware(['auth'])->group(function () {
-    Route::prefix('monitoring')->name('monitoring.')->group(function () {
-        // Route yang menyebabkan error
-        Route::get('/perlu-direview', [ProposalController::class, 'perluDireview'])->name('proposalPerluDireview');
-
-        // Daftarkan juga route monitoring lainnya agar tidak error selanjutnya
-        Route::get('/dikirim', [ProposalController::class, 'dikirim'])->name('proposalDikirim');
-        Route::get('/sedang-direview', [ProposalController::class, 'sedangDireview'])->name('proposalSedangDireview');
-        Route::get('/disetujui', [ProposalController::class, 'disetujui'])->name('proposalDisetujui');
-        Route::get('/ditolak', [ProposalController::class, 'ditolak'])->name('proposalDitolak');
-    });
-});
-
-Route::middleware(['auth', 'admin'])->group(function () {
-    // ... route admin lainnya ...
-
-    // Tambahkan ini
-    Route::post('/admin/reviewer/remove/{id}', [ReviewerController::class, 'remove'])->name('reviewer.remove');
-
-    // Pastikan route 'set' juga ada karena dipanggil di baris 102 pada error log Anda
-    Route::post('/admin/reviewer/set/{id}', [ReviewerController::class, 'set'])->name('admin.reviewer.set');
-});
-
-Route::middleware(['auth'])->group(function () {
-    // Tambahkan ini jika belum ada
-    Route::put('/user/profile/{user}', [AuthController::class, 'update'])->name('admin.user.update');
-    Route::put('/user/profile/{user}', [App\Http\Controllers\Auth\AuthController::class, 'update'])->name('admin.user.update');
-});
-
-Route::get('/api/notifications', function() {
-    // Gunakan id user untuk filter
-    $userId = auth()->user()->id;
-
-    return \App\Models\Notification::where('user_id', $userId)
-        ->latest()
-        ->limit(10)
-        ->get()
-        ->map(function($n) {
-            return [
-                'title'    => $n->title,
-                'message'  => $n->message,
-                'is_read'  => (bool)$n->is_read,
-                'time_ago' => $n->created_at->diffForHumans()
-            ];
-        });
-})->middleware('auth');

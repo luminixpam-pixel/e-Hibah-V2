@@ -25,7 +25,7 @@ class AuthController extends Controller
         if ($userLokal && $userLokal->password && Hash::check($request->password, $userLokal->password)) {
             Auth::login($userLokal);
             $request->session()->regenerate();
-            return redirect()->intended('/dashboard');
+            return redirect()->intended($this->dashboardUrlFor($userLokal));
         }
 
         // 2. Cek Login LDAP
@@ -39,7 +39,7 @@ class AuthController extends Controller
                 }
 
                 $request->session()->regenerate();
-                return redirect()->intended('/dashboard');
+                return redirect()->intended($this->dashboardUrlFor($user));
             }
 
             // LDAP merespon, tapi username/password salah
@@ -57,6 +57,25 @@ class AuthController extends Controller
             ])->withInput($request->only('username'));
         }
     }
+    /**
+     * URL dashboard sesuai role user.
+     * Dipakai setelah login berhasil (redirect()->intended() memakai
+     * URL ini sebagai tujuan default kalau tidak ada intended URL).
+     */
+    protected function dashboardUrlFor($user): string
+    {
+        return match ($user->role) {
+            'admin'       => route('dashboard.admin'),
+            'pengaju'     => route('dashboard.pengaju'),
+            'reviewer'    => route('dashboard.reviewer'),
+            'verifikator' => route('dashboard.verifikator'),
+            'lppm'        => route('dashboard.lppm'),
+            'dekan'       => route('dashboard.dekan'),
+            'kepala_lppm' => route('dashboard.kepala-lppm'),
+            default       => route('dashboard.pengaju'),
+        };
+    }
+
 public function adminUpdate(Request $request, $id)
 {
     $user = User::findOrFail($id);

@@ -31,6 +31,53 @@ class ProposalController extends Controller
     }
 
     /**
+     * Menampilkan form pengajuan proposal baru.
+     * (Route GET /proposal/create — dulu method ini tidak ada, route 500.)
+     */
+    public function create()
+    {
+        if (!in_array(auth()->user()->role, ['pengaju', 'reviewer'])) {
+            abort(403, 'Anda tidak memiliki izin untuk mengajukan proposal.');
+        }
+
+        $list_fakultas = \App\Models\Fakultas::all();
+
+        return view('proposal.create', compact('list_fakultas'));
+    }
+
+    /**
+     * Halaman pengumuman pendanaan — daftar proposal yang disetujui.
+     * (Route GET /pengumuman-pendanaan — dulu method ini tidak ada, route 500.)
+     */
+    public function pengumumanPendanaan()
+    {
+        $proposals = \App\Models\Proposal::with('user')
+            ->where('status_pendanaan', 'Disetujui')
+            ->latest()
+            ->get();
+
+        return view('proposal.pengumuman', compact('proposals'));
+    }
+
+    /**
+     * Halaman cek kuota dosen — berapa proposal yang sudah diikuti
+     * (sebagai ketua atau anggota) dari batas maksimal 3.
+     * (Route GET /cek-kuota-dosen — dulu method ini tidak ada, route 500.)
+     */
+    public function cekKuota()
+    {
+        $user = auth()->user();
+        $nama = $user->name;
+
+        $sebagaiKetua = \App\Models\Proposal::where('nama_ketua', $nama)->count();
+        $sebagaiAnggota = \App\Models\Proposal::whereJsonContains('anggota', $nama)->count();
+        $total = $sebagaiKetua + $sebagaiAnggota;
+        $sisa = max(0, 3 - $total);
+
+        return view('proposal.cek-kuota', compact('user', 'nama', 'sebagaiKetua', 'sebagaiAnggota', 'total', 'sisa'));
+    }
+
+    /**
      * Menampilkan daftar proposal & Dropdown Fakultas
      */
 public function index(Request $request)
