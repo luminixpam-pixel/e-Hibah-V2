@@ -34,215 +34,434 @@
        NAVBAR E-HIBAH
        ========================================================= */
 
+    /* =========================================================
+   E-HIBAH SIDEBAR MODERN
+   ========================================================= */
+
+:root {
+    --sidebar-width: 260px;
+    --sidebar-bg: #123c2d;
+    --sidebar-hover: #1c5942;
+    --sidebar-active: #267451;
+    --primary-green: #1fbd4c;
+    --soft-green: #e8f5ed;
+}
+
+/* Sidebar */
+#mainNavbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--sidebar-bg);
+    color: white;
+    z-index: 3100;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-right: 1px solid rgba(255,255,255,.08);
+    transition: all .3s ease;
+}
+
+/* Logo */
+#mainNavbar .navbar-brand {
+    color: white !important;
+    text-decoration: none;
+}
+
+.brand-logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 15px;
+}
+
+.brand-logo img {
+    width: 190px;
+    height: auto;
+    object-fit: contain;
+    margin: 0;
+}
+
+/* Menu sidebar */
+#mainNavbar .navbar-nav {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+#mainNavbar .nav-item {
+    width: 100%;
+}
+
+#mainNavbar .main-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px !important;
+    margin: 4px 12px;
+    width: calc(100% - 24px);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,.85) !important;
+    text-decoration: none;
+    transition: .2s ease;
+}
+
+#mainNavbar .main-nav-link i {
+    width: 22px;
+    text-align: center;
+    font-size: 17px;
+}
+
+#mainNavbar .main-nav-link:hover {
+    background: var(--sidebar-hover);
+    color: white !important;
+}
+
+#mainNavbar .main-nav-link-active {
+    background: var(--sidebar-active);
+    color: white !important;
+}
+
+/* Dropdown */
+#mainNavbar .dropdown-menu {
+    position: static !important;
+    float: none;
+    width: calc(100% - 30px);
+    margin: 0 15px 8px;
+    background: rgba(255,255,255,.06);
+    border: none;
+    box-shadow: none;
+    border-radius: 10px;
+}
+
+#mainNavbar .dropdown-item {
+    color: rgba(255,255,255,.85);
+    font-size: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+}
+
+#mainNavbar .dropdown-item:hover {
+    background: rgba(255,255,255,.10);
+    color: white;
+}
+
+#mainNavbar .dropdown-divider {
+    border-color: rgba(255,255,255,.15);
+}
+
+#mainNavbar .dropdown-toggle::after {
+    margin-left: auto;
+}
+
+/* Brand */
+.brand-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,.15);
+    color: white;
+    font-size: 18px;
+}
+
+.brand-title {
+    font-size: 16px;
+    line-height: 1.1;
+}
+
+.brand-subtitle {
+    font-size: 9px;
+    opacity: .75;
+    letter-spacing: .2px;
+}
+
+/* User */
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: white !important;
+    font-size: 13px;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,.15);
+}
+
+.user-name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-info {
+    min-width: 190px;
+}
+
+/* Notification */
+.notification-link {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    color: white !important;
+}
+
+.notification-link:hover {
+    background: rgba(255,255,255,.12);
+}
+
+/* Coming soon */
+.menu-coming-soon {
+    color: #aaa !important;
+    cursor: default;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.coming-badge {
+    margin-left: auto;
+    font-size: 9px;
+    padding: 3px 7px;
+    border-radius: 20px;
+    background: #f1f3f5;
+    color: #888;
+}
+
+/* Content */
+#mainContent {
+    margin-left: calc(var(--sidebar-width) + 20px);
+    width: calc(100% - var(--sidebar-width) - 20px);
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    background-color: rgba(255,255,255,.80);
+    border-radius: 15px;
+    margin-top: 20px;
+}
+
+/* Responsive */
+@media (max-width: 991.98px) {
     #mainNavbar {
-        background: #1fbd4c;
-        min-height: 68px;
-        z-index: 3100;
-        border-bottom: 1px solid rgba(255,255,255,.10);
+        width: 220px;
     }
 
-    #mainNavbar .navbar-brand {
-        color: #fff !important;
-        text-decoration: none;
-        min-width: 170px;
+    #mainContent {
+        margin-left: 240px;
+        width: calc(100% - 240px);
     }
+}
 
-    #mainNavbar .nav-link {
-        color: #fff !important;
-    }
-
-    #mainNavbar .nav-link i {
-        font-size: 1.1rem;
-    }
-
-    /* Brand */
-
-    .brand-icon {
-        width: 38px;
-        height: 38px;
+@media (max-width: 575.98px) {
+    #mainContent {
+        padding: 12px;
+        margin-top: 12px;
         border-radius: 10px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255,255,255,.15);
-        color: #fff;
-        font-size: 18px;
-    }
-
-    .brand-title {
-        font-size: 16px;
-        line-height: 1.1;
     }
 
     .brand-subtitle {
-        font-size: 9px;
-        opacity: .75;
-        font-weight: 400;
-        letter-spacing: .2px;
+        display: none !important;
     }
 
-    /* Menu utama */
-
-    #mainNavbar .main-nav-link {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        border-radius: 8px;
-        padding: 8px 9px !important;
-        font-size: 12.5px;
-        font-weight: 500;
-        color: rgba(255,255,255,.92) !important;
-        white-space: nowrap;
-        transition: background-color .2s ease, color .2s ease;
+    .notif-popup {
+        width: calc(100vw - 20px);
     }
-
-    #mainNavbar .main-nav-link:hover {
-        background: rgba(255,255,255,.12);
-        color: #fff !important;
-    }
-
-    #mainNavbar .main-nav-link-active {
-        background: rgba(15,23,42,.20);
-        color: #fff !important;
-        box-shadow: 0 0 0 1px rgba(255,255,255,.20);
-    }
-
-    /* Dropdown */
-
-    #mainNavbar .smooth-dropdown {
-        border: 0;
-        border-radius: 12px;
-        padding: 7px;
-        min-width: 235px;
-        box-shadow: 0 12px 35px rgba(0,0,0,.14);
-
-        animation: dropdownSmooth .16s ease-out;
-    }
-
-    #mainNavbar .dropdown-item {
-        border-radius: 8px;
-        padding: 9px 11px;
-        font-size: 13px;
-
-        transition:
-            background-color .18s ease,
-            padding-left .18s ease;
-    }
-
-    #mainNavbar .dropdown-item:hover {
-        padding-left: 15px;
-    }
-
-    #mainNavbar .dropdown-item i {
-        width: 19px;
-        text-align: center;
-    }
-
-    @keyframes dropdownSmooth {
-        from {
-            opacity: 0;
-            transform: translateY(-5px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* User */
-
-    .user-menu {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        color: #fff !important;
-        font-size: 13px;
-    }
-
-    .user-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255,255,255,.15);
-    }
-
-    .user-name {
-        max-width: 120px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .user-info {
-        min-width: 190px;
-    }
-
-    /* Notifikasi */
-
-    .notification-link {
-        width: 42px;
-        height: 42px;
-        border-radius: 10px;
-
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-
-        color: #fff !important;
-
-        transition:
-            background-color .2s ease,
-            transform .2s ease;
-    }
-
-    .notification-link:hover {
-        background: rgba(255,255,255,.12);
-        transform: translateY(-1px);
-    }
-
-    /* Menu yang belum tersedia */
-
-    .menu-coming-soon {
-        color: #777 !important;
-        cursor: default;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .menu-coming-soon:hover {
-        background: transparent !important;
-        padding-left: 11px !important;
-    }
-
-    .coming-badge {
-        margin-left: auto;
-        font-size: 9px;
-        padding: 3px 7px;
-        border-radius: 20px;
-        background: #f1f3f5;
-        color: #888;
-    }
+}
 
     /* =========================================================
        CONTENT
        ========================================================= */
 
-    #mainContent {
-        padding: 20px;
+  /* =========================================================
+   SIDEBAR & HEADER FINAL
+   ========================================================= */
 
-        backdrop-filter: blur(10px);
+/* Sidebar Brand */
+.sidebar-brand {
+    padding: 15px 10px 10px;
+    border-bottom: 1px solid rgba(255,255,255,.10);
+    margin-bottom: 10px;
+}
 
-        background-color: rgba(255,255,255,.80);
+.sidebar-menu {
+    padding: 8px 0 25px;
+}
 
-        border-radius: 15px;
+.sidebar-label {
+    padding: 14px 20px 8px;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: rgba(255,255,255,.45);
+    font-weight: 600;
+}
 
-        margin-top: 20px;
+/* Sidebar group */
+.sidebar-group {
+    width: 100%;
+}
+
+/* Submenu */
+.sidebar-submenu {
+    padding: 3px 0 8px 15px;
+}
+
+.sidebar-submenu a,
+.sidebar-submenu .sidebar-disabled {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    margin: 2px 15px 2px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 11.5px;
+    color: rgba(255,255,255,.70);
+    transition: .2s ease;
+}
+
+.sidebar-submenu a i,
+.sidebar-submenu .sidebar-disabled i {
+    width: 18px;
+    text-align: center;
+}
+
+.sidebar-submenu a:hover {
+    background: rgba(255,255,255,.10);
+    color: white;
+    transform: translateX(2px);
+}
+
+.sidebar-disabled {
+    opacity: .55;
+    cursor: default;
+}
+
+/* Header */
+#topHeader {
+    position: sticky;
+    top: 0;
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    min-height: 75px;
+    background: rgba(255,255,255,.95);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 15px;
+    padding: 10px 30px;
+    z-index: 2000;
+    border-bottom: 1px solid rgba(0,0,0,.05);
+    box-shadow: 0 3px 15px rgba(0,0,0,.03);
+}
+
+/* Header user */
+#topHeader .user-menu {
+    color: #1f2937 !important;
+}
+
+#topHeader .user-avatar {
+    background: #e8f5ed;
+    color: #17603d;
+}
+
+#topHeader .notification-link {
+    color: #17603d !important;
+}
+
+/* Content */
+#mainContent {
+    margin-left: calc(var(--sidebar-width) + 20px);
+    width: calc(100% - var(--sidebar-width) - 40px);
+    padding: 25px;
+    backdrop-filter: blur(10px);
+    background-color: rgba(255,255,255,.85);
+    border-radius: 15px;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+/* Dropdown profil */
+#topHeader .dropdown-menu {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 12px 35px rgba(0,0,0,.12);
+    padding: 8px;
+}
+
+/* Scrollbar sidebar */
+#mainNavbar::-webkit-scrollbar {
+    width: 5px;
+}
+
+#mainNavbar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.20);
+    border-radius: 10px;
+}
+
+/* Responsive */
+@media (max-width: 991.98px) {
+
+    :root {
+        --sidebar-width: 220px;
     }
+
+    #topHeader {
+        margin-left: var(--sidebar-width);
+        width: calc(100% - var(--sidebar-width));
+        padding: 10px 15px;
+    }
+
+    #mainContent {
+        margin-left: calc(var(--sidebar-width) + 15px);
+        width: calc(100% - var(--sidebar-width) - 30px);
+        padding: 15px;
+    }
+
+    .user-name {
+        max-width: 100px;
+    }
+}
+
+@media (max-width: 575.98px) {
+
+    #topHeader {
+        min-height: 60px;
+        padding: 8px 10px;
+        gap: 8px;
+    }
+
+    #mainContent {
+        padding: 12px;
+        margin-top: 12px;
+        border-radius: 10px;
+    }
+
+    .user-name {
+        max-width: 90px;
+    }
+
+    .sidebar-submenu a,
+    .sidebar-submenu .sidebar-disabled {
+        font-size: 10.5px;
+    }
+}
 
     /* =========================================================
        POPUP PROPOSAL
@@ -479,9 +698,333 @@
     display: block;
     margin-left: -200px;
 }
+
+
+/* ==========================================
+   E-HIBAH MODERN UI ENHANCEMENT
+   ========================================== */
+
+:root {
+    --sidebar-bg: #123b2e;
+    --sidebar-hover: #1b503d;
+    --sidebar-active: #24734f;
+    --primary-green: #16834a;
+    --soft-green: #edf7f0;
+}
+
+/* BACKGROUND */
+body {
+    background: #f3f7f4 !important;
+}
+
+/* SIDEBAR */
+#mainNavbar {
+    background: linear-gradient(180deg, #123b2e 0%, #0d3025 100%) !important;
+    box-shadow: 5px 0 25px rgba(15, 45, 32, 0.08);
+}
+
+.sidebar-brand {
+    padding: 25px 15px 22px !important;
+    margin-bottom: 18px !important;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.brand-logo img {
+    width: 200px !important;
+    transition: .3s ease;
+}
+
+#mainNavbar .main-nav-link {
+    margin: 5px 12px !important;
+    width: calc(100% - 24px) !important;
+    padding: 13px 16px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+}
+
+#mainNavbar .main-nav-link:hover {
+    background: rgba(255,255,255,.09) !important;
+    transform: translateX(3px);
+}
+
+#mainNavbar .main-nav-link-active {
+    background: linear-gradient(135deg, #278357, #319968) !important;
+    box-shadow: 0 4px 12px rgba(20, 120, 70, .18);
+}
+
+.sidebar-submenu a:hover {
+    background: rgba(255,255,255,.08) !important;
+}
+
+/* HEADER */
+#topHeader {
+    background: rgba(255,255,255,.92) !important;
+    min-height: 78px !important;
+    border-bottom: 1px solid #e8eee9 !important;
+    box-shadow: 0 3px 15px rgba(30,60,40,.035) !important;
+}
+
+/* MAIN CONTENT */
+#mainContent {
+    background: #ffffff !important;
+    border: 1px solid #e8eee9;
+    box-shadow: 0 8px 30px rgba(30,60,40,.045);
+    border-radius: 20px !important;
+    padding: 32px !important;
+}
+
+/* HEADINGS */
+#mainContent h1,
+#mainContent h2,
+#mainContent h3 {
+    color: #1c3327;
+    font-weight: 700;
+}
+
+/* CARDS */
+#mainContent .card {
+    border: 1px solid #e8eee9 !important;
+    border-radius: 15px !important;
+    box-shadow: 0 5px 20px rgba(30,60,40,.04) !important;
+    transition: .25s ease;
+}
+
+#mainContent .card:hover {
+    box-shadow: 0 8px 25px rgba(30,60,40,.08) !important;
+}
+
+/* BUTTONS */
+#mainContent .btn-primary {
+    background: #16834a !important;
+    border-color: #16834a !important;
+    border-radius: 9px !important;
+}
+
+#mainContent .btn-primary:hover {
+    background: #116b3c !important;
+    border-color: #116b3c !important;
+}
+
+#mainContent .btn-outline-primary {
+    color: #16834a !important;
+    border-color: #16834a !important;
+    border-radius: 9px !important;
+}
+
+#mainContent .btn-outline-primary:hover {
+    background: #16834a !important;
+    color: white !important;
+}
+
+/* TABLE */
+#mainContent table {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+#mainContent thead {
+    background: #edf7f0;
+}
+
+/* NOTIFICATION */
+#topHeader .notification-link:hover {
+    background: #edf7f0 !important;
+    border-radius: 12px;
+}
+
+/* PROFILE */
+#topHeader .user-avatar {
+    background: #e8f5ed !important;
+    color: #16834a !important;
+}
+
+/* SMOOTH */
+#mainContent,
+#mainNavbar,
+#topHeader,
+#mainContent .card,
+#mainContent .btn {
+    transition: all .25s ease;
+}
+
+
+/* ======================================
+   SIDEBAR BRAND & HEADER REFINEMENT
+   ====================================== */
+
+/* SIDEBAR LEBIH TERANG */
+#mainNavbar {
+    background: #246B4B !important;
+}
+
+/* BRAND SIDEBAR */
+.sidebar-brand {
+    min-height: 100px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px !important;
+    border-bottom: 1px solid rgba(255,255,255,.12) !important;
+}
+
+.sidebar-brand-text {
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #ffffff;
+}
+
+/* MENU SIDEBAR */
+#mainNavbar .main-nav-link {
+    color: #f3fff7 !important;
+}
+
+#mainNavbar .main-nav-link:hover {
+    background: rgba(255,255,255,.13) !important;
+}
+
+#mainNavbar .main-nav-link-active {
+    background: #2F805A !important;
+}
+
+/* HEADER */
+#topHeader {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
+/* LOGO DI HEADER */
+.header-logo {
+    display: flex;
+    align-items: center;
+    margin-right: auto;
+}
+
+.header-logo img {
+    width: 145px;
+    height: auto;
+    object-fit: contain;
+}
+
+.header-logo a {
+    display: flex;
+    align-items: center;
+}
+
+/* RESPONSIVE LOGO */
+@media (max-width: 575.98px) {
+    .header-logo img {
+        width: 110px;
+    }
+
+    .sidebar-brand-text {
+        font-size: 20px;
+    }
+}
+
+/* ==================================
+   COLLAPSIBLE SIDEBAR
+   ================================== */
+
+:root {
+    --sidebar-width: 220px;
+    --sidebar-collapsed-width: 75px;
+}
+
+#mainNavbar {
+    width: var(--sidebar-width) !important;
+    transition: width .3s ease;
+}
+
+#topHeader {
+    margin-left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+    transition: margin .3s ease, width .3s ease;
+}
+
+#mainContent {
+    margin-left: calc(var(--sidebar-width) + 20px) !important;
+    width: calc(100% - var(--sidebar-width) - 40px) !important;
+    transition: margin .3s ease, width .3s ease;
+}
+
+/* Tombol toggle */
+.sidebar-brand {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between !important;
+}
+
+.sidebar-toggle {
+    border: none;
+    background: rgba(255,255,255,.12);
+    color: white;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(255,255,255,.25);
+}
+
+/* SIDEBAR KECIL */
+body.sidebar-collapsed {
+    --sidebar-width: 75px;
+}
+
+body.sidebar-collapsed #mainNavbar {
+    width: 75px !important;
+}
+
+body.sidebar-collapsed .sidebar-brand {
+    justify-content: center !important;
+}
+
+body.sidebar-collapsed .sidebar-brand-title,
+body.sidebar-collapsed .sidebar-label,
+body.sidebar-collapsed #mainNavbar .main-nav-link span,
+body.sidebar-collapsed #mainNavbar .main-nav-link .menu-text,
+body.sidebar-collapsed .sidebar-submenu,
+body.sidebar-collapsed #mainNavbar .dropdown-toggle::after {
+    display: none !important;
+}
+
+body.sidebar-collapsed #mainNavbar .main-nav-link {
+    justify-content: center !important;
+    padding: 12px 0 !important;
+    margin: 5px 10px !important;
+    width: calc(100% - 20px) !important;
+}
+
+body.sidebar-collapsed #mainNavbar .main-nav-link i {
+    margin: 0 !important;
+}
+
+body.sidebar-collapsed .sidebar-toggle {
+    position: absolute;
+    right: -17px;
+    top: 28px;
+    background: #ffffff;
+    color: #246B4B;
+    border: 1px solid #e2e8e3;
+    box-shadow: 0 3px 10px rgba(0,0,0,.12);
+    z-index: 3200;
+}
+
+/* Responsif */
+@media (max-width: 991.98px) {
+    #mainContent {
+        padding: 15px !important;
+    }
+}
 </style>
 
     @stack('styles')
+    @yield('styles')
 </head>
 <body>
 
@@ -505,660 +1048,329 @@
 {{-- =========================
      NAVBAR E-HIBAH
      ========================= --}}
-<nav id="mainNavbar" class="navbar navbar-expand-xl shadow-sm">
-    <div class="container-fluid px-4">
-
-        {{-- BRAND --}}
-        <a class="navbar-brand fw-semibold d-flex align-items-center gap-2"
-           href="{{ route('dashboard') }}">
-
-         <a href="{{ route('landing') }}" class="brand-logo">
-            <img
-                src="{{ asset('image/logo-e-hibah.png') }}"
-                alt="Logo E-Hibah YARSI"
-            >
-        </a>
-        </a>
-
-        {{-- MOBILE BUTTON --}}
-        <button class="navbar-toggler border-0 shadow-none"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#navbarContent">
-
-            <i class="bi bi-list fs-2 text-white"></i>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarContent">
-
-            {{-- =========================
-                 MENU KIRI
-                 ========================= --}}
-            <ul class="navbar-nav navbar-left align-items-xl-center gap-xl-1">
-
-                {{-- DASHBOARD --}}
-                <li class="nav-item">
-                    <a class="nav-link main-nav-link
-                        {{ $routeName === 'dashboard' ? 'main-nav-link-active' : '' }}"
-                       href="{{ route('dashboard') }}">
-
-                        <i class="bi bi-grid-1x2"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-
-
-                {{-- INFORMASI --}}
-                <li class="nav-item dropdown">
-
-                    <a class="nav-link dropdown-toggle main-nav-link"
-                       href="#"
-                       data-bs-toggle="dropdown">
-
-                        <i class="bi bi-megaphone"></i>
-                        <span>Informasi</span>
-                    </a>
-
-                    <ul class="dropdown-menu smooth-dropdown">
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('proposal.pengumuman') }}">
-
-                                <i class="bi bi-megaphone me-2"></i>
-                                Pengumuman Hibah
-                            </a>
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('monitoring.kalender') }}">
-
-                                <i class="bi bi-calendar3 me-2"></i>
-                                Kalender Hibah
-                            </a>
-                        </li>
-
-                    </ul>
-                </li>
-
-
-                {{-- PENGAJUAN --}}
-                @if(in_array(Auth::user()->role, ['pengaju', 'reviewer']))
-
-                <li class="nav-item dropdown">
-
-                    <a class="nav-link dropdown-toggle main-nav-link"
-                       href="#"
-                       data-bs-toggle="dropdown">
-
-                        <i class="bi bi-file-earmark-plus"></i>
-                        <span>Pengajuan</span>
-                    </a>
-
-                    <ul class="dropdown-menu smooth-dropdown">
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="#"
-                               id="openPopupBtn">
-
-                                <i class="bi bi-plus-circle me-2"></i>
-                                Ajukan Proposal
-                            </a>
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('proposal.index') }}">
-
-                                <i class="bi bi-folder2-open me-2"></i>
-                                Proposal Saya
-                            </a>
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('dosen.cek-kuota') }}">
-
-                                <i class="bi bi-speedometer2 me-2"></i>
-                                Cek Kuota Pengajuan
-                            </a>
-                        </li>
-
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('laporan.kemajuan.index') }}">
-
-                                <i class="bi bi-file-earmark-arrow-up me-2"></i>
-                                Laporan Kemajuan
-                            </a>
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('laporan.akhir.index') }}">
-
-                                <i class="bi bi-file-earmark-check me-2"></i>
-                                Laporan Akhir
-                            </a>
-                        </li>
-
-                    </ul>
-                </li>
-
-                @endif
-
-
-                {{-- VERIFIKASI --}}
-                @if(Auth::user()->role === 'admin')
-
-                <li class="nav-item dropdown">
-
-                    <a class="nav-link dropdown-toggle main-nav-link"
-                       href="#"
-                       data-bs-toggle="dropdown">
-
-                        <i class="bi bi-check2-square"></i>
-                        <span>Verifikasi</span>
-                    </a>
-
-                    <ul class="dropdown-menu smooth-dropdown">
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('proposal.index') }}">
-
-                                <i class="bi bi-file-earmark-text me-2"></i>
-                                Daftar Proposal
-                            </a>
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('monitoring.proposalDisetujui') }}">
-
-                                <i class="bi bi-check-circle me-2"></i>
-                                Proposal Disetujui
-                            </a>
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('monitoring.proposalDirevisi') }}">
-
-                                <i class="bi bi-arrow-repeat me-2"></i>
-                                Perlu Revisi
-                            </a>
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('monitoring.proposalDitolak') }}">
-
-                                <i class="bi bi-x-circle me-2"></i>
-                                Proposal Ditolak
-                            </a>
-                        </li>
-
-                    </ul>
-                </li>
-
-                @endif
-
-
-                {{-- REVIEW --}}
-                @if(Auth::user()->role !== 'pengaju')
-
-                <li class="nav-item dropdown">
-
-                    <a class="nav-link dropdown-toggle main-nav-link
-                        {{ $isReviewerMenuActive ? 'main-nav-link-active' : '' }}"
-                       href="#"
-                       data-bs-toggle="dropdown">
-
-                        <i class="bi bi-search"></i>
-                        <span>Review</span>
-                    </a>
-
-                    <ul class="dropdown-menu smooth-dropdown">
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('monitoring.proposalPerluDireview') }}">
-
-                                <i class="bi bi-inbox me-2"></i>
-                                Perlu Direview
-                            </a>
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('monitoring.proposalSedangDireview') }}">
-
-                                <i class="bi bi-hourglass-split me-2"></i>
-                                Sedang Direview
-                            </a>
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('monitoring.reviewSelesai') }}">
-
-                                <i class="bi bi-check2-circle me-2"></i>
-                                Review Selesai
-                            </a>
-                        </li>
-
-                        @if(Auth::user()->role === 'admin')
-
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('admin.reviewer.index') }}">
-
-                                <i class="bi bi-person-check me-2"></i>
-                                Kelola Reviewer
-                            </a>
-                        </li>
-
-                        @endif
-
-                    </ul>
-                </li>
-
-                @endif
-
-
-                {{-- MONITORING --}}
-                <li class="nav-item dropdown">
-
-                    <a class="nav-link dropdown-toggle main-nav-link
-                        {{ $isMonitoringMenuActive ? 'main-nav-link-active' : '' }}"
-                       href="#"
-                       data-bs-toggle="dropdown">
-
-                        <i class="bi bi-graph-up-arrow"></i>
-                        <span>Monitoring</span>
-                    </a>
-
-                    <ul class="dropdown-menu smooth-dropdown">
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('proposal.index') }}">
-
-                                <i class="bi bi-list-check me-2"></i>
-                                Status Proposal
-                            </a>
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('monitoring.hasilRevisi') }}">
-
-                                <i class="bi bi-arrow-clockwise me-2"></i>
-                                Hasil Revisi
-                            </a>
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('monitoring.kalender') }}">
-
-                                <i class="bi bi-calendar-event me-2"></i>
-                                Jadwal & Kalender
-                            </a>
-                        </li>
-
-                    </ul>
-                </li>
-
-
-                {{-- PELAPORAN --}}
-                <li class="nav-item dropdown">
-
-                    <a class="nav-link dropdown-toggle main-nav-link"
-                       href="#"
-                       data-bs-toggle="dropdown">
-
-                        <i class="bi bi-file-earmark-bar-graph"></i>
-                        <span>Pelaporan</span>
-                    </a>
-
-                    <ul class="dropdown-menu smooth-dropdown">
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('laporan.kemajuan.index') }}">
-
-                                <i class="bi bi-file-earmark-arrow-up me-2"></i>
-                                Laporan Kemajuan
-                            </a>
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('laporan.akhir.index') }}">
-
-                                <i class="bi bi-file-earmark-check me-2"></i>
-                                Laporan Akhir
-                            </a>
-                        </li>
-
-                    </ul>
-                </li>
-
-
-                {{-- DATA HIBAH --}}
-                <li class="nav-item dropdown">
-
-                    <a class="nav-link dropdown-toggle main-nav-link"
-                       href="#"
-                       data-bs-toggle="dropdown">
-
-                        <i class="bi bi-database"></i>
-                        <span>Data Hibah</span>
-                    </a>
-
-                    <ul class="dropdown-menu smooth-dropdown">
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('proposal.index') }}">
-
-                                <i class="bi bi-folder2-open me-2"></i>
-                                Database Proposal
-                            </a>
-                        </li>
-
-                        @if(Auth::user()->role === 'admin')
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('admin.riwayatDosen') }}">
-
-                                <i class="bi bi-person-vcard me-2"></i>
-                                Riwayat Dosen
-                            </a>
-                        </li>
-
-                        @endif
-
-                    </ul>
-                </li>
-
-
-                {{-- LAINNYA --}}
-                <li class="nav-item dropdown">
-
-                    <a class="nav-link dropdown-toggle main-nav-link"
-                       href="#"
-                       data-bs-toggle="dropdown">
-
-                        <i class="bi bi-three-dots"></i>
-                        <span>Lainnya</span>
-                    </a>
-
-                    <ul class="dropdown-menu dropdown-menu-end smooth-dropdown">
-
-                        <li>
-                            <span class="dropdown-item menu-coming-soon">
-                                <i class="bi bi-file-earmark-ruled me-2"></i>
-                                Penetapan & Kontrak
-                                <span class="coming-badge">Segera</span>
-                            </span>
-                        </li>
-
-                        <li>
-                            <span class="dropdown-item menu-coming-soon">
-                                <i class="bi bi-wallet2 me-2"></i>
-                                Pendanaan & Keuangan
-                                <span class="coming-badge">Segera</span>
-                            </span>
-                        </li>
-
-                        <li>
-                            <span class="dropdown-item menu-coming-soon">
-                                <i class="bi bi-award me-2"></i>
-                                Luaran & Dampak
-                                <span class="coming-badge">Segera</span>
-                            </span>
-                        </li>
-
-                        <li>
-                            <span class="dropdown-item menu-coming-soon">
-                                <i class="bi bi-bar-chart-line me-2"></i>
-                                Analitik Institusi
-                                <span class="coming-badge">Segera</span>
-                            </span>
-                        </li>
-
-                        <li>
-                            <span class="dropdown-item menu-coming-soon">
-                                <i class="bi bi-question-circle me-2"></i>
-                                Panduan & Layanan
-                                <span class="coming-badge">Segera</span>
-                            </span>
-                        </li>
-
-                        @if(Auth::user()->role === 'admin')
-
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('admin.dokumen.index') }}">
-
-                                <i class="bi bi-gear me-2"></i>
-                                Administrasi Sistem
-                            </a>
-                        </li>
-
-                        @endif
-
-                    </ul>
-                </li>
-
-            </ul>
-
-
-            {{-- =========================
-                 MENU KANAN
-                 ========================= --}}
-            <ul class="navbar-nav ms-auto align-items-xl-center">
-
-                {{-- NOTIFIKASI --}}
-                <li class="nav-item">
-
-                    @php
-                        $bellCount = $notif_unread_count ?? 0;
-                        $bellText  = $bellCount > 99 ? '99+' : $bellCount;
-                    @endphp
-
-                    <a id="notifBell"
-                       class="nav-link notification-link position-relative"
-                       style="cursor:pointer;"
-                       title="Notifikasi">
-
-                        <i class="bi bi-bell"></i>
-
-                        <span id="notifCount"
-                              class="position-absolute badge rounded-pill bg-danger"
-                              style="
-                                display: {{ $bellCount > 0 ? 'inline-block' : 'none' }};
-                                font-size:10px;
-                                padding:4px 6px;
-                                top:2px;
-                                right:2px;
-                              ">
-                            {{ $bellText }}
-                        </span>
-
-                    </a>
-                </li>
-
-
-                {{-- PROFIL --}}
-                <li class="nav-item dropdown">
-
-                    <a class="nav-link dropdown-toggle user-menu"
-                       href="#"
-                       data-bs-toggle="dropdown">
-
-                        <span class="user-avatar">
-                            <i class="bi bi-person"></i>
-                        </span>
-
-                        <span class="user-name">
-                            {{ Auth::user()->name ?? 'Pengguna' }}
-                        </span>
-
-                    </a>
-
-                    <ul class="dropdown-menu dropdown-menu-end smooth-dropdown">
-
-                        <li>
-                            <div class="px-3 py-2 user-info">
-
-                                <small class="text-muted d-block">
-                                    Masuk sebagai
-                                </small>
-
-                                <strong>
-                                    {{ Auth::user()->name ?? 'Pengguna' }}
-                                </strong>
-
-                            </div>
-                        </li>
-
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-
-                        <li>
-                            <a class="dropdown-item"
-                               href="{{ route('profile.show') }}">
-
-                                <i class="bi bi-person-circle me-2"></i>
-                                Profil Saya
-                            </a>
-                        </li>
-
-                        <li>
-
-                            <form action="{{ route('logout') }}" method="POST">
-
-                                @csrf
-
-                                <button class="dropdown-item text-danger"
-                                        type="submit">
-
-                                    <i class="bi bi-box-arrow-right me-2"></i>
-                                    Keluar
-
-                                </button>
-
-                            </form>
-
-                        </li>
-
-                    </ul>
-
-                </li>
-
-            </ul>
-
+{{-- =========================
+     SIDEBAR E-HIBAH
+     ========================= --}}
+<nav id="mainNavbar" class="shadow-sm">
+
+    {{-- LOGO --}}
+  {{-- BRAND SIDEBAR --}}
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-text">
+            <span class="sidebar-brand-title">E-Hibah</span>
         </div>
+
+        <button type="button" id="sidebarToggle" class="sidebar-toggle"
+                title="Perbesar / Perkecil Sidebar">
+            <i class="bi bi-layout-sidebar-inset"></i>
+        </button>
+    </div>
+
+    {{-- MENU --}}
+    <div class="sidebar-menu">
+
+        <div class="sidebar-label">MENU UTAMA</div>
+
+        {{-- DASHBOARD --}}
+        <a href="{{ route('dashboard') }}"
+           class="main-nav-link {{ $routeName === 'dashboard' ? 'main-nav-link-active' : '' }}">
+            <i class="bi bi-grid-1x2"></i>
+            <span>Dashboard</span>
+        </a>
+
+        {{-- INFORMASI --}}
+        <div class="sidebar-group">
+            <a class="main-nav-link dropdown-toggle"
+               data-bs-toggle="collapse"
+               href="#menuInformasi">
+                <i class="bi bi-megaphone"></i>
+                <span>Informasi</span>
+            </a>
+
+            <div class="collapse sidebar-submenu" id="menuInformasi">
+                <a href="{{ route('proposal.pengumuman') }}">
+                    <i class="bi bi-megaphone"></i> Pengumuman Hibah
+                </a>
+                <a href="{{ route('monitoring.kalender') }}">
+                    <i class="bi bi-calendar3"></i> Kalender Hibah
+                </a>
+            </div>
+        </div>
+
+        {{-- PENGAJUAN --}}
+        @if(in_array(Auth::user()->role, ['pengaju', 'reviewer']))
+        <div class="sidebar-group">
+            <a class="main-nav-link dropdown-toggle"
+               data-bs-toggle="collapse"
+               href="#menuPengajuan">
+                <i class="bi bi-file-earmark-plus"></i>
+                <span>Pengajuan</span>
+            </a>
+
+            <div class="collapse sidebar-submenu" id="menuPengajuan">
+                <a href="{{ route('proposal.create') }}"
+                    <i class="bi bi-plus-circle"></i> Ajukan Proposal
+                </a>
+                <a href="{{ route('proposal.index') }}">
+                    <i class="bi bi-folder2-open"></i> Proposal Saya
+                </a>
+                <a href="{{ route('dosen.cek-kuota') }}">
+                    <i class="bi bi-speedometer2"></i> Cek Kuota Pengajuan
+                </a>
+                <a href="{{ route('laporan.kemajuan.index') }}">
+                    <i class="bi bi-file-earmark-arrow-up"></i> Laporan Kemajuan
+                </a>
+                <a href="{{ route('laporan.akhir.index') }}">
+                    <i class="bi bi-file-earmark-check"></i> Laporan Akhir
+                </a>
+            </div>
+        </div>
+        @endif
+
+        {{-- VERIFIKASI --}}
+        @if(Auth::user()->role === 'admin')
+        <div class="sidebar-group">
+            <a class="main-nav-link dropdown-toggle"
+               data-bs-toggle="collapse"
+               href="#menuVerifikasi">
+                <i class="bi bi-check2-square"></i>
+                <span>Verifikasi</span>
+            </a>
+
+            <div class="collapse sidebar-submenu" id="menuVerifikasi">
+                <a href="{{ route('proposal.index') }}">
+                    <i class="bi bi-file-earmark-text"></i> Daftar Proposal
+                </a>
+                <a href="{{ route('monitoring.proposalDisetujui') }}">
+                    <i class="bi bi-check-circle"></i> Proposal Disetujui
+                </a>
+                <a href="{{ route('monitoring.proposalDirevisi') }}">
+                    <i class="bi bi-arrow-repeat"></i> Perlu Revisi
+                </a>
+                <a href="{{ route('monitoring.proposalDitolak') }}">
+                    <i class="bi bi-x-circle"></i> Proposal Ditolak
+                </a>
+            </div>
+        </div>
+        @endif
+
+        {{-- REVIEW --}}
+        @if(Auth::user()->role !== 'pengaju')
+        <div class="sidebar-group">
+            <a class="main-nav-link dropdown-toggle"
+               data-bs-toggle="collapse"
+               href="#menuReview">
+                <i class="bi bi-search"></i>
+                <span>Review</span>
+            </a>
+
+            <div class="collapse sidebar-submenu" id="menuReview">
+                <a href="{{ route('monitoring.proposalPerluDireview') }}">
+                    <i class="bi bi-inbox"></i> Perlu Direview
+                </a>
+                <a href="{{ route('monitoring.proposalSedangDireview') }}">
+                    <i class="bi bi-hourglass-split"></i> Sedang Direview
+                </a>
+                <a href="{{ route('monitoring.reviewSelesai') }}">
+                    <i class="bi bi-check2-circle"></i> Review Selesai
+                </a>
+
+                @if(Auth::user()->role === 'admin')
+                <a href="{{ route('admin.reviewer.index') }}">
+                    <i class="bi bi-person-check"></i> Kelola Reviewer
+                </a>
+                @endif
+            </div>
+        </div>
+        @endif
+
+        {{-- MONITORING --}}
+        <div class="sidebar-group">
+            <a class="main-nav-link dropdown-toggle"
+               data-bs-toggle="collapse"
+               href="#menuMonitoring">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Monitoring</span>
+            </a>
+
+            <div class="collapse sidebar-submenu" id="menuMonitoring">
+                <a href="{{ route('proposal.index') }}">
+                    <i class="bi bi-list-check"></i> Status Proposal
+                </a>
+                <a href="{{ route('monitoring.hasilRevisi') }}">
+                    <i class="bi bi-arrow-clockwise"></i> Hasil Revisi
+                </a>
+                <a href="{{ route('monitoring.kalender') }}">
+                    <i class="bi bi-calendar-event"></i> Jadwal & Kalender
+                </a>
+            </div>
+        </div>
+
+        {{-- PELAPORAN --}}
+        <div class="sidebar-group">
+            <a class="main-nav-link dropdown-toggle"
+               data-bs-toggle="collapse"
+               href="#menuPelaporan">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span>Pelaporan</span>
+            </a>
+
+            <div class="collapse sidebar-submenu" id="menuPelaporan">
+                <a href="{{ route('laporan.kemajuan.index') }}">
+                    <i class="bi bi-file-earmark-arrow-up"></i> Laporan Kemajuan
+                </a>
+                <a href="{{ route('laporan.akhir.index') }}">
+                    <i class="bi bi-file-earmark-check"></i> Laporan Akhir
+                </a>
+            </div>
+        </div>
+
+        {{-- DATA HIBAH --}}
+        <div class="sidebar-group">
+            <a class="main-nav-link dropdown-toggle"
+               data-bs-toggle="collapse"
+               href="#menuDataHibah">
+                <i class="bi bi-database"></i>
+                <span>Data Hibah</span>
+            </a>
+
+            <div class="collapse sidebar-submenu" id="menuDataHibah">
+                <a href="{{ route('proposal.index') }}">
+                    <i class="bi bi-folder2-open"></i> Database Proposal
+                </a>
+
+                @if(Auth::user()->role === 'admin')
+                <a href="{{ route('admin.riwayatDosen') }}">
+                    <i class="bi bi-person-vcard"></i> Riwayat Dosen
+                </a>
+                @endif
+            </div>
+        </div>
+
+        {{-- LAINNYA --}}
+        <div class="sidebar-group">
+            <a class="main-nav-link dropdown-toggle"
+               data-bs-toggle="collapse"
+               href="#menuLainnya">
+                <i class="bi bi-three-dots"></i>
+                <span>Lainnya</span>
+            </a>
+
+            <div class="collapse sidebar-submenu" id="menuLainnya">
+                <span class="sidebar-disabled">
+                    <i class="bi bi-file-earmark-ruled"></i> Penetapan & Kontrak
+                </span>
+                <span class="sidebar-disabled">
+                    <i class="bi bi-wallet2"></i> Pendanaan & Keuangan
+                </span>
+                <span class="sidebar-disabled">
+                    <i class="bi bi-award"></i> Luaran & Dampak
+                </span>
+                <span class="sidebar-disabled">
+                    <i class="bi bi-bar-chart-line"></i> Analitik Institusi
+                </span>
+                <span class="sidebar-disabled">
+                    <i class="bi bi-question-circle"></i> Panduan & Layanan
+                </span>
+
+                @if(Auth::user()->role === 'admin')
+                <a href="{{ route('admin.dokumen.index') }}">
+                    <i class="bi bi-gear"></i> Administrasi Sistem
+                </a>
+                @endif
+            </div>
+        </div>
+
     </div>
 </nav>
 
-{{-- Alert placeholder --}}
-<div id="alertPlaceholder" class="position-fixed top-0 end-0 p-3" style="z-index:9999;"></div>
+{{-- =========================
+     HEADER ATAS
+     ========================= --}}
+<div id="topHeader">
+    {{-- LOGO HEADER --}}
+<div class="header-logo">
+    <a href="{{ route('landing') }}">
+        <img src="{{ asset('image/logo-e-hibah.png') }}"
+             alt="Logo E-Hibah">
+    </a>
+</div>
 
+    {{-- NOTIFIKASI --}}
+    @php
+        $bellCount = $notif_unread_count ?? 0;
+        $bellText  = $bellCount > 99 ? '99+' : $bellCount;
+    @endphp
 
+    <a id="notifBell"
+       class="notification-link position-relative"
+       style="cursor:pointer;"
+       title="Notifikasi">
+
+        <i class="bi bi-bell"></i>
+
+        <span id="notifCount"
+              class="position-absolute badge rounded-pill bg-danger"
+              style="
+                display: {{ $bellCount > 0 ? 'inline-block' : 'none' }};
+                font-size:10px;
+                padding:4px 6px;
+                top:2px;
+                right:2px;
+              ">
+            {{ $bellText }}
+        </span>
+    </a>
+
+    {{-- PROFIL --}}
+    <div class="dropdown">
+        <a class="dropdown-toggle user-menu"
+           href="#"
+           data-bs-toggle="dropdown">
+
+            <span class="user-avatar">
+                <i class="bi bi-person"></i>
+            </span>
+
+            <span class="user-name">
+                {{ Auth::user()->name ?? 'Pengguna' }}
+            </span>
+        </a>
+
+        <ul class="dropdown-menu dropdown-menu-end smooth-dropdown">
+
+            <li>
+                <div class="px-3 py-2 user-info">
+                    <small class="text-muted d-block">Masuk sebagai</small>
+                    <strong>{{ Auth::user()->name ?? 'Pengguna' }}</strong>
+                </div>
+            </li>
+
+            <li><hr class="dropdown-divider"></li>
+
+            <li>
+                <a class="dropdown-item"
+                   href="{{ route('profile.show') }}">
+                    <i class="bi bi-person-circle me-2"></i> Profil
+                </a>
+            </li>
+
+            <li>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="dropdown-item">
+                        <i class="bi bi-box-arrow-right me-2"></i> Logout
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </div>
+</div>
 
 {{-- Content --}}
 <div id="mainContent" class="container content-wrapper mt-3">
     @yield('content')
 </div>
-
-{{-- Popup Proposal --}}
-@if(Auth::check() && in_array(Auth::user()->role, ['pengaju', 'reviewer']))
-<div id="proposalPopup" class="popup-overlay">
-    <div class="popup-content">
-        <span class="close-popup" id="closePopupBtn">&times;</span>
-        <h5 class="fw-bold mb-3">Form Pengajuan Proposal</h5>
-
-        <form action="{{ route('proposal.store') }}" method="POST" enctype="multipart/form-data" id="mainProposalForm">
-            @csrf
-
-            <div class="mb-3">
-                <label class="form-label small fw-bold">Nama Ketua</label>
-                <input type="text" name="nama_ketua" class="form-control" list="dosenList" required>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label small fw-bold">Anggota Peneliti</label>
-                <div id="anggota-container">
-                    <div class="input-group mb-2">
-                        <input type="text" name="anggota[]" class="form-control" list="dosenList" placeholder="Ketik Nama Anggota...">
-                        <button type="button" class="btn btn-outline-secondary disabled" style="width: 45px; opacity: 0;">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <button type="button" class="btn btn-sm btn-outline-primary" id="addAnggotaBtn">
-                    <i class="bi bi-plus"></i> Tambah Anggota
-                </button>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label small fw-bold">Fakultas / Prodi</label>
-                <select name="fakultas_prodi" class="form-select" required>
-                    <option value="" selected disabled>-- Pilih Fakultas --</option>
-                    @isset($list_fakultas)
-                        @foreach($list_fakultas as $fakultas)
-                            <option value="{{ $fakultas->id }}">{{ $fakultas->nama_fakultas }}</option>
-                        @endforeach
-                    @endisset
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label small fw-bold text-secondary">Estimasi Biaya</label>
-                <div class="input-group shadow-sm">
-                    <span class="input-group-text bg-light fw-bold text-success">Rp</span>
-                    <input type="text" id="biaya_display" class="form-control" placeholder="0" required>
-                    <input type="hidden" name="biaya" id="biaya_hidden">
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label small fw-bold">Judul Proposal</label>
-                <input type="text" name="judul" class="form-control" required>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label small fw-bold">File Proposal (PDF/DOCX)</label>
-                <input type="file" name="file" class="form-control" accept=".pdf,.doc,.docx" required>
-            </div>
-
-            <button class="btn btn-success w-100 fw-bold py-2" type="submit" id="submitBtn">Kirim Proposal</button>
-        </form>
-    </div>
-</div>
-@endif
 
 <datalist id="dosenList">
     @isset($all_dosen)
@@ -1578,5 +1790,17 @@ document.addEventListener("DOMContentLoaded",()=>{
 </script>
 
 @stack('scripts')
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const toggle = document.getElementById('sidebarToggle');
+
+    if (!toggle) return;
+
+    toggle.addEventListener('click', function () {
+        document.body.classList.toggle('sidebar-collapsed');
+    });
+});
+</script>
 </body>
 </html>
