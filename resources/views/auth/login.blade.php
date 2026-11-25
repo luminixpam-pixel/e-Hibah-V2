@@ -81,7 +81,7 @@
 
         .brand-content {
             width: 100%;
-            max-width: 580px;
+            max-width: 720px;
             display: flex;
             flex-direction: column;
             position: relative;
@@ -123,23 +123,23 @@
             line-height: 1.8;
         }
 
-        /* ILUSTRASI */
+        /* ILUSTRASI — diperbesar & diturunkan agar gambar orang tidak terpotong */
         .illustration {
             position: relative;
             z-index: 2;
             display: flex;
             justify-content: center;
             align-items: flex-end;
-            margin-top: 0;
-            margin-bottom: 18px;
+            margin-top: 32px;
+            margin-bottom: 10px;
             width: 100%;
         }
 
         .login-cover-img {
-            max-width: 560px;
+            max-width: 660px;
             width: 100%;
             height: auto;
-            max-height: 420px;
+            max-height: 440px;
             object-fit: contain;
             object-position: bottom center;
             filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.16));
@@ -451,7 +451,7 @@ body {
 }
 
 .panel-bottom {
-    margin-top: 27px;
+    margin-top: 16px;
     padding-top: 0;
     font-size: 11px;
 }
