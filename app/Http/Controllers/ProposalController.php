@@ -477,7 +477,8 @@ public function edit($id)
     $proposal = \App\Models\Proposal::with(['rabItems', 'members', 'skema'])->findOrFail($id);
 
     // Hanya pemilik proposal atau admin yang boleh membukanya.
-    if (auth()->user()->role !== 'admin' && (int) $proposal->user_id !== (int) auth()->id()) {
+    // auth()->id() = username, bukan users.id — pakai auth()->user()->id.
+    if (auth()->user()->role !== 'admin' && (int) $proposal->user_id !== (int) auth()->user()->id) {
         abort(403, 'Anda tidak memiliki izin untuk mengubah proposal ini.');
     }
 
@@ -508,7 +509,8 @@ public function update(Request $request, $id)
     $proposal = \App\Models\Proposal::with('members')->findOrFail($id);
 
     // Hanya pemilik proposal atau admin yang boleh mengubahnya.
-    if (auth()->user()->role !== 'admin' && (int) $proposal->user_id !== (int) auth()->id()) {
+    // auth()->id() = username, bukan users.id — pakai auth()->user()->id.
+    if (auth()->user()->role !== 'admin' && (int) $proposal->user_id !== (int) auth()->user()->id) {
         abort(403, 'Anda tidak memiliki izin untuk mengubah proposal ini.');
     }
 
@@ -811,7 +813,8 @@ public function proposalDirevisi()
 public function proposalDisetujui()
 {
     // Mengambil proposal yang statusnya 'Disetujui' DAN dimiliki oleh user yang login
-    $proposals = Proposal::where('user_id', auth()->id())
+    // auth()->id() = username, bukan users.id — pakai auth()->user()->id.
+    $proposals = Proposal::where('user_id', auth()->user()->id)
         ->where('status', 'Disetujui')
         ->with('reviewers') // Eager loading untuk menampilkan nama reviewer
         ->latest()

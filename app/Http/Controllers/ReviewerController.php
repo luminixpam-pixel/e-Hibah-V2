@@ -52,9 +52,10 @@ class ReviewerController extends Controller
         }
 
         // ✅ kalau reviewer buka menu reviewer
+        // Auth::id() = username, bukan users.id — pakai Auth::user()->id.
         $proposals = Proposal::with('reviewers')
             ->whereHas('reviewers', function ($q) {
-                $q->where('users.id', Auth::id());
+                $q->where('users.id', Auth::user()->id);
             })
             ->orderBy('review_deadline', 'asc')
             ->get();

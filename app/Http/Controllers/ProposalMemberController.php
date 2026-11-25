@@ -15,7 +15,9 @@ class ProposalMemberController extends Controller
      */
     public function index()
     {
-        $userId = (int) auth()->id();
+        // auth()->id() = username (lihat User::getAuthIdentifierName),
+        // bukan users.id — pakai auth()->user()->id agar undangan ketemu.
+        $userId = (int) auth()->user()->id;
 
         $undanganMenunggu = ProposalMember::with(['proposal.skema', 'proposal.user'])
             ->where('user_id', $userId)
@@ -40,9 +42,8 @@ class ProposalMemberController extends Controller
     {
         $member = ProposalMember::with('proposal')->findOrFail($id);
 
-        if ((int) $member->user_id !== (int) auth()->id()) {
-            // TODO-DEBUG: sementara — tampilkan id agar penyebab 403 ketahuan, hapus sebelum rilis.
-            abort(403, 'Undangan ini bukan untuk Anda. [debug member_user_id=' . $member->user_id . ' auth_id=' . auth()->id() . ']');
+        if ((int) $member->user_id !== (int) auth()->user()->id) {
+            abort(403, 'Undangan ini bukan untuk Anda.');
         }
 
         $request->validate([
