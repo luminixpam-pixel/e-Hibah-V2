@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class DosenSisterSeeder extends Seeder
@@ -17,13 +16,13 @@ class DosenSisterSeeder extends Seeder
             'name'     => 'Administrator Utama',
             'username' => 'admin',
             'email'    => 'admin@gmail.com',
-            'password' => Hash::make('admin'),
+            'password' => 'admin', // Di-hash otomatis oleh cast hashed di model User
         ],
         [
             'name'     => 'Admin Dua',
             'username' => 'admin2',
             'email'    => 'admin2@gmail.com',
-            'password' => Hash::make('admin123'),
+            'password' => 'admin123', // Di-hash otomatis oleh cast hashed di model User
         ],
     ];
     foreach ($admins as $adminData) {
@@ -32,7 +31,7 @@ class DosenSisterSeeder extends Seeder
                 [
                     'username' => $adminData['username'],
                     'name'     => $adminData['name'],
-                    'password' => Hash::make($adminData['password']),
+                    'password' => $adminData['password'],
                     'role'     => 'admin',
                 ]
             );
@@ -353,7 +352,7 @@ class DosenSisterSeeder extends Seeder
                 [
                     'name'          => $dosen['name'],
                     'email'         => $username . '@yarsi.ac.id', // Otomatis jadi email kampus
-                    'password'      => Hash::make('password123'),  // Password default
+                    'password'      => 'password123',  // Password default (di-hash otomatis oleh cast hashed di model User)
                     'role'          => 'pengaju',
                     'fakultas'      => $dosen['penempatan'],
                     'nidn'          => '00000000', // Default jika tidak ada

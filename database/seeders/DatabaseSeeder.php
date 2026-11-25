@@ -22,7 +22,8 @@ public function run(): void
         [
             'name' => 'Administrator',
             'email' => 'admin@gmail.com',
-            'password' => \Illuminate\Support\Facades\Hash::make('admin123'),
+            // Kata sandi polos — di-hash otomatis sekali oleh cast 'hashed' di model User.
+            'password' => 'admin123',
             'role' => 'admin',
         ]
     );

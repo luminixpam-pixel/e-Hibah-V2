@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class AkunRoleSeeder extends Seeder
 {
@@ -78,7 +77,8 @@ class AkunRoleSeeder extends Seeder
 
             User::updateOrCreate(
                 ['username' => $data['username']],
-                array_merge($data, ['password' => Hash::make($password)])
+                // Kata sandi polos — di-hash otomatis sekali oleh cast 'hashed' di model User.
+                array_merge($data, ['password' => $password])
             );
         }
     }

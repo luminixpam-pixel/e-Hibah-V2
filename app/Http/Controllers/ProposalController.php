@@ -160,7 +160,7 @@ public function index(Request $request)
             'fakultas_prodi'  => 'required|exists:fakultas,id',
             'biaya'           => 'required',
             'anggota'         => 'nullable|array',
-            'file'            => 'required|file|mimes:pdf,doc,docx|max:102400', // Max 10MB
+            'file'            => 'required|file|mimes:pdf,doc,docx|max:102400', // Maks 100 MB
         ]);
 
         // 5. Olah Data
@@ -231,7 +231,7 @@ public function update(Request $request, $id)
         'nama_ketua'     => 'required|string',
         'fakultas_prodi' => 'required',
         'biaya'          => 'required',
-        'file'           => 'nullable|file|mimes:pdf|max:10240',
+        'file'           => 'nullable|file|mimes:pdf,doc,docx|max:102400',
         'anggota'        => 'nullable|array',
     ]);
 

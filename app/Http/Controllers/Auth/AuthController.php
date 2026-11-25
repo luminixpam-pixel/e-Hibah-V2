@@ -118,6 +118,12 @@ public function update(Request $request, $id)
 {
     $user = User::findOrFail($id);
 
+    // Hanya admin atau pemilik akun yang boleh mengubah profil ini.
+    $currentUser = auth()->user();
+    if ($currentUser->role !== 'admin' && $currentUser->id !== $user->id) {
+        return back()->with('error', 'Akses ditolak.');
+    }
+
     // Validasi input
     $request->validate([
         'email' => 'required|email|unique:users,email,' . $user->id,
