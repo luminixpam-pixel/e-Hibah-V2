@@ -132,7 +132,7 @@
             justify-content: center;
             align-items: flex-end;
             margin-top: auto;
-            margin-bottom: 0;
+            margin-bottom: -16px;
             width: 100%;
         }
 
@@ -457,8 +457,13 @@ body {
     bottom: 18px;
     z-index: 3;
     margin-top: 0;
-    padding-top: 0;
+    padding: 8px 16px;
     font-size: 11px;
+    font-weight: 700;
+    color: #087b43;
+    background: #ffffff;
+    border-radius: 999px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
 }
 
 /* RIGHT PANEL */
