@@ -41,7 +41,8 @@ class ProposalMemberController extends Controller
         $member = ProposalMember::with('proposal')->findOrFail($id);
 
         if ((int) $member->user_id !== (int) auth()->id()) {
-            abort(403, 'Undangan ini bukan untuk Anda.');
+            // TODO-DEBUG: sementara — tampilkan id agar penyebab 403 ketahuan, hapus sebelum rilis.
+            abort(403, 'Undangan ini bukan untuk Anda. [debug member_user_id=' . $member->user_id . ' auth_id=' . auth()->id() . ']');
         }
 
         $request->validate([
@@ -49,7 +50,7 @@ class ProposalMemberController extends Controller
         ]);
 
         if ($member->status_konfirmasi !== 'Menunggu') {
-            return redirect()->back()->with('error', 'Undangan ini sudah Anda jawab sebelumnya.');
+            return redirect()->route('anggota.undangan')->with('error', 'Undangan ini sudah Anda jawab sebelumnya.');
         }
 
         $member->update([
@@ -69,7 +70,7 @@ class ProposalMemberController extends Controller
             );
         }
 
-        return redirect()->back()->with('success', $request->aksi === 'setuju'
+        return redirect()->route('anggota.undangan')->with('success', $request->aksi === 'setuju'
             ? 'Terima kasih! Anda tercatat sebagai anggota tim proposal ini.'
             : 'Undangan ditolak. Ketua pengusul telah diberi tahu.');
     }

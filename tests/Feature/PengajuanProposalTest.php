@@ -188,6 +188,7 @@ test('submit ditolak bila kuota skema sudah habis, draft tidak menghabiskan kuot
 });
 
 test('anggota bisa konfirmasi Setuju, orang lain tidak bisa', function () {
+    $this->withoutExceptionHandling(); // TODO-DEBUG: sementara — biar pesan 403 asli tampil, hapus setelah ketahuan.
     Storage::fake('public');
     $ketua = buatPengaju(['name' => 'Dr. Andi']);
     $anggota = buatPengaju(['name' => 'Budi Santoso']);
