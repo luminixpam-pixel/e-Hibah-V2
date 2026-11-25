@@ -82,6 +82,7 @@
         .brand-content {
             width: 100%;
             max-width: 720px;
+            flex: 1;
             display: flex;
             flex-direction: column;
             position: relative;
@@ -123,15 +124,15 @@
             line-height: 1.8;
         }
 
-        /* ILUSTRASI — diperbesar & diturunkan agar gambar orang tidak terpotong */
+        /* ILUSTRASI — ditempel ke bawah panel agar potongan terlihat sengaja */
         .illustration {
             position: relative;
             z-index: 2;
             display: flex;
             justify-content: center;
             align-items: flex-end;
-            margin-top: 32px;
-            margin-bottom: 10px;
+            margin-top: auto;
+            margin-bottom: 0;
             width: 100%;
         }
 
@@ -423,7 +424,7 @@ body {
 
 /* LEFT PANEL */
 .brand-panel {
-    padding: 40px 55px;
+    padding: 40px 55px 0;
     justify-content: center;
     align-items: center;
 }
@@ -451,7 +452,11 @@ body {
 }
 
 .panel-bottom {
-    margin-top: 16px;
+    position: absolute;
+    left: 0;
+    bottom: 18px;
+    z-index: 3;
+    margin-top: 0;
     padding-top: 0;
     font-size: 11px;
 }
