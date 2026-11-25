@@ -242,6 +242,18 @@
                                     </small>
                                 @endif
 
+                                @php
+                                    $verifikasiTerakhir = $p->verifications
+                                        ->sortByDesc('created_at')
+                                        ->first();
+                                @endphp
+                                @if ($verifikasiTerakhir && trim((string) $verifikasiTerakhir->catatan) !== '')
+                                    <small class="proposal-revision-note">
+                                        <i class="bi bi-shield-check me-1"></i>
+                                        Catatan verifikasi ({{ $verifikasiTerakhir->hasil === 'Lolos' ? 'Lolos Administrasi' : 'Revisi Administrasi' }}): {{ $verifikasiTerakhir->catatan }}
+                                    </small>
+                                @endif
+
                                 <small class="proposal-date">
                                     <i class="bi bi-calendar3 me-1"></i>
                                     {{ $p->created_at?->format('d M Y') }}

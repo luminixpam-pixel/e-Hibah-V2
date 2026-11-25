@@ -113,6 +113,14 @@ class Proposal extends Model
     }
 
     /**
+     * Riwayat verifikasi administrasi (One to Many, Fase 3).
+     */
+    public function verifications()
+    {
+        return $this->hasMany(Verification::class, 'proposal_id');
+    }
+
+    /**
      * Accessor untuk mempermudah pemanggilan format Rupiah di Blade
      * Contoh penggunaan: $proposal->biaya_rupiah
      */

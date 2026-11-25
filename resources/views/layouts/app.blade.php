@@ -1128,7 +1128,7 @@ body.sidebar-collapsed .sidebar-toggle {
         @endif
 
         {{-- VERIFIKASI --}}
-        @if(Auth::user()->role === 'admin')
+        @if(in_array(Auth::user()->role, ['verifikator', 'admin']))
         <div class="sidebar-group">
             <a class="main-nav-link dropdown-toggle"
                data-bs-toggle="collapse"
@@ -1138,6 +1138,11 @@ body.sidebar-collapsed .sidebar-toggle {
             </a>
 
             <div class="collapse sidebar-submenu" id="menuVerifikasi">
+                @if(Auth::user()->role === 'verifikator')
+                <a href="{{ route('dashboard.verifikator') }}">
+                    <i class="bi bi-hourglass-split"></i> Antrean Verifikasi
+                </a>
+                @endif
                 <a href="{{ route('proposal.index') }}">
                     <i class="bi bi-file-earmark-text"></i> Daftar Proposal
                 </a>
@@ -1154,8 +1159,29 @@ body.sidebar-collapsed .sidebar-toggle {
         </div>
         @endif
 
+        {{-- PLOTTING (LPPM) --}}
+        @if(Auth::user()->role === 'lppm')
+        <div class="sidebar-group">
+            <a class="main-nav-link dropdown-toggle"
+               data-bs-toggle="collapse"
+               href="#menuPlotting">
+                <i class="bi bi-diagram-3"></i>
+                <span>Plotting</span>
+            </a>
+
+            <div class="collapse sidebar-submenu" id="menuPlotting">
+                <a href="{{ route('lppm.plotting') }}">
+                    <i class="bi bi-person-plus"></i> Plotting Reviewer
+                </a>
+                <a href="{{ route('dashboard.lppm') }}">
+                    <i class="bi bi-activity"></i> Pemantauan Review
+                </a>
+            </div>
+        </div>
+        @endif
+
         {{-- REVIEW --}}
-        @if(Auth::user()->role !== 'pengaju')
+        @if(in_array(Auth::user()->role, ['reviewer', 'admin']))
         <div class="sidebar-group">
             <a class="main-nav-link dropdown-toggle"
                data-bs-toggle="collapse"
@@ -1165,6 +1191,11 @@ body.sidebar-collapsed .sidebar-toggle {
             </a>
 
             <div class="collapse sidebar-submenu" id="menuReview">
+                @if(Auth::user()->role === 'reviewer')
+                <a href="{{ route('dashboard.reviewer') }}">
+                    <i class="bi bi-inbox"></i> Tugas Review Saya
+                </a>
+                @endif
                 <a href="{{ route('monitoring.proposalPerluDireview') }}">
                     <i class="bi bi-inbox"></i> Perlu Direview
                 </a>
@@ -1196,6 +1227,9 @@ body.sidebar-collapsed .sidebar-toggle {
             <div class="collapse sidebar-submenu" id="menuMonitoring">
                 <a href="{{ route('proposal.index') }}">
                     <i class="bi bi-list-check"></i> Status Proposal
+                </a>
+                <a href="{{ route('monitoring.reviewSelesai') }}">
+                    <i class="bi bi-check2-circle"></i> Review Selesai
                 </a>
                 <a href="{{ route('monitoring.hasilRevisi') }}">
                     <i class="bi bi-arrow-clockwise"></i> Hasil Revisi

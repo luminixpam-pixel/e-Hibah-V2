@@ -87,7 +87,7 @@
 
         <div class="lppm-quick-grid">
 
-            <a href="{{ route('monitoring.proposalPerluDireview') }}"
+            <a href="{{ route('lppm.plotting') }}"
                class="lppm-quick-card">
 
                 <div class="lppm-quick-icon green">
@@ -95,7 +95,7 @@
                 </div>
 
                 <div class="lppm-quick-content">
-                    <h6>Proposal Perlu Direview</h6>
+                    <h6>Plotting Reviewer</h6>
                     <p>Plotting dan penugasan reviewer</p>
                 </div>
 
@@ -201,7 +201,7 @@
                         </div>
                     </div>
 
-                    <a href="{{ route('proposal.tinjau', $p->id) }}"
+                    <a href="{{ route('lppm.plotting') }}"
                        class="lppm-action-btn">
 
                         <i class="bi bi-person-plus"></i>
@@ -222,6 +222,88 @@
                     <p>
                         Proposal yang lolos administrasi akan ditampilkan
                         di bagian ini.
+                    </p>
+                </div>
+
+            @endforelse
+
+        </div>
+    </div>
+
+    {{-- Pemantauan Review --}}
+    <div class="lppm-panel" style="margin-top: 25px;">
+
+        <div class="lppm-panel-header">
+            <div>
+                <h4>Pemantauan Review</h4>
+                <p>Progres penilaian per proposal: review yang sudah masuk dibanding reviewer yang ditugaskan.</p>
+            </div>
+
+            <div class="lppm-panel-icon">
+                <i class="bi bi-activity"></i>
+            </div>
+        </div>
+
+        <div class="lppm-panel-body">
+
+            @forelse ($pantauReview ?? [] as $p)
+
+                @php
+                    $reviewMasuk = $p->reviews_count ?? 0;
+                    $reviewTotal = $p->reviewers_count ?? 0;
+                    $persen = $reviewTotal > 0 ? (int) round($reviewMasuk / $reviewTotal * 100) : 0;
+                @endphp
+
+                <div class="lppm-proposal-item" style="flex-direction: column; align-items: stretch;">
+
+                    <div class="lppm-proposal-info">
+                        <h6>{{ $p->judul }}</h6>
+
+                        <div class="lppm-proposal-meta">
+                            <span>
+                                <i class="bi bi-person"></i>
+                                {{ $p->user->name ?? '-' }}
+                            </span>
+
+                            <span>
+                                <i class="bi bi-person-check"></i>
+                                {{ $p->reviewers->pluck('name')->implode(', ') ?: 'Belum ada reviewer' }}
+                            </span>
+
+                            @if ($p->review_deadline)
+                                <span>
+                                    <i class="bi bi-calendar3"></i>
+                                    Tenggat {{ $p->review_deadline->format('d M Y H:i') }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3 mt-2">
+                        <div class="progress flex-grow-1" style="height: 10px;">
+                            <div class="progress-bar bg-success" role="progressbar"
+                                 style="width: {{ $persen }}%;"
+                                 aria-valuenow="{{ $persen }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <small class="text-muted" style="white-space: nowrap;">
+                            {{ $reviewMasuk }} dari {{ $reviewTotal }} review masuk ({{ $persen }}%)
+                        </small>
+                    </div>
+
+                </div>
+
+            @empty
+
+                <div class="lppm-empty">
+                    <div class="lppm-empty-icon">
+                        <i class="bi bi-inbox"></i>
+                    </div>
+
+                    <h6>Belum ada proposal yang sedang direview</h6>
+
+                    <p>
+                        Proposal yang sudah ditugaskan reviewer akan
+                        dipantau progres penilaiannya di bagian ini.
                     </p>
                 </div>
 

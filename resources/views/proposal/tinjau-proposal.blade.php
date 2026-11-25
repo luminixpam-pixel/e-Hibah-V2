@@ -44,5 +44,48 @@
         </div>
     </div>
 
+    {{-- Formulir verifikasi administrasi (khusus verifikator, proposal masih Dikirim) --}}
+    @if(auth()->user()->role === 'verifikator' && $proposal->status === 'Dikirim')
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="mb-3">Verifikasi Administrasi</h5>
+            <form action="{{ route('verifikasi.store', $proposal->id) }}" method="POST">
+                @csrf
+                <div class="mb-2">
+                    <label class="form-label">Hasil pemeriksaan</label>
+                    <select name="hasil" class="form-select" required>
+                        <option value="">— Pilih hasil —</option>
+                        <option value="Lolos">Lolos Administrasi</option>
+                        <option value="Revisi">Kembalikan untuk Revisi Administrasi</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Catatan / alasan pengembalian <span class="text-muted">(wajib bila dikembalikan)</span></label>
+                    <textarea name="catatan" class="form-control" rows="3" placeholder="Tuliskan kekurangan berkas atau alasan pengembalian..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-success btn-sm">Simpan Hasil Verifikasi</button>
+            </form>
+        </div>
+    </div>
+    @endif
+
+    {{-- Riwayat verifikasi administrasi --}}
+    @if($proposal->verifications->isNotEmpty())
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="mb-3">Riwayat Verifikasi</h5>
+            @foreach($proposal->verifications->sortByDesc('created_at') as $v)
+                <p class="mb-1">
+                    <strong>{{ $v->hasil === 'Lolos' ? 'Lolos Administrasi' : 'Revisi Administrasi' }}</strong>
+                    <small class="text-muted">— {{ $v->verifikator->name ?? '-' }}, {{ $v->created_at?->format('d M Y H:i') }}</small>
+                </p>
+                @if($v->catatan)
+                    <p class="mb-2">{{ $v->catatan }}</p>
+                @endif
+            @endforeach
+        </div>
+    </div>
+    @endif
+
 </div>
 @endsection

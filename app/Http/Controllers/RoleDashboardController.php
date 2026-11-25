@@ -76,7 +76,7 @@ class RoleDashboardController extends Controller
     {
         $user = Auth::user();
 
-        $myProposals = Proposal::with(['skema', 'reviews'])
+        $myProposals = Proposal::with(['skema', 'reviews', 'verifications'])
             ->where('user_id', $user->id)->latest()->get();
 
         $stats = [
@@ -166,8 +166,16 @@ class RoleDashboardController extends Controller
             ->take(10)
             ->get();
 
+        // Pemantauan progres review (story 17): review masuk / reviewer ditugaskan.
+        $pantauReview = Proposal::whereIn('status', ['Sedang Direview', 'Review Selesai'])
+            ->with(['user', 'reviewers'])
+            ->withCount(['reviewers', 'reviews'])
+            ->latest()
+            ->take(10)
+            ->get();
+
         return view('dashboard.lppm', array_merge(
-            compact('user', 'siapPlotting'),
+            compact('user', 'siapPlotting', 'pantauReview'),
             $stats
         ));
     }

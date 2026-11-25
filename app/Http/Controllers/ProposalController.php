@@ -121,7 +121,7 @@ class ProposalController extends Controller
      * kemajuan atau laporan akhir yang tertunggak dari periode
      * sebelumnya (tabel logbook/laporan belum ada).
      */
-    private function checkPengajuan(User $user, Skema $skema, array $memberUserIds): ?string
+    private function checkPengajuan(User $user, Skema $skema, array $memberUserIds, ?int $exceptProposalId = null): ?string
     {
         if ($user->is_blacklisted) {
             return 'Akun Anda ditandai memiliki tanggungan laporan (blacklist) sehingga tidak dapat mengajukan proposal baru. Silakan hubungi LPPM.';
@@ -132,7 +132,7 @@ class ProposalController extends Controller
             return null;
         }
 
-        if ($this->countParticipation($user->id, $skema->id) >= (int) $skema->kuota) {
+        if ($this->countParticipation($user->id, $skema->id, $exceptProposalId) >= (int) $skema->kuota) {
             return "Anda sudah mencapai kuota skema {$skema->kategori} ({$skema->kuota} keikutsertaan).";
         }
 
@@ -144,7 +144,7 @@ class ProposalController extends Controller
             if ($member->is_blacklisted) {
                 return "Anggota {$member->name} ditandai memiliki tanggungan laporan (blacklist) sehingga tidak dapat diikutsertakan.";
             }
-            if ($this->countParticipation($member->id, $skema->id) >= (int) $skema->kuota) {
+            if ($this->countParticipation($member->id, $skema->id, $exceptProposalId) >= (int) $skema->kuota) {
                 return "Anggota {$member->name} sudah mencapai kuota skema {$skema->kategori} ({$skema->kuota} keikutsertaan).";
             }
         }
@@ -516,7 +516,9 @@ public function update(Request $request, $id)
 
     $user = auth()->user();
     $aksi = $request->input('aksi', 'submit');
-    $kirimPengajuan = $aksi === 'submit' && $proposal->status === 'Draft';
+    // Kirim ulang hasil Revisi Administrasi dihitung sebagai pengajuan juga,
+    // supaya proposal kembali ke antrean verifikasi (status Dikirim).
+    $kirimPengajuan = $aksi === 'submit' && in_array($proposal->status, ['Draft', 'Revisi Administrasi']);
 
     // Validasi: draft boleh dilengkapi bertahap; pengiriman dan revisi harus lengkap.
     $request->validate([
@@ -552,7 +554,8 @@ public function update(Request $request, $id)
         if (!$proposal->file_path && !$request->hasFile('file')) {
             return redirect()->back()->withInput()->with('error', 'Unggah file proposal terlebih dahulu sebelum mengirim pengajuan.');
         }
-        $error = $this->checkPengajuan($user, $skema, $memberUserIds);
+        // Proposal yang dikirim ulang tidak dihitung sebagai keikutsertaan baru.
+        $error = $this->checkPengajuan($user, $skema, $memberUserIds, (int) $proposal->id);
         if ($error) {
             return redirect()->back()->withInput()->with('error', $error);
         }
@@ -667,6 +670,12 @@ public function update(Request $request, $id)
 
     if ($request->reviewer_1 == $proposal->user_id || $request->reviewer_2 == $proposal->user_id) {
         return back()->withInput()->with('error', 'Pemilik proposal tidak boleh menjadi reviewer sendiri.');
+    }
+
+    // Anggota tim proposal tidak boleh mereview proposal itu sendiri (blind review).
+    $memberIds = $proposal->members()->whereNotNull('user_id')->pluck('user_id')->all();
+    if (in_array((int) $request->reviewer_1, $memberIds, true) || in_array((int) $request->reviewer_2, $memberIds, true)) {
+        return back()->withInput()->with('error', 'Anggota tim proposal tidak boleh menjadi reviewer proposal itu sendiri.');
     }
 
     // Eksekusi Simpan
@@ -880,7 +889,7 @@ public function setReview($id)
 }
  public function tinjau($id)
     {
-        $proposal = Proposal::with(['user', 'reviewers', 'reviews.reviewer'])->findOrFail($id);
+        $proposal = Proposal::with(['user', 'reviewers', 'reviews.reviewer', 'verifications.verifikator'])->findOrFail($id);
         return view('proposal.tinjau-proposal', compact('proposal'));
     }
      public function daftarReview(Request $request)

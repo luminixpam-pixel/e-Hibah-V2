@@ -7,7 +7,7 @@ use App\Http\Controllers\{
     AdminController, NotificationController, CalendarController,
     ProposalReviewerController, LaporanKemajuanController, ProfileController,
     AdminDocumentController, TemplateController, LaporanAkhirController,
-    RoleDashboardController, ProposalMemberController
+    RoleDashboardController, ProposalMemberController, VerificationController
 };
 
 /*
@@ -106,6 +106,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/anggota/undangan', [ProposalMemberController::class, 'index'])->name('anggota.undangan');
     Route::post('/anggota/undangan/{id}/konfirmasi', [ProposalMemberController::class, 'confirm'])->name('anggota.konfirmasi');
 
+    // Verifikasi administrasi (formulir pemeriksaan oleh verifikator).
+    Route::post('/verifikasi/{proposal}', [VerificationController::class, 'store'])
+        ->middleware('role:verifikator')->name('verifikasi.store');
+
     // Proposal Actions (General)
     Route::controller(ProposalController::class)->group(function () {
         Route::get('/proposal', 'index')->name('proposal.index');
@@ -179,6 +183,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/search-reviewer', [ProposalReviewerController::class, 'search'])->name('admin.proposal.search-reviewer');
         Route::post('/{id}/assign', [ProposalReviewerController::class, 'assign'])->name('admin.proposal.assign');
     });
+
+    // Plotting reviewer oleh LPPM (Fase 3, story 16 + 19).
+    Route::get('/lppm/plotting', [ProposalReviewerController::class, 'plotting'])
+        ->middleware('role:lppm')->name('lppm.plotting');
+
+    // Tetapkan 2 reviewer + tenggat (dipakai admin & LPPM).
+    Route::post('/proposal/{id}/assign-reviewer', [ProposalController::class, 'assignReviewer'])
+        ->middleware('role:admin,lppm')->name('proposal.assignReviewer');
 });
 
 /* --- ROLE: ADMIN ONLY --- */
@@ -213,7 +225,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::delete('/admin/template/{id}', [TemplateController::class, 'destroy'])->name('admin.template.destroy');
 
     // Proposal Assignments
-    Route::post('/proposal/{id}/assign-reviewer', [ProposalController::class, 'assignReviewer'])->name('proposal.assignReviewer');
     Route::patch('/proposal/{id}/set-review', [ProposalController::class, 'setReview'])->name('proposal.set-review');
 });
 
