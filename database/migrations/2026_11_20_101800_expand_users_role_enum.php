@@ -27,7 +27,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('admin','pengaju','reviewer','verifikator','lppm','dekan','kepala_lppm') NOT NULL DEFAULT 'pengaju'");
+        // Raw SQL MySQL — lewati di SQLite (mis. database test :memory:),
+        // karena SQLite tidak mengenal MODIFY COLUMN / ENUM. Kolom role
+        // tetap string di sana; constraint ENUM hanya berlaku di MySQL.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('admin','pengaju','reviewer','verifikator','lppm','dekan','kepala_lppm') NOT NULL DEFAULT 'pengaju'");
+        }
     }
 
     /**
@@ -39,6 +44,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('admin','pengaju','reviewer') NOT NULL DEFAULT 'pengaju'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('admin','pengaju','reviewer') NOT NULL DEFAULT 'pengaju'");
+        }
     }
 };
