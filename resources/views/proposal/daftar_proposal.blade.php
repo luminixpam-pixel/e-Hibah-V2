@@ -118,12 +118,19 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>
                             <div class="fw-bold text-dark">{{ $proposal->judul }}</div>
+                            @if ($proposal->no_pengajuan)
+                                <small class="text-muted">{{ $proposal->no_pengajuan }}</small>
+                            @endif
+                            @if ($proposal->skema)
+                                <small class="text-muted d-block">{{ $proposal->skema->kategori }}</small>
+                            @endif
                         </td>
                         <td class="text-center">{{ $proposal->nama_ketua }}</td>
 
                        <td class="text-center">
                             @php
                                 $statusMap = [
+                                    'Draft'           => ['class' => 'bg-warning text-dark', 'icon' => 'bi-pencil-square'],
                                     'Dikirim'         => ['class' => 'bg-secondary', 'icon' => 'bi-send'],
                                     'Perlu Direview'  => ['class' => 'bg-warning text-dark', 'icon' => 'bi-hourglass-split'],
                                     'Sedang Direview' => ['class' => 'bg-info text-white', 'icon' => 'bi-search'],
@@ -163,7 +170,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                 {{-- Logika: Jika dia pemilik proposal, dia BOLEH aksi, apa pun role-nya (pengaju/reviewer) --}}
                                 @if($proposal->user_id === Auth::user()->id)
                                     @php
-                                        $isStatusEditable = in_array($proposal->status, ['Dikirim', 'Direvisi']);
+                                        $isStatusEditable = in_array($proposal->status, ['Draft', 'Dikirim', 'Direvisi']);
                                     @endphp
 
                                     @if($isMasaHibah && $isStatusEditable)
@@ -186,7 +193,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
 
                                     {{-- FITUR HAPUS --}}
                                     @php
-                                        $allowedDelete = ['Dikirim', 'Ditolak', 'Direvisi', 'Sedang Direview', 'Hasil Revisi'];
+                                        $allowedDelete = ['Draft', 'Dikirim', 'Ditolak', 'Direvisi', 'Sedang Direview', 'Hasil Revisi'];
                                     @endphp
                                     @if(in_array($proposal->status, $allowedDelete))
                                         <form action="{{ route('proposal.destroy', $proposal->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus proposal Anda sendiri?')">

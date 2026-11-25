@@ -7,7 +7,7 @@ use App\Http\Controllers\{
     AdminController, NotificationController, CalendarController,
     ProposalReviewerController, LaporanKemajuanController, ProfileController,
     AdminDocumentController, TemplateController, LaporanAkhirController,
-    RoleDashboardController
+    RoleDashboardController, ProposalMemberController
 };
 
 /*
@@ -101,6 +101,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/monitoring-kalender', [CalendarController::class, 'index'])->name('monitoring.kalender');
     Route::get('/pengumuman-pendanaan', [ProposalController::class, 'pengumumanPendanaan'])->name('proposal.pengumuman');
     Route::get('/cek-kuota-dosen', [ProposalController::class, 'cekKuota'])->name('dosen.cek-kuota');
+
+    // Undangan keanggotaan tim (konfirmasi Setuju / Tolak oleh anggota).
+    Route::get('/anggota/undangan', [ProposalMemberController::class, 'index'])->name('anggota.undangan');
+    Route::post('/anggota/undangan/{id}/konfirmasi', [ProposalMemberController::class, 'confirm'])->name('anggota.konfirmasi');
 
     // Proposal Actions (General)
     Route::controller(ProposalController::class)->group(function () {

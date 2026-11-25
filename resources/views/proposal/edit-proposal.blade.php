@@ -37,7 +37,7 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('proposal.update', $proposal->id) }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('proposal.update', $proposal->id) }}" method="POST" enctype="multipart/form-data" id="editProposalForm">
                         @csrf
                     @method('PUT')
 
@@ -57,16 +57,17 @@
                                 <small class="text-muted ms-1">Otomatis sesuai akun</small>
                             </div>
 
-                            {{-- BIAYA --}}
+                            {{-- BIAYA (total RAB — dihitung otomatis dari rincian di bawah) --}}
                             <div class="col-md-6">
                                 <label class="form-label fw-bold text-secondary">Estimasi Biaya (Rp)</label>
                                 <div class="input-group">
                                     <span class="input-group-text border-0 bg-light" style="color: #2e7d32;"><b>Rp</b></span>
                                     <input type="text" id="biaya_display" class="form-control border-0 bg-light"
-                                           value="{{ number_format($proposal->biaya, 0, ',', '.') }}" required
+                                           value="{{ number_format($proposal->biaya, 0, ',', '.') }}" readonly
                                            style="border-radius: 0 10px 10px 0; font-weight: bold; color: #2e7d32;">
                                     <input type="hidden" name="biaya" id="biaya_real" value="{{ $proposal->biaya }}">
                                 </div>
+                                <small class="text-muted ms-1">Total dari rincian RAB di bawah</small>
                             </div>
 
                             {{-- JUDUL PROPOSAL --}}
@@ -74,6 +75,65 @@
                                 <label class="form-label fw-bold text-secondary">Judul Proposal</label>
                                 <textarea name="judul" class="form-control border-0 bg-light p-3" rows="2"
                                           style="border-radius: 12px;" placeholder="Masukkan judul lengkap..." required>{{ old('judul', $proposal->judul) }}</textarea>
+                            </div>
+
+                            {{-- SKEMA --}}
+                            <div class="col-12">
+                                <label class="form-label fw-bold text-secondary">Skema Hibah</label>
+                                <select name="skema_id" id="skema_id" class="form-control border-0 bg-light p-3" style="border-radius: 12px;">
+                                    <option value="">Pilih Skema...</option>
+                                    @foreach($list_skema as $s)
+                                        <option value="{{ $s->id }}" {{ old('skema_id', $proposal->skema_id) == $s->id ? 'selected' : '' }}>
+                                            {{ $s->kategori }} — Plafon Rp {{ number_format($s->plafon, 0, ',', '.') }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div id="skemaInfo" class="mt-2 p-3 rounded-4 border bg-light-subtle small text-muted" style="display: none;">
+                                    <div><strong>Plafon:</strong> <span id="skemaPlafon"></span></div>
+                                    <div id="skemaDeskripsi"></div>
+                                    <div id="skemaSyarat"></div>
+                                </div>
+                            </div>
+
+                            {{-- RAB --}}
+                            <div class="col-12">
+                                <div class="p-3 rounded-4 border border-light-subtle bg-light-subtle">
+                                    <label class="form-label fw-bold text-secondary d-flex justify-content-between align-items-center">
+                                        Rincian Biaya (RAB)
+                                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" id="addRabBtn">
+                                            <i class="bi bi-plus-circle me-1"></i> Tambah
+                                        </button>
+                                    </label>
+
+                                    @php
+                                        $rabRows = old('rab', $proposal->rabItems->toArray());
+                                        if (empty($rabRows)) $rabRows = [['nama_komponen' => '', 'jumlah' => '', 'keterangan' => '']];
+                                    @endphp
+
+                                    <div id="rab-container">
+                                        @foreach($rabRows as $i => $item)
+                                            <div class="d-flex gap-2 mb-2 rab-row">
+                                                <input type="text" name="rab[{{ $i }}][nama_komponen]" class="form-control border-0 shadow-sm"
+                                                       value="{{ $item['nama_komponen'] ?? '' }}" placeholder="Nama komponen" style="border-radius: 10px;">
+                                                <input type="number" name="rab[{{ $i }}][jumlah]" class="form-control border-0 shadow-sm rab-jumlah"
+                                                       value="{{ $item['jumlah'] ?? '' }}" placeholder="Jumlah (Rp)" min="0" step="1" style="border-radius: 10px; max-width: 170px;">
+                                                <input type="text" name="rab[{{ $i }}][keterangan]" class="form-control border-0 shadow-sm"
+                                                       value="{{ $item['keterangan'] ?? '' }}" placeholder="Keterangan (opsional)" style="border-radius: 10px;">
+                                                <button type="button" class="btn btn-danger-soft remove-rab" style="border-radius: 10px; width: 45px;">
+                                                    <i class="bi bi-trash3-fill"></i>
+                                                </button>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+                                        <span class="fw-bold text-secondary">Total RAB:</span>
+                                        <strong id="rabTotalDisplay" style="color: #2e7d32;">Rp 0</strong>
+                                    </div>
+                                    <div id="rabPlafonWarning" class="alert alert-danger mt-2 mb-0 py-2 small" style="display: none;">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i><span id="rabPlafonWarningText"></span>
+                                    </div>
+                                </div>
                             </div>
 
                             {{-- ANGGOTA --}}
@@ -127,9 +187,18 @@
                             <a href="{{ route('monitoring.proposalDikirim') }}" class="btn btn-light px-4 py-2 fw-bold text-secondary" style="border-radius: 12px;">
                                 Batal
                             </a>
-                            <button type="submit" class="btn btn-success px-5 py-2 fw-bold shadow-sm" style="border-radius: 12px; background-color: #2e7d32;">
-                                <i class="bi bi-send-check-fill me-2"></i>Simpan & Kirim
-                            </button>
+                            @if($proposal->status === 'Draft')
+                                <button type="submit" name="aksi" value="draft" class="btn btn-outline-success px-4 py-2 fw-bold shadow-sm" style="border-radius: 12px;" id="draftButton">
+                                    <i class="bi bi-save me-2"></i>Simpan Draft
+                                </button>
+                                <button type="submit" name="aksi" value="submit" class="btn btn-success px-5 py-2 fw-bold shadow-sm" style="border-radius: 12px; background-color: #2e7d32;" id="submitButton">
+                                    <i class="bi bi-send-check-fill me-2"></i>Kirim Pengajuan
+                                </button>
+                            @else
+                                <button type="submit" name="aksi" value="submit" class="btn btn-success px-5 py-2 fw-bold shadow-sm" style="border-radius: 12px; background-color: #2e7d32;">
+                                    <i class="bi bi-send-check-fill me-2"></i>Simpan & Kirim
+                                </button>
+                            @endif
                         </div>
                     </form>
                 </div>
@@ -168,15 +237,125 @@
 document.addEventListener('DOMContentLoaded', function() {
     const biayaDisplay = document.getElementById('biaya_display');
     const biayaReal = document.getElementById('biaya_real');
+    const biayaAwal = parseFloat(biayaReal.value) || 0;
 
-    // 1. Format Rupiah saat Input
-    biayaDisplay.addEventListener('input', function(e) {
-        let value = this.value.replace(/[^0-9]/g, '');
-        biayaReal.value = value; // Simpan angka murni ke hidden input
-        this.value = new Intl.NumberFormat('id-ID').format(value);
+    // 1. Skema & RAB: total RAB dihitung otomatis, biaya tampil mengikuti total.
+    const SKEMA_INFO = {
+        @foreach($list_skema as $s)
+            {{ $s->id }}: {
+                plafon: {{ $s->plafon }},
+                kategori: @json($s->kategori),
+                deskripsi: @json($s->deskripsi),
+                syarat: @json($s->syarat),
+            },
+        @endforeach
+    };
+
+    function formatRupiah(n) {
+        return 'Rp ' + new Intl.NumberFormat('id-ID').format(n);
+    }
+
+    function skemaTerpilih() {
+        var sel = document.getElementById('skema_id');
+        return sel.value ? SKEMA_INFO[sel.value] : null;
+    }
+
+    function updateSkemaInfo() {
+        var info = skemaTerpilih();
+        var box = document.getElementById('skemaInfo');
+        if (!info) {
+            box.style.display = 'none';
+            return;
+        }
+        document.getElementById('skemaPlafon').textContent = formatRupiah(info.plafon);
+        document.getElementById('skemaDeskripsi').textContent = info.deskripsi || '';
+        document.getElementById('skemaSyarat').textContent = info.syarat ? 'Syarat: ' + info.syarat : '';
+        box.style.display = 'block';
+        hitungTotalRab();
+    }
+
+    function hitungTotalRab() {
+        var total = 0;
+        var adaIsi = false;
+        document.querySelectorAll('#rab-container .rab-row').forEach(function(row) {
+            var nama = row.querySelector('input[name*="[nama_komponen]"]').value.trim();
+            var jumlah = parseFloat(row.querySelector('.rab-jumlah').value) || 0;
+            if (nama !== '' || jumlah > 0) adaIsi = true;
+            total += jumlah;
+        });
+
+        // Bila belum ada rincian RAB yang terisi, tampilkan biaya lama.
+        var tampil = adaIsi ? total : biayaAwal;
+        document.getElementById('rabTotalDisplay').textContent = formatRupiah(tampil);
+        biayaDisplay.value = new Intl.NumberFormat('id-ID').format(tampil);
+        biayaReal.value = tampil;
+
+        var info = skemaTerpilih();
+        var warning = document.getElementById('rabPlafonWarning');
+        var submitBtn = document.getElementById('submitButton');
+        if (adaIsi && info && info.plafon > 0 && total > info.plafon) {
+            document.getElementById('rabPlafonWarningText').textContent =
+                'Total RAB melebihi plafon skema ' + info.kategori + ' (' + formatRupiah(info.plafon) + '). Kurangi komponen biaya sebelum mengirim.';
+            warning.style.display = 'block';
+            if (submitBtn) submitBtn.disabled = true;
+        } else {
+            warning.style.display = 'none';
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    }
+
+    document.getElementById('skema_id').addEventListener('change', updateSkemaInfo);
+
+    // 2. Tambah baris RAB secara dinamis
+    const rabContainer = document.getElementById('rab-container');
+    const addRabBtn = document.getElementById('addRabBtn');
+    let rabIndex = document.querySelectorAll('#rab-container .rab-row').length;
+
+    addRabBtn.addEventListener('click', function() {
+        const div = document.createElement('div');
+        div.className = 'd-flex gap-2 mb-2 rab-row';
+        div.innerHTML = `
+            <input type="text" name="rab[${rabIndex}][nama_komponen]" class="form-control border-0 shadow-sm"
+                   placeholder="Nama komponen" style="border-radius: 10px;">
+            <input type="number" name="rab[${rabIndex}][jumlah]" class="form-control border-0 shadow-sm rab-jumlah"
+                   placeholder="Jumlah (Rp)" min="0" step="1" style="border-radius: 10px; max-width: 170px;">
+            <input type="text" name="rab[${rabIndex}][keterangan]" class="form-control border-0 shadow-sm"
+                   placeholder="Keterangan (opsional)" style="border-radius: 10px;">
+            <button type="button" class="btn btn-danger-soft remove-rab" style="border-radius: 10px; width: 45px;">
+                <i class="bi bi-trash3-fill"></i>
+            </button>
+        `;
+        rabIndex++;
+        rabContainer.appendChild(div);
     });
 
-    // 2. Tambah Anggota Secara Dinamis
+    // 3. Hapus baris RAB & hitung ulang total saat input berubah
+    rabContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-rab')) {
+            e.target.closest('.rab-row').remove();
+            hitungTotalRab();
+        }
+    });
+    rabContainer.addEventListener('input', hitungTotalRab);
+
+    // 4. Draft: lewati validasi browser (judul tetap wajib di server).
+    const draftBtn = document.getElementById('draftButton');
+    const form = document.getElementById('editProposalForm');
+    if (draftBtn) {
+        draftBtn.addEventListener('click', function() {
+            form.noValidate = true;
+        });
+    }
+    const submitBtn = document.getElementById('submitButton');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function() {
+            form.noValidate = false;
+        });
+    }
+
+    updateSkemaInfo();
+
+    // 5. Tambah Anggota Secara Dinamis (kode lama, dipertahankan)
     const container = document.getElementById('anggota-container');
     const addBtn = document.getElementById('addAnggotaBtn');
 
@@ -193,7 +372,7 @@ document.addEventListener('DOMContentLoaded', function() {
         container.appendChild(div);
     });
 
-    // 3. Hapus Anggota
+    // 6. Hapus Anggota
     container.addEventListener('click', function(e) {
         if (e.target.closest('.remove-anggota')) {
             e.target.closest('.anggota-row').remove();

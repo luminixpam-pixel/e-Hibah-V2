@@ -120,6 +120,20 @@
             </div>
 
             <div class="col-md-6 col-xl-3">
+                <a href="{{ route('anggota.undangan') }}"
+                   class="quick-menu-card">
+                    <div class="quick-icon orange">
+                        <i class="bi bi-envelope"></i>
+                    </div>
+                    <div>
+                        <h6>Undangan Keanggotaan</h6>
+                        <p>Konfirmasi undangan tim proposal.</p>
+                    </div>
+                    <i class="bi bi-arrow-up-right quick-arrow"></i>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-xl-3">
                 <a href="{{ route('laporan.kemajuan.index') }}"
                    class="quick-menu-card">
                     <div class="quick-icon orange">
@@ -189,6 +203,19 @@
                                     {{ $p->judul }}
                                 </h6>
 
+                                @if ($p->no_pengajuan)
+                                    <small class="proposal-no">
+                                        <i class="bi bi-hash me-1"></i>{{ $p->no_pengajuan }}
+                                        @if ($p->skema)
+                                            · {{ $p->skema->kategori }}
+                                        @endif
+                                    </small>
+                                @elseif ($p->skema)
+                                    <small class="proposal-no">
+                                        <i class="bi bi-award me-1"></i>{{ $p->skema->kategori }}
+                                    </small>
+                                @endif
+
                                 <div class="proposal-meta">
 
                                     <span class="proposal-status">
@@ -202,6 +229,18 @@
                                     @endif
 
                                 </div>
+
+                                @php
+                                    $reviewBercatatan = $p->reviews
+                                        ->sortByDesc('created_at')
+                                        ->first(fn ($r) => trim((string) $r->catatan) !== '');
+                                @endphp
+                                @if ($reviewBercatatan)
+                                    <small class="proposal-revision-note">
+                                        <i class="bi bi-chat-left-text me-1"></i>
+                                        Catatan revisi: {{ $reviewBercatatan->catatan }}
+                                    </small>
+                                @endif
 
                                 <small class="proposal-date">
                                     <i class="bi bi-calendar3 me-1"></i>
@@ -567,6 +606,26 @@
 .funding-status {
     background: #e6f3ed;
     color: #317553;
+}
+
+.proposal-no {
+    display: block;
+    font-size: 11px;
+    color: #517ca9;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.proposal-revision-note {
+    display: block;
+    font-size: 11px;
+    color: #a33e3e;
+    background: #fff5f5;
+    border: 1px solid #f2d1d1;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-top: 8px;
+    line-height: 1.6;
 }
 
 .proposal-date {

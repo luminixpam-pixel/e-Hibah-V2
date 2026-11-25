@@ -9,6 +9,10 @@ use App\Models\User;
 use App\Models\Review;
 use App\Models\ActivityLog;
 use App\Models\Fakultas;
+use App\Models\HibahPeriod;
+use App\Models\ProposalMember;
+use App\Models\RabItem;
+use App\Models\Skema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\NotificationHelper;
@@ -31,6 +35,208 @@ class ProposalController extends Controller
     }
 
     /**
+     * Periode hibah yang sedang berjalan (dipakai mengisi proposals.periode_id).
+     */
+    private function activePeriod(): ?HibahPeriod
+    {
+        return HibahPeriod::whereDate('start_date', '<=', now())
+            ->whereDate('end_date', '>=', now())
+            ->first();
+    }
+
+    /**
+     * Nomor pengajuan sementara: EH-TAHUN-ID (berurutan dari ID proposal).
+     *
+     * TODO: Format resmi nomor pengajuan menunggu konfirmasi LPPM.
+     * Jangan menganggap format ini final.
+     */
+    private function generateNoPengajuan(Proposal $proposal): string
+    {
+        return sprintf('EH-%d-%04d', $proposal->created_at->year, $proposal->id);
+    }
+
+    /**
+     * Selesaikan nama anggota (teks bebas dari form) menjadi user terdaftar.
+     * Nama yang tidak cocok dengan akun dosen tetap dicatat (user_id null)
+     * dan hanya tersimpan di kolom JSON `anggota` proposal.
+     *
+     * @return array<int, array{user_id: ?int, nama: string}>
+     */
+    private function resolveAnggota(array $names, ?int $ketuaId = null): array
+    {
+        $resolved = [];
+        $seen = [];
+
+        foreach ($names as $nama) {
+            $nama = trim((string) $nama);
+            if ($nama === '' || isset($seen[mb_strtolower($nama)])) {
+                continue;
+            }
+            $seen[mb_strtolower($nama)] = true;
+
+            $user = User::whereIn('role', ['pengaju', 'reviewer'])->where('name', $nama)->first();
+
+            // Ketua tidak dicatat lagi sebagai anggota tim.
+            if ($user && $ketuaId && (int) $user->id === (int) $ketuaId) {
+                continue;
+            }
+
+            $resolved[] = ['user_id' => $user?->id, 'nama' => $nama];
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * Hitung keikutsertaan seorang dosen pada satu skema (sebagai ketua
+     * + sebagai anggota). Hanya proposal yang sudah dikirim yang dihitung;
+     * draft belum menghabiskan kuota. Anggota lama (JSON `anggota` sebelum
+     * Fase 2) tidak tercatat di proposal_members sehingga tidak terhitung.
+     */
+    private function countParticipation(int $userId, int $skemaId, ?int $exceptProposalId = null): int
+    {
+        $sebagaiKetua = Proposal::where('user_id', $userId)
+            ->where('skema_id', $skemaId)
+            ->where('status', '!=', 'Draft')
+            ->when($exceptProposalId, fn ($q) => $q->where('id', '!=', $exceptProposalId))
+            ->count();
+
+        $sebagaiAnggota = ProposalMember::where('user_id', $userId)
+            ->whereHas('proposal', function ($q) use ($skemaId, $exceptProposalId) {
+                $q->where('skema_id', $skemaId)->where('status', '!=', 'Draft');
+                if ($exceptProposalId) {
+                    $q->where('id', '!=', $exceptProposalId);
+                }
+            })
+            ->count();
+
+        return $sebagaiKetua + $sebagaiAnggota;
+    }
+
+    /**
+     * Cek aturan pengajuan untuk satu skema: blacklist + kuota.
+     * Mengembalikan pesan error, atau null bila boleh dilanjutkan.
+     *
+     * TODO (Fase 5): tolak juga bila pengusul/anggota punya laporan
+     * kemajuan atau laporan akhir yang tertunggak dari periode
+     * sebelumnya (tabel logbook/laporan belum ada).
+     */
+    private function checkPengajuan(User $user, Skema $skema, array $memberUserIds): ?string
+    {
+        if ($user->is_blacklisted) {
+            return 'Akun Anda ditandai memiliki tanggungan laporan (blacklist) sehingga tidak dapat mengajukan proposal baru. Silakan hubungi LPPM.';
+        }
+
+        // Kuota 0 berarti batas belum ditetapkan — lewati pengecekan kuota.
+        if ((int) $skema->kuota <= 0) {
+            return null;
+        }
+
+        if ($this->countParticipation($user->id, $skema->id) >= (int) $skema->kuota) {
+            return "Anda sudah mencapai kuota skema {$skema->kategori} ({$skema->kuota} keikutsertaan).";
+        }
+
+        foreach ($memberUserIds as $memberId) {
+            $member = User::find($memberId);
+            if (!$member) {
+                continue;
+            }
+            if ($member->is_blacklisted) {
+                return "Anggota {$member->name} ditandai memiliki tanggungan laporan (blacklist) sehingga tidak dapat diikutsertakan.";
+            }
+            if ($this->countParticipation($member->id, $skema->id) >= (int) $skema->kuota) {
+                return "Anggota {$member->name} sudah mencapai kuota skema {$skema->kategori} ({$skema->kuota} keikutsertaan).";
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Simpan ulang item RAB dari input form. Mengembalikan total RAB.
+     */
+    private function saveRabItems(Proposal $proposal, array $rabInput): float
+    {
+        $proposal->rabItems()->delete();
+
+        $total = 0;
+        foreach ($rabInput as $item) {
+            $nama = trim((string) ($item['nama_komponen'] ?? ''));
+            $jumlah = (float) preg_replace('/[^0-9.]/', '', (string) ($item['jumlah'] ?? 0));
+            if ($nama === '' && $jumlah <= 0) {
+                continue;
+            }
+
+            $proposal->rabItems()->create([
+                'nama_komponen' => $nama !== '' ? $nama : 'Komponen RAB',
+                'jumlah' => $jumlah,
+                'keterangan' => $item['keterangan'] ?? null,
+            ]);
+            $total += $jumlah;
+        }
+
+        return $total;
+    }
+
+    /**
+     * Sinkronkan anggota tim dari daftar nama yang sudah diselesaikan
+     * (resolveAnggota). Baris yang sudah ada dipertahankan status
+     * konfirmasinya; baris yang tidak lagi tercantum dihapus.
+     */
+    private function syncMembers(Proposal $proposal, array $anggotaResolved): void
+    {
+        $desiredUserIds = array_values(array_filter(array_column($anggotaResolved, 'user_id')));
+        $existingIds = $proposal->members()->whereNotNull('user_id')->pluck('user_id')->all();
+
+        // Hapus anggota yang tidak lagi tercantum. Baris tanpa user
+        // (anggota tanpa akun) hanya tercatat di kolom JSON `anggota`,
+        // jadi selalu dibuat ulang dari daftar nama saat ini.
+        $proposal->members()->whereNotNull('user_id')->whereNotIn('user_id', $desiredUserIds)->delete();
+        $proposal->members()->whereNull('user_id')->delete();
+
+        foreach ($desiredUserIds as $userId) {
+            if (!in_array($userId, $existingIds)) {
+                $proposal->members()->create([
+                    'user_id' => $userId,
+                    'peran' => 'Anggota',
+                    'status_konfirmasi' => 'Menunggu',
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Kirim undangan keanggotaan ke semua anggota yang statusnya masih
+     * 'Menunggu'. Sudah diundang sebelumnya tidak dikirim ulang.
+     */
+    private function sendMemberInvitations(Proposal $proposal): void
+    {
+        $members = $proposal->members()
+            ->where('status_konfirmasi', 'Menunggu')
+            ->whereNotNull('user_id')
+            ->get();
+
+        foreach ($members as $member) {
+            $sudahDiundang = \App\Models\Notification::where('user_id', $member->user_id)
+                ->where('proposal_id', $proposal->id)
+                ->where('title', 'Undangan Anggota Tim Proposal')
+                ->exists();
+
+            if ($sudahDiundang) {
+                continue;
+            }
+
+            NotificationHelper::send(
+                (int) $member->user_id,
+                'Undangan Anggota Tim Proposal',
+                'Anda diundang menjadi anggota tim proposal "' . ($proposal->judul ?? '-') . '" oleh ' . ($proposal->nama_ketua ?? '-') . '. Buka menu Undangan Keanggotaan di dasbor untuk konfirmasi.',
+                'info',
+                $proposal->id
+            );
+        }
+    }
+
+    /**
      * Menampilkan form pengajuan proposal baru.
      * (Route GET /proposal/create — dulu method ini tidak ada, route 500.)
      */
@@ -41,8 +247,12 @@ class ProposalController extends Controller
         }
 
         $list_fakultas = \App\Models\Fakultas::all();
+        $list_skema = \App\Models\Skema::orderBy('kategori')->get();
+        $all_dosen = \App\Models\User::whereIn('role', ['pengaju', 'reviewer'])
+            ->orderBy('name')
+            ->get();
 
-        return view('proposal.create', compact('list_fakultas'));
+        return view('proposal.create', compact('list_fakultas', 'list_skema', 'all_dosen'));
     }
 
     /**
@@ -60,21 +270,37 @@ class ProposalController extends Controller
     }
 
     /**
-     * Halaman cek kuota dosen — berapa proposal yang sudah diikuti
-     * (sebagai ketua atau anggota) dari batas maksimal 3.
-     * (Route GET /cek-kuota-dosen — dulu method ini tidak ada, route 500.)
+     * Halaman cek kuota dosen — keikutsertaan per kategori skema
+     * (sebagai ketua atau anggota) dibanding kuota skema tersebut.
+     * Hanya proposal yang sudah dikirim yang dihitung; draft tidak
+     * menghabiskan kuota.
      */
     public function cekKuota()
     {
         $user = auth()->user();
-        $nama = $user->name;
 
-        $sebagaiKetua = \App\Models\Proposal::where('nama_ketua', $nama)->count();
-        $sebagaiAnggota = \App\Models\Proposal::whereJsonContains('anggota', $nama)->count();
-        $total = $sebagaiKetua + $sebagaiAnggota;
-        $sisa = max(0, 3 - $total);
+        $kuotaPerSkema = Skema::orderBy('kategori')->get()->map(function ($skema) use ($user) {
+            $sebagaiKetua = Proposal::where('user_id', $user->id)
+                ->where('skema_id', $skema->id)
+                ->where('status', '!=', 'Draft')
+                ->count();
+            $sebagaiAnggota = ProposalMember::where('user_id', $user->id)
+                ->whereHas('proposal', function ($q) use ($skema) {
+                    $q->where('skema_id', $skema->id)->where('status', '!=', 'Draft');
+                })
+                ->count();
 
-        return view('proposal.cek-kuota', compact('user', 'nama', 'sebagaiKetua', 'sebagaiAnggota', 'total', 'sisa'));
+            return [
+                'skema' => $skema,
+                'sebagaiKetua' => $sebagaiKetua,
+                'sebagaiAnggota' => $sebagaiAnggota,
+                'total' => $sebagaiKetua + $sebagaiAnggota,
+                'kuota' => (int) $skema->kuota,
+                'sisa' => max(0, (int) $skema->kuota - $sebagaiKetua - $sebagaiAnggota),
+            ];
+        });
+
+        return view('proposal.cek-kuota', compact('user', 'kuotaPerSkema'));
     }
 
     /**
@@ -97,7 +323,7 @@ public function index(Request $request)
         ->exists();
     // -------------------------
 
-    $query = \App\Models\Proposal::with(['fakultas', 'user'])
+    $query = \App\Models\Proposal::with(['fakultas', 'user', 'skema'])
         ->whereYear('created_at', $tahun);
 
     if ($role === 'pengaju' || $role === 'reviewer') {
@@ -116,8 +342,10 @@ public function index(Request $request)
         'isMasaHibah'
     ));
 }
-/**
-     * Menyimpan proposal baru dengan Validasi Kuota 3 Proposal
+    /**
+     * Menyimpan proposal baru (draft atau diajukan).
+     * Draft boleh dilengkapi bertahap; submit wajib lengkap dan lolos
+     * cek kuota per skema + blacklist + plafon RAB.
      */
     public function store(Request $request)
     {
@@ -127,68 +355,116 @@ public function index(Request $request)
         }
 
         $user = auth()->user();
+        $aksi = $request->input('aksi', 'submit');
+        $isDraft = $aksi === 'draft';
 
-        // 2. Kumpulkan semua nama yang terlibat (Ketua + Anggota)
-        $anggotaInput = $request->input('anggota', []);
-        $semuaPeserta = array_filter($anggotaInput, fn($v) => trim((string)$v) !== '');
-        $semuaPeserta[] = $request->nama_ketua;
-        $semuaPeserta = array_unique($semuaPeserta);
+        // 2. Akun yang ditandai memiliki tanggungan tidak boleh mengajukan baru.
+        if ($user->is_blacklisted) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Akun Anda ditandai memiliki tanggungan laporan (blacklist) sehingga tidak dapat mengajukan proposal baru. Silakan hubungi LPPM.');
+        }
 
-        // 3. Cek Batas Maksimal 3 Proposal untuk SETIAP orang yang terlibat
-      $ketua = $request->nama_ketua;
-        $anggotaInput = $request->anggota ?? [];
-        $semuaDosenTerlibat = array_merge([$ketua], $anggotaInput);
+        // 3. Validasi form (draft boleh dilengkapi bertahap, submit harus lengkap).
+        if ($isDraft) {
+            $request->validate([
+                'judul' => 'required|string|max:255',
+                'nama_ketua' => 'nullable|string|max:255',
+                'fakultas_prodi' => 'nullable|exists:fakultas,id',
+                'skema_id' => 'nullable|exists:skemas,id',
+                'file' => 'nullable|file|mimes:pdf,doc,docx|max:102400',
+                'anggota' => 'nullable|array',
+                'rab' => 'nullable|array',
+                'rab.*.nama_komponen' => 'nullable|string|max:255',
+                'rab.*.jumlah' => 'nullable|numeric|min:0',
+                'rab.*.keterangan' => 'nullable|string|max:500',
+            ]);
+        } else {
+            $request->validate([
+                'judul' => 'required|string|max:255',
+                'nama_ketua' => 'required|string|max:255',
+                'fakultas_prodi' => 'required|exists:fakultas,id',
+                'skema_id' => 'required|exists:skemas,id',
+                'file' => 'required|file|mimes:pdf,doc,docx|max:102400', // Maks 100 MB
+                'anggota' => 'nullable|array',
+                'rab' => 'required|array|min:1',
+                'rab.*.nama_komponen' => 'required|string|max:255',
+                'rab.*.jumlah' => 'required|numeric|min:0',
+                'rab.*.keterangan' => 'nullable|string|max:500',
+            ]);
+        }
 
-        foreach ($semuaDosenTerlibat as $nama) {
-            if (!$nama) continue;
+        $skema = $request->filled('skema_id') ? Skema::find($request->skema_id) : null;
 
-            $countKetua = Proposal::where('nama_ketua', $nama)->count();
-            $countAnggota = Proposal::whereJsonContains('anggota', $nama)->count();
-            $totalPartisipasi = $countKetua + $countAnggota;
+        // 4. Selesaikan nama anggota menjadi user (bila terdaftar).
+        $anggotaInput = array_values(array_filter(
+            array_map(fn ($v) => trim((string) $v), (array) $request->input('anggota', []))
+        ));
+        $anggotaResolved = $this->resolveAnggota($anggotaInput, $user->id);
+        $memberUserIds = array_values(array_filter(array_column($anggotaResolved, 'user_id')));
 
-            if ($totalPartisipasi >= 3) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', "Dosen {$nama} sudah terdaftar di 3 proposal. Batas maksimal adalah 3.");
+        // 5. Cek kuota per skema + blacklist anggota (hanya saat submit).
+        if (!$isDraft && $skema) {
+            $error = $this->checkPengajuan($user, $skema, $memberUserIds);
+            if ($error) {
+                return redirect()->back()->withInput()->with('error', $error);
             }
         }
 
-        // 4. Validasi Form
-        $request->validate([
-            'judul'           => 'required|string|max:255',
-            'nama_ketua'      => 'required|string|max:255',
-            'fakultas_prodi'  => 'required|exists:fakultas,id',
-            'biaya'           => 'required',
-            'anggota'         => 'nullable|array',
-            'file'            => 'required|file|mimes:pdf,doc,docx|max:102400', // Maks 100 MB
-        ]);
-
-        // 5. Olah Data
-        $biayaClean = preg_replace('/[^0-9]/', '', $request->biaya);
-        $anggotaFinal = is_array($anggotaInput) ? array_values(array_filter($anggotaInput)) : [];
+        // 6. Hitung total RAB dan validasi terhadap plafon skema (hanya saat submit).
+        $rabTotal = 0;
+        foreach ((array) $request->input('rab', []) as $item) {
+            $rabTotal += (float) preg_replace('/[^0-9.]/', '', (string) ($item['jumlah'] ?? 0));
+        }
+        if (!$isDraft && $skema && $skema->plafon > 0 && $rabTotal > (float) $skema->plafon) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Total RAB Rp ' . number_format($rabTotal, 0, ',', '.') . ' melebihi plafon skema ' . $skema->kategori . ' (Rp ' . number_format((float) $skema->plafon, 0, ',', '.') . ').');
+        }
 
         try {
-            // Upload File
-            $extension = $request->file('file')->getClientOriginalExtension();
-            $cleanName = preg_replace('/[^A-Za-z0-9\-]/', '', $request->judul);
-            $finalName = substr($cleanName, 0, 50) . '_' . time() . '.' . $extension;
-            $filePath = $request->file('file')->storeAs('proposal_files', $finalName, 'public');
+            $proposal = DB::transaction(function () use ($request, $user, $isDraft, $skema, $anggotaResolved, $rabTotal) {
+                // Upload File (wajib saat submit, opsional saat draft).
+                $filePath = null;
+                if ($request->hasFile('file')) {
+                    $extension = $request->file('file')->getClientOriginalExtension();
+                    $cleanName = preg_replace('/[^A-Za-z0-9\-]/', '', $request->judul);
+                    $finalName = substr($cleanName, 0, 50) . '_' . time() . '.' . $extension;
+                    $filePath = $request->file('file')->storeAs('proposal_files', $finalName, 'public');
+                }
 
-            // Simpan Database
-            Proposal::create([
-                'judul'          => $request->judul,
-                'nama_ketua'     => $request->nama_ketua,
-                'fakultas_prodi' => $request->fakultas_prodi,
-                'file_path'      => $filePath,
-                'anggota'        => $anggotaFinal,
-                'biaya'          => $biayaClean,
-                'status'         => 'Dikirim',
-                'user_id'        => $user->id,
-            ]);
+                $proposal = Proposal::create([
+                    'judul' => $request->judul,
+                    'nama_ketua' => $request->nama_ketua ?: $user->name,
+                    'fakultas_prodi' => $request->fakultas_prodi,
+                    'file_path' => $filePath,
+                    'anggota' => array_column($anggotaResolved, 'nama'),
+                    'biaya' => $rabTotal,
+                    'status' => $isDraft ? 'Draft' : 'Dikirim',
+                    'user_id' => $user->id,
+                    'skema_id' => $skema?->id,
+                    'periode_id' => $this->activePeriod()?->id,
+                ]);
 
-            return redirect()->route('proposal.index')->with('success', 'Proposal berhasil diajukan!');
+                $this->saveRabItems($proposal, (array) $request->input('rab', []));
+                $this->syncMembers($proposal, $anggotaResolved);
+
+                if (!$isDraft) {
+                    $proposal->update(['no_pengajuan' => $this->generateNoPengajuan($proposal)]);
+                    $this->sendMemberInvitations($proposal);
+                    NotificationController::notifyProposalSubmitted($user->id);
+                }
+
+                return $proposal;
+            });
+
+            if ($isDraft) {
+                return redirect()->route('proposal.index')
+                    ->with('success', 'Draft proposal berhasil disimpan. Anda dapat melengkapinya kembali sebelum dikirim.');
+            }
+
+            return redirect()->route('proposal.index')
+                ->with('success', 'Proposal berhasil diajukan! Nomor pengajuan: ' . $proposal->no_pengajuan);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
@@ -198,11 +474,17 @@ public function index(Request $request)
 public function edit($id)
 {
     // 1. Ambil data proposal yang akan diedit
-    $proposal = \App\Models\Proposal::findOrFail($id);
+    $proposal = \App\Models\Proposal::with(['rabItems', 'members', 'skema'])->findOrFail($id);
+
+    // Hanya pemilik proposal atau admin yang boleh membukanya.
+    if (auth()->user()->role !== 'admin' && (int) $proposal->user_id !== (int) auth()->id()) {
+        abort(403, 'Anda tidak memiliki izin untuk mengubah proposal ini.');
+    }
 
     // 2. Ambil semua data user (untuk list anggota di datalist)
     // Sesuaikan role jika hanya ingin menampilkan dosen/pengaju saja
     $users = \App\Models\User::all();
+    $list_skema = Skema::orderBy('kategori')->get();
 
     // 3. Cek Masa Hibah (Keamanan)
     $now = now();
@@ -216,52 +498,132 @@ public function edit($id)
     }
 
     // 4. Kirim semua variabel ke view
-    return view('proposal.edit-proposal', compact('proposal', 'users'));
+    return view('proposal.edit-proposal', compact('proposal', 'users', 'list_skema'));
 }
     /**
-     * Update Data Proposal
+     * Update Data Proposal (lengkapi draft, kirim draft, atau revisi).
      */
 public function update(Request $request, $id)
 {
-    $proposal = \App\Models\Proposal::findOrFail($id);
+    $proposal = \App\Models\Proposal::with('members')->findOrFail($id);
 
-    // Validasi (Samakan dengan input di Blade)
+    // Hanya pemilik proposal atau admin yang boleh mengubahnya.
+    if (auth()->user()->role !== 'admin' && (int) $proposal->user_id !== (int) auth()->id()) {
+        abort(403, 'Anda tidak memiliki izin untuk mengubah proposal ini.');
+    }
+
+    $user = auth()->user();
+    $aksi = $request->input('aksi', 'submit');
+    $kirimPengajuan = $aksi === 'submit' && $proposal->status === 'Draft';
+
+    // Validasi: draft boleh dilengkapi bertahap; pengiriman dan revisi harus lengkap.
     $request->validate([
-        'judul'          => 'required|string',
-        'nama_ketua'     => 'required|string',
+        'judul' => 'required|string',
+        'nama_ketua' => 'required|string',
         'fakultas_prodi' => 'required',
-        'biaya'          => 'required',
-        'file'           => 'nullable|file|mimes:pdf,doc,docx|max:102400',
-        'anggota'        => 'nullable|array',
+        'skema_id' => 'nullable|exists:skemas,id',
+        'file' => 'nullable|file|mimes:pdf,doc,docx|max:102400',
+        'anggota' => 'nullable|array',
+        'rab' => 'nullable|array',
+        'rab.*.nama_komponen' => 'nullable|string|max:255',
+        'rab.*.jumlah' => 'nullable|numeric|min:0',
+        'rab.*.keterangan' => 'nullable|string|max:500',
     ]);
 
-    // Bersihkan Biaya
-    $biayaClean = preg_replace('/[^0-9]/', '', $request->biaya);
+    $skema = $request->filled('skema_id') ? Skema::find($request->skema_id) : $proposal->skema;
 
-    // Update Data
-    $proposal->update([
-        'judul'          => $request->judul,
-        'nama_ketua'     => $request->nama_ketua,
-        'fakultas_prodi' => $request->fakultas_prodi,
-        'biaya'          => $biayaClean,
-        'anggota'        => array_values(array_filter($request->anggota ?? [])),
-    ]);
+    $anggotaInput = array_values(array_filter(
+        array_map(fn ($v) => trim((string) $v), (array) $request->input('anggota', []))
+    ));
+    $anggotaResolved = $this->resolveAnggota($anggotaInput, (int) $proposal->user_id);
+    $memberUserIds = array_values(array_filter(array_column($anggotaResolved, 'user_id')));
 
-    // Handle File
-    if ($request->hasFile('file')) {
-        if ($proposal->file_path) \Storage::disk('public')->delete($proposal->file_path);
-        $proposal->file_path = $request->file('file')->store('proposal_files', 'public');
+    // Saat draft dikirim: berlaku semua aturan pengajuan.
+    if ($kirimPengajuan) {
+        if ($user->is_blacklisted) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Akun Anda ditandai memiliki tanggungan laporan (blacklist) sehingga tidak dapat mengajukan proposal baru. Silakan hubungi LPPM.');
+        }
+        if (!$skema) {
+            return redirect()->back()->withInput()->with('error', 'Pilih skema hibah terlebih dahulu sebelum mengirim pengajuan.');
+        }
+        if (!$proposal->file_path && !$request->hasFile('file')) {
+            return redirect()->back()->withInput()->with('error', 'Unggah file proposal terlebih dahulu sebelum mengirim pengajuan.');
+        }
+        $error = $this->checkPengajuan($user, $skema, $memberUserIds);
+        if ($error) {
+            return redirect()->back()->withInput()->with('error', $error);
+        }
     }
 
-    // Status logic
-    if (in_array($proposal->status, ['Ditolak', 'Revisi'])) {
-        $proposal->status = 'Hasil Revisi';
+    // Total RAB dari input form (bila ada); bila tidak ada, biaya lama dipertahankan.
+    $rabInput = (array) $request->input('rab', []);
+    $rabTotal = 0;
+    $hasRab = false;
+    foreach ($rabInput as $item) {
+        $namaItem = trim((string) ($item['nama_komponen'] ?? ''));
+        $jumlahItem = (float) preg_replace('/[^0-9.]/', '', (string) ($item['jumlah'] ?? 0));
+        if ($namaItem !== '' || $jumlahItem > 0) {
+            $hasRab = true;
+        }
+        $rabTotal += $jumlahItem;
     }
 
-    $proposal->save();
+    if ($kirimPengajuan && !$hasRab) {
+        return redirect()->back()->withInput()->with('error', 'Isi minimal satu komponen RAB sebelum mengirim pengajuan.');
+    }
+    if ($hasRab && $skema && $skema->plafon > 0 && $rabTotal > (float) $skema->plafon) {
+        return redirect()->back()->withInput()
+            ->with('error', 'Total RAB Rp ' . number_format($rabTotal, 0, ',', '.') . ' melebihi plafon skema ' . $skema->kategori . ' (Rp ' . number_format((float) $skema->plafon, 0, ',', '.') . ').');
+    }
+
+    DB::transaction(function () use ($request, $proposal, $user, $kirimPengajuan, $skema, $anggotaResolved, $rabInput, $rabTotal, $hasRab) {
+        // Handle File
+        if ($request->hasFile('file')) {
+            if ($proposal->file_path) \Storage::disk('public')->delete($proposal->file_path);
+            $proposal->file_path = $request->file('file')->store('proposal_files', 'public');
+        }
+
+        $data = [
+            'judul' => $request->judul,
+            'nama_ketua' => $request->nama_ketua,
+            'fakultas_prodi' => $request->fakultas_prodi,
+            'anggota' => array_column($anggotaResolved, 'nama'),
+            'skema_id' => $skema?->id,
+        ];
+        if ($hasRab) {
+            $data['biaya'] = $rabTotal;
+        }
+
+        // Status logic
+        if ($kirimPengajuan) {
+            $data['status'] = 'Dikirim';
+            $data['no_pengajuan'] = $this->generateNoPengajuan($proposal);
+        } elseif (in_array($proposal->status, ['Ditolak', 'Revisi'])) {
+            $data['status'] = 'Hasil Revisi';
+        }
+
+        $proposal->update($data);
+
+        if ($hasRab) {
+            $this->saveRabItems($proposal, $rabInput);
+        }
+        $this->syncMembers($proposal, $anggotaResolved);
+
+        if ($kirimPengajuan) {
+            $this->sendMemberInvitations($proposal);
+            NotificationController::notifyProposalSubmitted($user->id);
+        }
+    });
+
+    if ($kirimPengajuan) {
+        return redirect()->route('monitoring.proposalDikirim')
+            ->with('success', 'Proposal berhasil diajukan! Nomor pengajuan: ' . $proposal->fresh()->no_pengajuan);
+    }
 
     return redirect()->route('monitoring.proposalDikirim')->with('success', 'Proposal diperbarui!');
-}   /**
+}
+    /**
      * Download File Proposal
      */
   public function download($id)
@@ -594,7 +956,7 @@ public function uploadLaporanAkhir(Request $request, $id)
             ->exists();
         // -------------------------
 
-        $query = Proposal::with(['fakultas', 'user'])
+        $query = Proposal::with(['fakultas', 'user', 'skema'])
             ->whereYear('created_at', $tahun)
             ->where('status', 'Dikirim');
 
@@ -631,3 +993,5 @@ public function uploadLaporanAkhir(Request $request, $id)
     }
 
 }
+
+

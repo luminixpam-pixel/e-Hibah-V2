@@ -37,9 +37,11 @@
         <div>
             <h6>Ketentuan Pengajuan Proposal</h6>
             <p>
-                Setiap dosen maksimal terlibat dalam <strong>3 proposal</strong>,
-                baik sebagai ketua maupun anggota. Pastikan data dan dokumen
-                yang diunggah telah sesuai.
+                Setiap dosen maksimal terlibat sesuai <strong>kuota skema</strong>
+                yang dipilih (sebagai ketua maupun anggota). Total RAB tidak
+                boleh melebihi <strong>plafon skema</strong>. Cek sisa kuota Anda
+                di <a href="{{ route('dosen.cek-kuota') }}">halaman Cek Kuota</a>.
+                Pastikan data dan dokumen yang diunggah telah sesuai.
             </p>
         </div>
     </div>
@@ -162,30 +164,136 @@
                     </div>
                 </div>
 
-                {{-- Biaya --}}
+            </div>
+        </div>
+
+        {{-- SKEMA & RAB --}}
+        <div class="proposal-form-card">
+
+            <div class="proposal-form-card-header">
+                <div class="proposal-form-number">02</div>
+
+                <div>
+                    <h4>Skema &amp; RAB</h4>
+                    <p>Pilih skema hibah dan susun rincian biaya (RAB).</p>
+                </div>
+            </div>
+
+            <div class="proposal-form-card-body">
+
+                {{-- Skema --}}
                 <div class="proposal-field">
-                    <label for="biaya">
-                        Biaya Pengajuan (Rp)
+                    <label for="skema_id">
+                        Skema Hibah
                         <span class="required-mark">*</span>
                     </label>
 
                     <div class="proposal-input-icon">
-                        <i class="bi bi-currency-exchange"></i>
+                        <i class="bi bi-award"></i>
 
-                        <input
-                            type="text"
-                            name="biaya"
-                            id="biaya"
+                        <select
+                            name="skema_id"
+                            id="skema_id"
                             class="proposal-input"
                             required
-                            value="{{ old('biaya') }}"
-                            placeholder="Contoh: 4000000"
                         >
+                            <option value="" disabled
+                                {{ old('skema_id') ? '' : 'selected' }}>
+                                Pilih Skema...
+                            </option>
+
+                            @foreach ($list_skema as $s)
+                                <option value="{{ $s->id }}"
+                                    {{ old('skema_id') == $s->id ? 'selected' : '' }}>
+                                    {{ $s->kategori }} — Plafon Rp {{ number_format($s->plafon, 0, ',', '.') }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
 
-                    <small>
-                        Masukkan nominal biaya yang diajukan dalam rupiah.
-                    </small>
+                    <div id="skemaInfo" class="proposal-skema-info" style="display: none;">
+                        <div><strong>Plafon:</strong> <span id="skemaPlafon"></span></div>
+                        <div id="skemaDeskripsi"></div>
+                        <div id="skemaSyarat"></div>
+                    </div>
+                </div>
+
+                {{-- RAB --}}
+                <div class="proposal-field">
+                    <label>
+                        Rincian Biaya (RAB)
+                        <span class="required-mark">*</span>
+                    </label>
+
+                    <div class="proposal-team-info">
+                        <i class="bi bi-calculator"></i>
+                        <span>
+                            Tambahkan tiap komponen biaya. Total RAB dihitung
+                            otomatis dan tidak boleh melebihi plafon skema.
+                        </span>
+                    </div>
+
+                    <div id="rab-wrap">
+
+                        @php
+                            $oldRab = old('rab', [['nama_komponen' => '', 'jumlah' => '', 'keterangan' => '']]);
+                        @endphp
+
+                        @foreach ($oldRab as $index => $rab)
+                            <div class="proposal-rab-row">
+                                <input
+                                    type="text"
+                                    name="rab[{{ $index }}][nama_komponen]"
+                                    class="proposal-input rab-nama"
+                                    value="{{ $rab['nama_komponen'] ?? '' }}"
+                                    placeholder="Nama komponen"
+                                >
+                                <input
+                                    type="number"
+                                    name="rab[{{ $index }}][jumlah]"
+                                    class="proposal-input rab-jumlah"
+                                    value="{{ $rab['jumlah'] ?? '' }}"
+                                    placeholder="Jumlah (Rp)"
+                                    min="0"
+                                    step="1"
+                                >
+                                <input
+                                    type="text"
+                                    name="rab[{{ $index }}][keterangan]"
+                                    class="proposal-input rab-keterangan"
+                                    value="{{ $rab['keterangan'] ?? '' }}"
+                                    placeholder="Keterangan (opsional)"
+                                >
+                                <button
+                                    type="button"
+                                    class="proposal-remove-member"
+                                    onclick="hapusRab(this)"
+                                    title="Hapus komponen"
+                                    {{ count($oldRab) <= 1 ? 'disabled' : '' }}
+                                >
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        @endforeach
+
+                    </div>
+
+                    <button type="button"
+                            class="proposal-add-member"
+                            onclick="tambahRab()">
+                        <i class="bi bi-plus-circle"></i>
+                        Tambah Komponen
+                    </button>
+
+                    <div class="proposal-rab-total">
+                        <span>Total RAB:</span>
+                        <strong id="rabTotalDisplay">Rp 0</strong>
+                    </div>
+
+                    <div id="rabPlafonWarning" class="proposal-rab-warning" style="display: none;">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <span id="rabPlafonWarningText"></span>
+                    </div>
                 </div>
 
             </div>
@@ -195,7 +303,7 @@
         <div class="proposal-form-card">
 
             <div class="proposal-form-card-header">
-                <div class="proposal-form-number">02</div>
+                <div class="proposal-form-number">03</div>
 
                 <div>
                     <h4>Tim Pengusul</h4>
@@ -230,6 +338,7 @@
                                 type="text"
                                 name="anggota[]"
                                 class="proposal-input anggota-input"
+                                list="dosen-list"
                                 value="{{ $anggota }}"
                                 placeholder="Nama anggota {{ $index + 1 }}"
                             >
@@ -264,7 +373,7 @@
         <div class="proposal-form-card">
 
             <div class="proposal-form-card-header">
-                <div class="proposal-form-number">03</div>
+                <div class="proposal-form-number">04</div>
 
                 <div>
                     <h4>Dokumen Proposal</h4>
@@ -330,7 +439,12 @@
                 Batal
             </a>
 
-            <button type="submit" class="proposal-submit-button">
+            <button type="submit" name="aksi" value="draft" class="proposal-draft-button" id="draftButton">
+                <i class="bi bi-save"></i>
+                Simpan Draft
+            </button>
+
+            <button type="submit" name="aksi" value="submit" class="proposal-submit-button" id="submitButton">
                 <i class="bi bi-send"></i>
                 Ajukan Proposal
             </button>
@@ -338,6 +452,13 @@
         </div>
 
     </form>
+
+    {{-- Daftar dosen untuk pilihan anggota tim --}}
+    <datalist id="dosen-list">
+        @foreach ($all_dosen as $d)
+            <option value="{{ $d->name }}">
+        @endforeach
+    </datalist>
 
 </div>
 
@@ -359,6 +480,7 @@ function tambahAnggota() {
             type="text"
             name="anggota[]"
             class="proposal-input anggota-input"
+            list="dosen-list"
             placeholder="Nama anggota ${n}"
         >
 
@@ -412,6 +534,129 @@ document.getElementById('proposalFile').addEventListener('change', function() {
         display.classList.remove('selected');
     }
 });
+
+/* Skema & RAB */
+
+const SKEMA_INFO = {
+    @foreach ($list_skema as $s)
+        {{ $s->id }}: {
+            plafon: {{ $s->plafon }},
+            kategori: @json($s->kategori),
+            deskripsi: @json($s->deskripsi),
+            syarat: @json($s->syarat),
+        },
+    @endforeach
+};
+
+function formatRupiah(n) {
+    return 'Rp ' + new Intl.NumberFormat('id-ID').format(n);
+}
+
+function skemaTerpilih() {
+    var sel = document.getElementById('skema_id');
+    return sel.value ? SKEMA_INFO[sel.value] : null;
+}
+
+function updateSkemaInfo() {
+    var info = skemaTerpilih();
+    var box = document.getElementById('skemaInfo');
+
+    if (!info) {
+        box.style.display = 'none';
+        return;
+    }
+
+    document.getElementById('skemaPlafon').textContent = formatRupiah(info.plafon);
+    document.getElementById('skemaDeskripsi').textContent = info.deskripsi || '';
+    document.getElementById('skemaSyarat').textContent = info.syarat ? 'Syarat: ' + info.syarat : '';
+    box.style.display = 'block';
+
+    hitungTotalRab();
+}
+
+function hitungTotalRab() {
+    var total = 0;
+
+    document.querySelectorAll('.rab-jumlah').forEach(function(input) {
+        total += parseFloat(input.value) || 0;
+    });
+
+    document.getElementById('rabTotalDisplay').textContent = formatRupiah(total);
+
+    var info = skemaTerpilih();
+    var warning = document.getElementById('rabPlafonWarning');
+    var submitBtn = document.getElementById('submitButton');
+
+    if (info && info.plafon > 0 && total > info.plafon) {
+        document.getElementById('rabPlafonWarningText').textContent =
+            'Total RAB melebihi plafon skema ' + info.kategori + ' (' + formatRupiah(info.plafon) + '). Kurangi komponen biaya sebelum mengajukan.';
+        warning.style.display = 'flex';
+        submitBtn.disabled = true;
+    } else {
+        warning.style.display = 'none';
+        submitBtn.disabled = false;
+    }
+
+    return total;
+}
+
+let rabIndex = document.querySelectorAll('.proposal-rab-row').length;
+
+function tambahRab() {
+    var wrap = document.getElementById('rab-wrap');
+
+    var row = document.createElement('div');
+    row.className = 'proposal-rab-row';
+
+    row.innerHTML = `
+        <input type="text" name="rab[${rabIndex}][nama_komponen]" class="proposal-input rab-nama" placeholder="Nama komponen">
+        <input type="number" name="rab[${rabIndex}][jumlah]" class="proposal-input rab-jumlah" placeholder="Jumlah (Rp)" min="0" step="1">
+        <input type="text" name="rab[${rabIndex}][keterangan]" class="proposal-input rab-keterangan" placeholder="Keterangan (opsional)">
+        <button type="button" class="proposal-remove-member" onclick="hapusRab(this)" title="Hapus komponen">
+            <i class="bi bi-trash"></i>
+        </button>
+    `;
+
+    rabIndex++;
+    wrap.appendChild(row);
+
+    updateRabButtons();
+}
+
+function hapusRab(button) {
+    var wrap = document.getElementById('rab-wrap');
+
+    if (wrap.querySelectorAll('.proposal-rab-row').length > 1) {
+        button.closest('.proposal-rab-row').remove();
+    }
+
+    updateRabButtons();
+    hitungTotalRab();
+}
+
+function updateRabButtons() {
+    var wrap = document.getElementById('rab-wrap');
+    var rows = wrap.querySelectorAll('.proposal-rab-row');
+
+    rows.forEach(function(row) {
+        row.querySelector('.proposal-remove-member').disabled = rows.length <= 1;
+    });
+}
+
+document.getElementById('skema_id').addEventListener('change', updateSkemaInfo);
+document.getElementById('rab-wrap').addEventListener('input', hitungTotalRab);
+
+/* Draft: lewati validasi browser (judul tetap wajib di server). */
+document.getElementById('draftButton').addEventListener('click', function() {
+    document.getElementById('proposalForm').noValidate = true;
+});
+document.getElementById('submitButton').addEventListener('click', function() {
+    document.getElementById('proposalForm').noValidate = false;
+});
+
+/* Inisialisasi tampilan skema & total saat halaman dimuat (termasuk old input). */
+updateSkemaInfo();
+updateRabButtons();
 </script>
 
 @endsection
@@ -869,6 +1114,97 @@ document.getElementById('proposalFile').addEventListener('change', function() {
     margin-right: 5px;
 }
 
+/* Skema info & RAB */
+
+.proposal-skema-info {
+    margin-top: 12px;
+    padding: 14px 16px;
+    background: #f5faf6;
+    border: 1px solid #e3eee6;
+    border-radius: 12px;
+    font-size: 12px;
+    color: #688073;
+    line-height: 1.7;
+}
+
+.proposal-rab-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.proposal-rab-row .rab-nama {
+    flex: 2;
+    min-width: 0;
+}
+
+.proposal-rab-row .rab-jumlah {
+    flex: 1;
+    min-width: 0;
+}
+
+.proposal-rab-row .rab-keterangan {
+    flex: 2;
+    min-width: 0;
+}
+
+.proposal-rab-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 18px;
+    padding: 14px 16px;
+    background: #f0f5f2;
+    border-radius: 12px;
+    font-size: 13px;
+    color: #354c3d;
+}
+
+.proposal-rab-total strong {
+    font-size: 16px;
+    color: #20563c;
+}
+
+.proposal-rab-warning {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-top: 12px;
+    padding: 14px 16px;
+    background: #fff1f1;
+    border: 1px solid #f2d1d1;
+    border-radius: 12px;
+    color: #a33e3e;
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.proposal-draft-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 13px 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    background: #fff;
+    border: 1px solid #87b59a;
+    color: #28764d;
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.proposal-draft-button:hover {
+    background: #eaf5ee;
+}
+
+.proposal-submit-button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
 /* Footer */
 
 .proposal-form-footer {
@@ -994,8 +1330,17 @@ document.getElementById('proposalFile').addEventListener('change', function() {
     }
 
     .proposal-cancel-button,
-    .proposal-submit-button {
+    .proposal-submit-button,
+    .proposal-draft-button {
         width: 100%;
+    }
+
+    .proposal-rab-row {
+        flex-wrap: wrap;
+    }
+
+    .proposal-rab-row .proposal-input {
+        flex: 1 1 100%;
     }
 }
 

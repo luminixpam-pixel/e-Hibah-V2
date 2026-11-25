@@ -76,7 +76,8 @@ class RoleDashboardController extends Controller
     {
         $user = Auth::user();
 
-        $myProposals = Proposal::where('user_id', $user->id)->latest()->get();
+        $myProposals = Proposal::with(['skema', 'reviews'])
+            ->where('user_id', $user->id)->latest()->get();
 
         $stats = [
             'total'     => $myProposals->count(),
