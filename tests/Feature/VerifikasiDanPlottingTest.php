@@ -172,13 +172,16 @@ test('halaman plotting LPPM menampilkan proposal lolos administrasi', function (
     $lppm = f3User('lppm', ['name' => 'Lppm']);
     $skema = f3Skema();
     f3ProposalDikirim($pengaju, $skema, ['judul' => 'Proposal lolos', 'status' => 'Lolos Administrasi']);
-    f3ProposalDikirim($pengaju, $skema, ['judul' => 'Proposal masih dikirim', 'status' => 'Dikirim']);
+    $dikirim = f3ProposalDikirim($pengaju, $skema, ['judul' => 'Proposal masih dikirim', 'status' => 'Dikirim']);
 
     $response = $this->actingAs($lppm)->get(route('lppm.plotting'));
 
     $response->assertOk();
     $response->assertSee('Proposal lolos');
-    $response->assertDontSee('Proposal masih dikirim');
+    // Judul proposal yang masih Dikirim tetap muncul di script kalender
+    // layout (layout merender semua judul proposal), jadi yang dicek adalah
+    // tidak adanya form penugasan untuk proposal tersebut di daftar plotting.
+    $response->assertDontSee(route('proposal.assignReviewer', $dikirim->id));
 
     // Bukan LPPM tidak boleh membuka plotting.
     $this->actingAs($pengaju)->get(route('lppm.plotting'))->assertForbidden();
