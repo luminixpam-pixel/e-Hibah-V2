@@ -24,6 +24,11 @@ class Review extends Model
         'status',
         'catatan',
         'total_score',
+        'rekomendasi_biaya',
+    ];
+
+    protected $casts = [
+        'rekomendasi_biaya' => 'decimal:2',
     ];
 
     public function proposal()

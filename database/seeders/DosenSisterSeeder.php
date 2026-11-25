@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Models\Fakultas;
 use App\Models\User;
 use Illuminate\Support\Str;
 
@@ -355,6 +356,7 @@ class DosenSisterSeeder extends Seeder
                     'password'      => 'password123',  // Password default (di-hash otomatis oleh cast hashed di model User)
                     'role'          => 'pengaju',
                     'fakultas'      => $dosen['penempatan'],
+                    'fakultas_id'   => Fakultas::idForPenempatan($dosen['penempatan']),
                     'nidn'          => '00000000', // Default jika tidak ada
                     'program_studi' => 'Teknik Informatika',
                     'jabatan'       => 'Dosen',

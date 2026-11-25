@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Fakultas;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -74,6 +75,12 @@ class AkunRoleSeeder extends Seeder
         foreach ($akun as $data) {
             $password = $data['password'];
             unset($data['password']);
+
+            // Isi fakultas_id dari string fakultas (butuh FakultasSeeder
+            // jalan dulu — sudah dipanggil di DatabaseSeeder).
+            if (! empty($data['fakultas'])) {
+                $data['fakultas_id'] = Fakultas::idForPenempatan($data['fakultas']);
+            }
 
             User::updateOrCreate(
                 ['username' => $data['username']],

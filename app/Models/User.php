@@ -21,6 +21,9 @@ class User extends Authenticatable implements LdapAuthenticatable
         'nidn',
         'no_telepon',
         'fakultas',
+        'fakultas_id',
+        'bidang_keahlian',
+        'is_blacklisted',
         'program_studi',
         'jabatan',
         'role',
@@ -36,6 +39,7 @@ class User extends Authenticatable implements LdapAuthenticatable
     protected $casts = [
     'email_verified_at' => 'datetime',
     'password' => 'hashed',
+    'is_blacklisted' => 'boolean',
 ];
     /*
     |--------------------------------------------------------------------------
@@ -99,6 +103,23 @@ class User extends Authenticatable implements LdapAuthenticatable
         // Asumsi: satu user bisa punya banyak pengajuan hibah
         // Dan di tabel proposals ada kolom 'user_id'
         return $this->hasMany(Proposal::class, 'user_id');
+    }
+
+    /**
+     * Fakultas user (relasi baru, Fase 1). Dipakai filter dasbor dekan.
+     * Kolom string `fakultas` lama tetap dipertahankan.
+     */
+    public function fakultas()
+    {
+        return $this->belongsTo(Fakultas::class, 'fakultas_id');
+    }
+
+    /**
+     * Keanggotaan user di tim proposal orang lain.
+     */
+    public function proposalMembers()
+    {
+        return $this->hasMany(ProposalMember::class, 'user_id');
     }
 
     // ... (Relasi tetap sama seperti kode Anda sebelumnya)

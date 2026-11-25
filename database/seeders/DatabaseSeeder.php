@@ -16,6 +16,17 @@ class DatabaseSeeder extends Seeder
    // database/seeders/DatabaseSeeder.php
 public function run(): void
 {
+    // Master data dulu — dipakai seeder lain (fakultas_id di
+    // AkunRoleSeeder & DosenSisterSeeder).
+    $this->call(FakultasSeeder::class);
+    $this->call(HibahPeriodSeeder::class);
+
+    // Data dosen SISTER (sudah diperbaiki di Fase 0). Dijalankan sebelum
+    // AkunRoleSeeder supaya kata sandi akun tes (admin123/password123)
+    // yang berlaku — DosenSisterSeeder memakai email admin@gmail.com
+    // yang sama untuk username admin.
+    $this->call(DosenSisterSeeder::class);
+
     // Akun Admin Lokal (PENTING)
     \App\Models\User::updateOrCreate(
         ['username' => 'admin'],
@@ -30,6 +41,9 @@ public function run(): void
 
     // Akun tes 1 per role (admin, pengaju, reviewer, verifikator, lppm, dekan, kepala_lppm)
     $this->call(AkunRoleSeeder::class);
+
+    // Skema hibah (plafon & kuota masih 0 — lihat TODO di SkemaSeeder).
+    $this->call(SkemaSeeder::class);
 
     // Jalankan Sinkronisasi LDAP
     //$this->call(LdapDosenSeeder::class);

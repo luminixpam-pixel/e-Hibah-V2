@@ -30,7 +30,11 @@ class Proposal extends Model
         'laporan_akhir',
         'file_laporan_akhir',
         'keterangan_akhir',
-        'status_laporan'
+        'status_laporan',
+        'no_pengajuan',
+        'skema_id',
+        'periode_id',
+        'dana_disetujui',
     ];
 
     /**
@@ -40,6 +44,7 @@ class Proposal extends Model
         'review_deadline' => 'datetime',
         'anggota' => 'array', // Mengonversi JSON di database menjadi Array PHP secara otomatis
         'biaya' => 'integer', // Memastikan biaya diproses sebagai angka
+        'dana_disetujui' => 'decimal:2',
     ];
 
     /**
@@ -73,6 +78,38 @@ class Proposal extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class, 'proposal_id');
+    }
+
+    /**
+     * Relasi ke Skema hibah yang dipilih saat pengajuan.
+     */
+    public function skema()
+    {
+        return $this->belongsTo(Skema::class, 'skema_id');
+    }
+
+    /**
+     * Relasi ke Periode hibah pengajuan ini.
+     */
+    public function periode()
+    {
+        return $this->belongsTo(HibahPeriod::class, 'periode_id');
+    }
+
+    /**
+     * Relasi ke Item RAB (One to Many).
+     */
+    public function rabItems()
+    {
+        return $this->hasMany(RabItem::class, 'proposal_id');
+    }
+
+    /**
+     * Relasi ke Anggota Tim (One to Many).
+     */
+    public function members()
+    {
+        return $this->hasMany(ProposalMember::class, 'proposal_id');
     }
 
     /**
