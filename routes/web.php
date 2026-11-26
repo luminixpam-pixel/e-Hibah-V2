@@ -119,7 +119,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/proposal/download/{id}', 'download')->name('proposal.download');
         Route::delete('/proposal/{id}', 'destroy')->name('proposal.destroy');
         Route::get('/proposal/{id}/tinjau', 'tinjau')->name('proposal.tinjau');
-        Route::patch('/proposal/{id}/keputusan', 'keputusan')->name('proposal.keputusan');
+        Route::patch('/proposal/{id}/keputusan', 'keputusan')->middleware('role:admin')->name('proposal.keputusan');
 
         // Monitoring Statuses
         Route::get('/proposal-disetujui', 'proposalDisetujui')->name('monitoring.proposalDisetujui');
