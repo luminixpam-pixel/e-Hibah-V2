@@ -49,7 +49,9 @@ test('pengaju tidak boleh memutuskan proposal (403) dan status tidak berubah', f
 
     $response->assertForbidden();
     expect($proposal->fresh()->status)->toBe('Dikirim');
-    expect($proposal->fresh()->status_pendanaan)->toBeNull();
+    // status_pendanaan tidak berubah (tetap default kolom 'Proses',
+    // bukan null — kolom ini NOT NULL).
+    expect($proposal->fresh()->status_pendanaan)->toBe('Proses');
 });
 
 test('kepala lppm tidak boleh memutuskan proposal lewat route ini (403)', function () {
