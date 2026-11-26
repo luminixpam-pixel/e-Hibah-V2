@@ -53,11 +53,15 @@ class LaporanKemajuanController extends Controller
 
         $proposals = $query->latest()->paginate(10);
 
-        // 4. Data untuk Dropdown Pilih Proposal (Khusus Pengaju)
-        $myProposals = null;
-        if ($user->role === 'pengaju') {
+        // 4. Data untuk Dropdown Pilih Proposal (Khusus Pengaju).
+        // Hanya proposal yang sudah Disetujui (pasca-hibah) yang boleh
+        // diunggah laporan kemajuannya — query lama memakai where('status')
+        // tanpa nilai (tidak valid) dan view memakai $proposals, sehingga
+        // dropdown menampilkan Draft dan Lolos Administrasi juga.
+        $myProposals = collect();
+        if (in_array($user->role, ['pengaju', 'reviewer'], true)) {
             $myProposals = Proposal::where('user_id', $user->id)
-                ->where('status') // Pastikan hanya yang disetujui
+                ->where('status', 'Disetujui')
                 ->latest()
                 ->get(['id', 'judul']);
         }
@@ -87,6 +91,12 @@ class LaporanKemajuanController extends Controller
 
             if (! $proposal) {
                 return redirect()->back()->with('error', 'Proposal tidak valid / bukan milik Anda.');
+            }
+
+            // Laporan kemajuan hanya untuk proposal yang sudah disetujui
+            // pendanaannya (sama seperti dropdown di halaman ini).
+            if ($proposal->status !== 'Disetujui') {
+                return redirect()->back()->with('error', 'Laporan kemajuan hanya dapat diunggah untuk proposal yang sudah disetujui pendanaannya.');
             }
 
             // Hapus file lama jika ada

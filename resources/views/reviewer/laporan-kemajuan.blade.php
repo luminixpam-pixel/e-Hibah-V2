@@ -166,13 +166,18 @@
                     <select name="proposal_id" class="form-select @error('proposal_id') is-invalid @enderror" required style="border-radius: 10px; padding: 10px;">
                         <option value="">-- Pilih Proposal --</option>
 
-                        {{-- Gunakan $proposals atau $myProposals sesuai variabel dari Controller --}}
-                        @foreach ($proposals as $proposal)
+                        {{-- Hanya proposal yang sudah Disetujui (dari $myProposals);
+                             sebelumnya memakai $proposals sehingga Draft dan Lolos
+                             Administrasi ikut tercantum. --}}
+                        @foreach (($myProposals ?? collect()) as $proposal)
                             <option value="{{ $proposal->id }}" {{ old('proposal_id') == $proposal->id ? 'selected' : '' }}>
                                 {{ $proposal->judul }}
                             </option>
                         @endforeach
                     </select>
+                    @if (($myProposals ?? collect())->isEmpty())
+                        <small class="text-muted">Belum ada proposal yang disetujui pendanaannya.</small>
+                    @endif
 
                     @error('proposal_id')
                         <div class="invalid-feedback">{{ $message }}</div>

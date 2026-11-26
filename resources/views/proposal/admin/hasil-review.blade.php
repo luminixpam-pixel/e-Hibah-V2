@@ -23,6 +23,23 @@
         </div>
     @endif
 
+    {{-- Judul + empty-state untuk tampilan web (bukan PDF): sebelumnya halaman
+         ini hanya berisi @foreach, jadi saat belum ada review tampil kotak
+         putih kosong tanpa judul maupun pesan. --}}
+    @if(!isset($is_pdf) || !$is_pdf)
+        <h4 class="fw-bold mt-4 mb-1">Hasil Review Proposal</h4>
+        <p class="text-muted mb-4">Hasil penilaian reviewer atas proposal yang sudah direview.</p>
+
+        @if($reviews->isEmpty())
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <h6 class="fw-bold">Belum ada data hasil review</h6>
+                    <p class="text-muted small mb-0">Hasil review akan tampil di sini setelah reviewer mengisi penilaian.</p>
+                </div>
+            </div>
+        @endif
+    @endif
+
     @foreach ($reviews as $r)
         <div style="margin-bottom: 10px; font-size: 12px;">
             <strong>Judul Proposal:</strong> {{ $r->proposal->judul }} <br>

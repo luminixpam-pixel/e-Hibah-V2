@@ -27,13 +27,17 @@
                     @forelse ($kuotaPerSkema as $row)
                         <tr>
                             <td class="fw-bold">{{ $row['skema']->kategori }}</td>
-                            <td class="text-center">Rp {{ number_format($row['skema']->plafon, 0, ',', '.') }}</td>
+                            {{-- Plafon/kuota 0 berarti belum ditetapkan LPPM (bukan 0 rupiah
+                                 atau kuota habis) — jangan tampilkan "Rp 0" / "Penuh". --}}
+                            <td class="text-center">{{ $row['skema']->plafon > 0 ? 'Rp '.number_format($row['skema']->plafon, 0, ',', '.') : 'Belum ditetapkan' }}</td>
                             <td class="text-center">{{ $row['sebagaiKetua'] }}</td>
                             <td class="text-center">{{ $row['sebagaiAnggota'] }}</td>
                             <td class="text-center fw-bold">{{ $row['total'] }}</td>
-                            <td class="text-center">{{ $row['kuota'] }}</td>
+                            <td class="text-center">{{ $row['kuota'] > 0 ? $row['kuota'] : 'Belum ditetapkan' }}</td>
                             <td class="text-center">
-                                @if ($row['sisa'] > 0)
+                                @if ($row['kuota'] <= 0)
+                                    <span class="badge bg-secondary">Belum ditetapkan</span>
+                                @elseif ($row['sisa'] > 0)
                                     <span class="badge bg-success">{{ $row['sisa'] }} lagi</span>
                                 @else
                                     <span class="badge bg-danger">Penuh</span>

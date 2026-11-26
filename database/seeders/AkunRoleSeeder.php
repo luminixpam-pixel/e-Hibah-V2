@@ -9,7 +9,10 @@ use Illuminate\Database\Seeder;
 class AkunRoleSeeder extends Seeder
 {
     /**
-     * Membuat 1 akun tes untuk setiap role (7 role).
+     * Membuat 1 akun tes untuk setiap role (7 role) + 1 reviewer kedua.
+     * Reviewer kedua dibutuhkan karena penugasan plotting wajib 2 reviewer
+     * berbeda (assignReviewer menolak reviewer 1 = reviewer 2), sementara
+     * sebelumnya hanya ada 1 akun reviewer di sistem.
      * Aman dijalankan berulang kali (updateOrCreate berdasarkan username).
      * Password default semua akun (kecuali admin): password123
      */
@@ -38,6 +41,13 @@ class AkunRoleSeeder extends Seeder
                 'username' => 'reviewer',
                 'name' => 'Reviewer Proposal',
                 'email' => 'reviewer@yarsi.ac.id',
+                'password' => 'password123',
+                'role' => 'reviewer',
+            ],
+            [
+                'username' => 'reviewer2',
+                'name' => 'Reviewer Proposal 2',
+                'email' => 'reviewer2@yarsi.ac.id',
                 'password' => 'password123',
                 'role' => 'reviewer',
             ],

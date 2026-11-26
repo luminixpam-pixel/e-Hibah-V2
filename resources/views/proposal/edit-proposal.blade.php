@@ -188,7 +188,7 @@
                             <a href="{{ route('monitoring.proposalDikirim') }}" class="btn btn-light px-4 py-2 fw-bold text-secondary" style="border-radius: 12px;">
                                 Batal
                             </a>
-                            @if($proposal->status === 'Draft')
+                            @if(in_array($proposal->status, ['Draft', 'Revisi Administrasi'], true))
                                 <button type="submit" name="aksi" value="draft" class="btn btn-outline-success px-4 py-2 fw-bold shadow-sm" style="border-radius: 12px;" id="draftButton">
                                     <i class="bi bi-save me-2"></i>Simpan Draft
                                 </button>
@@ -196,8 +196,11 @@
                                     <i class="bi bi-send-check-fill me-2"></i>Kirim Pengajuan
                                 </button>
                             @else
-                                <button type="submit" name="aksi" value="submit" class="btn btn-success px-5 py-2 fw-bold shadow-sm" style="border-radius: 12px; background-color: #2e7d32;">
-                                    <i class="bi bi-send-check-fill me-2"></i>Simpan & Kirim
+                                {{-- Status lain tidak bisa dikirim (mis. Dikirim / Lolos
+                                     Administrasi): tombol ini hanya menyimpan perubahan,
+                                     jangan dilabeli "Kirim" agar tidak menyesatkan. --}}
+                                <button type="submit" name="aksi" value="draft" class="btn btn-success px-5 py-2 fw-bold shadow-sm" style="border-radius: 12px; background-color: #2e7d32;">
+                                    <i class="bi bi-save me-2"></i>Simpan Perubahan
                                 </button>
                             @endif
                         </div>

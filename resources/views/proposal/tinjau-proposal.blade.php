@@ -9,7 +9,7 @@
         <div class="card-body">
             <p><strong>Judul:</strong> {{ $proposal->judul }}</p>
             <p><strong>Nama Ketua:</strong> {{ $proposal->nama_ketua }}</p>
-            <p><strong>Biaya:</strong> {{ $proposal->biaya ?? '-' }}</p>
+            <p><strong>Biaya:</strong> {{ $proposal->biaya !== null ? 'Rp '.number_format($proposal->biaya, 0, ',', '.') : '-' }}</p>
             <p><strong>Status:</strong> {{ $proposal->status ?? '-' }}</p>
 
             <p><strong>Anggota:</strong>
@@ -49,19 +49,34 @@
     <div class="card mb-3">
         <div class="card-body">
             <h5 class="mb-3">Verifikasi Administrasi</h5>
+            {{-- Pesan hasil verifikasi + pesan validasi: sebelumnya tidak dirender
+                 di halaman ini, sehingga pengembalian tanpa alasan ditolak
+                 diam-diam (select ter-reset tanpa penjelasan). --}}
+            @if (session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+            @if (session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
             <form action="{{ route('verifikasi.store', $proposal->id) }}" method="POST">
                 @csrf
                 <div class="mb-2">
                     <label class="form-label">Hasil pemeriksaan</label>
-                    <select name="hasil" class="form-select" required>
+                    <select name="hasil" class="form-select @error('hasil') is-invalid @enderror" required>
                         <option value="">— Pilih hasil —</option>
-                        <option value="Lolos">Lolos Administrasi</option>
-                        <option value="Revisi">Kembalikan untuk Revisi Administrasi</option>
+                        <option value="Lolos" {{ old('hasil') === 'Lolos' ? 'selected' : '' }}>Lolos Administrasi</option>
+                        <option value="Revisi" {{ old('hasil') === 'Revisi' ? 'selected' : '' }}>Kembalikan untuk Revisi Administrasi</option>
                     </select>
+                    @error('hasil')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="mb-2">
                     <label class="form-label">Catatan / alasan pengembalian <span class="text-muted">(wajib bila dikembalikan)</span></label>
-                    <textarea name="catatan" class="form-control" rows="3" placeholder="Tuliskan kekurangan berkas atau alasan pengembalian..."></textarea>
+                    <textarea name="catatan" class="form-control @error('catatan') is-invalid @enderror" rows="3" placeholder="Tuliskan kekurangan berkas atau alasan pengembalian...">{{ old('catatan') }}</textarea>
+                    @error('catatan')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
                 </div>
                 <button type="submit" class="btn btn-success btn-sm">Simpan Hasil Verifikasi</button>
             </form>

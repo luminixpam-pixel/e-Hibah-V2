@@ -308,3 +308,41 @@ test('dasbor LPPM menampilkan progres review 1 dari 2', function () {
     $response->assertSee('1 dari 2');
     $response->assertSee('50%');
 });
+
+test('penugasan reviewer yang sama ditolak dan pesannya tampil di halaman plotting', function () {
+    $pengaju = f3User('pengaju', ['name' => 'Dr. Andi']);
+    $lppm = f3User('lppm', ['name' => 'Lppm']);
+    $reviewer = f3User('reviewer', ['name' => 'Sinta']);
+    $skema = f3Skema();
+    $proposal = f3ProposalDikirim($pengaju, $skema, ['judul' => 'Proposal plotting', 'status' => 'Lolos Administrasi']);
+
+    // Sebelumnya penolakan ini tidak terlihat di halaman plotting (tidak ada
+    // pesan error), sehingga penugasan tampak gagal diam-diam.
+    $response = $this->actingAs($lppm)
+        ->from(route('lppm.plotting'))
+        ->followingRedirects()
+        ->post(route('proposal.assignReviewer', $proposal->id), [
+            'reviewer_1' => $reviewer->id,
+            'reviewer_2' => $reviewer->id,
+            'review_deadline' => now()->addWeek()->format('Y-m-d\\TH:i'),
+        ]);
+
+    $response->assertOk();
+    $response->assertSee('Reviewer 1 dan 2 tidak boleh orang yang sama.');
+    expect($proposal->fresh()->status)->toBe('Lolos Administrasi');
+    $this->assertDatabaseCount('proposal_reviewers', 0);
+});
+
+test('halaman plotting memperingatkan bila kandidat reviewer kurang dari 2', function () {
+    $pengaju = f3User('pengaju', ['name' => 'Dr. Andi']);
+    $lppm = f3User('lppm', ['name' => 'Lppm']);
+    f3User('reviewer', ['name' => 'Sinta']);
+    $skema = f3Skema();
+    f3ProposalDikirim($pengaju, $skema, ['judul' => 'Proposal plotting', 'status' => 'Lolos Administrasi']);
+
+    $response = $this->actingAs($lppm)->get(route('lppm.plotting'));
+
+    $response->assertOk();
+    $response->assertSee('Kandidat reviewer hanya 1 orang');
+    $response->assertSee('penugasan butuh 2 reviewer berbeda');
+});

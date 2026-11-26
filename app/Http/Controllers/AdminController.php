@@ -56,15 +56,29 @@ class AdminController extends Controller
 
     }
 
-    public function indexUsers()
+    public function indexUsers(Request $request)
     {
         if (auth()->user()->role !== 'admin') {
             abort(403);
         }
 
-        $users = User::all();
+        // Pagination + pencarian sederhana: sebelumnya User::all() memuat
+        // ratusan baris sekaligus tanpa pencarian.
+        $search = trim((string) $request->input('search', ''));
 
-        return view('admin.users.index', compact('users'));
+        $users = User::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('username', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('name')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.users.index', compact('users', 'search'));
     }
 
     /**

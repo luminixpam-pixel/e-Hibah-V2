@@ -11,6 +11,31 @@
     <h4 class="mb-1">Plotting Reviewer</h4>
     <p class="text-muted mb-4">Proposal yang telah lolos administrasi dan siap ditugaskan reviewer.</p>
 
+    {{-- Pesan hasil penugasan (sukses/gagal) — sebelumnya tidak ada di halaman
+         ini, sehingga penugasan yang ditolak server terlihat gagal diam-diam. --}}
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+        </div>
+    @endif
+    @if ($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $e)
+                    <li>{{ $e }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+        </div>
+    @endif
+
     @forelse ($proposals ?? [] as $p)
         <div class="card mb-3">
             <div class="card-body">
@@ -30,6 +55,17 @@
                         <i class="bi bi-person-check me-1"></i>
                         Reviewer saat ini: {{ $p->reviewers->pluck('name')->implode(', ') }}
                     </p>
+                @endif
+
+                {{-- Penugasan butuh 2 reviewer berbeda; bila kandidat kurang dari 2,
+                     penugasan pasti ditolak server — beri tahu LPPM sebabnya. --}}
+                @if (count($kandidat[$p->id] ?? []) < 2)
+                    <div class="alert alert-warning small mb-3" role="alert">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        Kandidat reviewer hanya {{ count($kandidat[$p->id] ?? []) }} orang — penugasan butuh
+                        2 reviewer berbeda. Tambahkan akun reviewer lewat menu Manajemen Reviewer (admin)
+                        sebelum menugaskan proposal ini.
+                    </div>
                 @endif
 
                 <form action="{{ route('proposal.assignReviewer', $p->id) }}" method="POST">

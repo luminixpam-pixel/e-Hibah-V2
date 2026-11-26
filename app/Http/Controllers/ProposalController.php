@@ -544,9 +544,12 @@ class ProposalController extends Controller
             abort(403, 'Anda tidak memiliki izin untuk mengubah proposal ini.');
         }
 
-        // 2. Ambil semua data user (untuk list anggota di datalist)
-        // Sesuaikan role jika hanya ingin menampilkan dosen/pengaju saja
-        $users = \App\Models\User::all();
+        // 2. Ambil data dosen/pengaju (untuk list anggota di datalist) —
+        // selaras dengan form buat proposal (hanya pengaju + reviewer
+        // yang bisa menjadi anggota tim).
+        $users = \App\Models\User::whereIn('role', ['pengaju', 'reviewer'])
+            ->orderBy('name')
+            ->get();
         $list_skema = Skema::orderBy('kategori')->get();
         // Pilihan nama komponen RAB: bawaan + kustom dari settings
         // (key 'rab_komponen_kustom'); dipakai datalist di form.
@@ -698,6 +701,67 @@ class ProposalController extends Controller
         }
 
         return redirect()->route('monitoring.proposalDikirim')->with('success', 'Proposal diperbarui!');
+    }
+
+    /**
+     * Kirim proposal Draft / Revisi Administrasi langsung dari daftar
+     * (tombol "Kirim" di /proposal). Sebelumnya pengajuan hanya bisa
+     * lewat form edit, dan tombol "Simpan & Kirim" di form edit tampil
+     * juga untuk status yang tidak bisa dikirim — sehingga tombol Kirim
+     * terlihat tidak konsisten. Semua pemeriksaan pengiriman di sini
+     * sama dengan jalur update() (skema, berkas, RAB, plafon, kuota,
+     * blacklist/tanggungan), hanya tanpa mengharuskan isi ulang form.
+     */
+    public function submit($id)
+    {
+        $proposal = \App\Models\Proposal::with('members')->findOrFail($id);
+        $user = auth()->user();
+
+        // Hanya pemilik proposal yang boleh mengirimkannya.
+        if ((int) $proposal->user_id !== (int) $user->id) {
+            abort(403, 'Anda tidak memiliki izin untuk mengirim proposal ini.');
+        }
+
+        // Hanya Draft dan Revisi Administrasi yang bisa dikirim.
+        if (! in_array($proposal->status, ['Draft', 'Revisi Administrasi'], true)) {
+            return back()->with('error', 'Proposal ini sudah tidak bisa dikirim (status: '.$proposal->status.').');
+        }
+
+        if (! $proposal->skema) {
+            return back()->with('error', 'Pilih skema hibah terlebih dahulu sebelum mengirim pengajuan.');
+        }
+
+        if (! $proposal->file_path) {
+            return back()->with('error', 'Unggah file proposal terlebih dahulu sebelum mengirim pengajuan.');
+        }
+
+        $memberUserIds = $proposal->members()->whereNotNull('user_id')->pluck('user_id')->all();
+
+        if ($error = $this->checkPengajuan($user, $proposal->skema, $memberUserIds, (int) $proposal->id)) {
+            return back()->with('error', $error);
+        }
+
+        if ((float) $proposal->biaya <= 0 && ! $proposal->rabItems()->exists()) {
+            return back()->with('error', 'Isi minimal satu komponen RAB sebelum mengirim pengajuan.');
+        }
+
+        if ($proposal->skema->plafon > 0 && (float) $proposal->biaya > (float) $proposal->skema->plafon) {
+            return back()->with('error', 'Total RAB Rp '.number_format((float) $proposal->biaya, 0, ',', '.').' melebihi plafon skema '.$proposal->skema->kategori.' (Rp '.number_format((float) $proposal->skema->plafon, 0, ',', '.').').');
+        }
+
+        DB::transaction(function () use ($proposal, $user) {
+            $proposal->update([
+                'status' => 'Dikirim',
+                'no_pengajuan' => $this->generateNoPengajuan($proposal),
+            ]);
+
+            $this->sendMemberInvitations($proposal);
+            NotificationController::notifyProposalSubmitted($user->id);
+            $this->logActivity("Mengirim proposal ID {$proposal->id} (status: Dikirim)");
+        });
+
+        return redirect()->route('monitoring.proposalDikirim')
+            ->with('success', 'Proposal berhasil diajukan! Nomor pengajuan: '.$proposal->fresh()->no_pengajuan);
     }
 
     /**

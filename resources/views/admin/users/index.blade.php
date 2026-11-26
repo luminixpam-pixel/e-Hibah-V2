@@ -25,6 +25,16 @@
         </div>
     @endif
 
+    {{-- Pencarian sederhana (nama / username / email) + pagination 20/halaman:
+         sebelumnya semua pengguna dimuat sekaligus tanpa pencarian. --}}
+    <form action="{{ route('admin.users.index') }}" method="GET" class="d-flex gap-2 mb-3">
+        <input type="search" name="search" class="form-control" placeholder="Cari nama / username / email..." value="{{ $search ?? '' }}">
+        <button type="submit" class="btn btn-primary">Cari</button>
+        @if (! empty($search))
+            <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">Reset</a>
+        @endif
+    </form>
+
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
@@ -42,7 +52,7 @@
                     <tbody>
                         @forelse ($users as $index => $u)
                             <tr>
-                                <td>{{ $index + 1 }}</td>
+                                <td>{{ ($users->firstItem() ?? 0) + $index }}</td>
                                 <td><strong>{{ $u->name }}</strong></td>
                                 <td>{{ $u->username }}</td>
                                 <td>{{ $u->email }}</td>
@@ -58,6 +68,9 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+            <div class="d-flex justify-content-center mt-3">
+                {{ $users->links() }}
             </div>
         </div>
     </div>

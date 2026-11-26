@@ -305,7 +305,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::get('/admin/reviewer', 'index')->name('admin.reviewer.index');
         Route::get('/admin/reviewer/search', 'searchReviewer')->name('admin.reviewer.search');
         Route::post('/admin/reviewer/{user}', 'setReviewer')->name('admin.reviewer.set');
-        Route::post('/admin/reviewer/{user}/remove', 'removeReviewer')->name('reviewer.remove');
+        Route::post('/admin/reviewer/{user}/remove', 'removeReviewer')->name('admin.reviewer.remove');
     });
 
     // Dokumen Management (upload, toggle, hapus)
@@ -335,6 +335,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 Route::middleware(['auth', 'role:pengaju,reviewer'])->group(function () {
     Route::get('/proposal/create', [ProposalController::class, 'create'])->name('proposal.create');
     Route::post('/proposal/store', [ProposalController::class, 'store'])->name('proposal.store');
+    // Kirim Draft / Revisi Administrasi langsung dari daftar proposal.
+    Route::post('/proposal/{id}/kirim', [ProposalController::class, 'submit'])->name('proposal.kirim');
 });
 
 /* --- ROLE: REVIEWER --- */

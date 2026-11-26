@@ -1028,6 +1028,11 @@ body.sidebar-collapsed .sidebar-toggle {
 </head>
 <body>
 
+{{-- Wadah notifikasi flash (success/error) — dipakai script showAlert di bawah.
+     Tanpa div ini, session('success')/session('error') tidak pernah tampil
+     karena showAlert memanggil appendChild pada null. --}}
+<div id="alertPlaceholder" class="position-fixed top-0 end-0 p-3" style="z-index:9999;"></div>
+
 @php
     $routeName = \Illuminate\Support\Facades\Route::currentRouteName();
     $isMonitoringMenuActive = in_array($routeName, [

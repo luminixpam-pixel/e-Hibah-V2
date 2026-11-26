@@ -34,15 +34,21 @@ class LaporanAkhirController extends Controller
 
         if ($user->role === 'admin') {
             $proposals = $query->with(['user', 'reviewers'])->latest()->get();
-            $myProposals = [];
+            // Dropdown admin: semua proposal yang sudah Disetujui (sebelumnya
+            // kosong, sehingga form unggah tidak bisa dipakai admin).
+            $myProposals = Proposal::where('status', 'Disetujui')->latest()->get(['id', 'judul']);
         } else {
             $proposals = $query->where('user_id', $user->id)
                 ->with(['reviewers'])
                 ->latest()
                 ->get();
 
-            // Mengambil proposal milik user untuk dropdown select
-            $myProposals = Proposal::where('user_id', $user->id)->get();
+            // Mengambil proposal milik user untuk dropdown select — hanya
+            // yang sudah Disetujui, selaras dengan laporan kemajuan.
+            $myProposals = Proposal::where('user_id', $user->id)
+                ->where('status', 'Disetujui')
+                ->latest()
+                ->get(['id', 'judul']);
         }
 
         return view('reviewer.laporan-akhir', compact('proposals', 'myProposals'));

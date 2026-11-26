@@ -106,6 +106,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
             <thead class="table-light text-center">
                 <tr>
                     <th width="5%">No</th>
+                    <th>No. Pengajuan</th>
                     <th>Judul Proposal</th>
                     <th>Pengusul</th>
                     <th>Status Alur</th>
@@ -116,11 +117,15 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                 @forelse ($proposals as $index => $proposal)
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
+                        <td class="text-center">
+                            @if ($proposal->no_pengajuan)
+                                <span class="fw-semibold">{{ $proposal->no_pengajuan }}</span>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
                         <td>
                             <div class="fw-bold text-dark">{{ $proposal->judul }}</div>
-                            @if ($proposal->no_pengajuan)
-                                <small class="text-muted">{{ $proposal->no_pengajuan }}</small>
-                            @endif
                             @if ($proposal->skema)
                                 <small class="text-muted d-block">{{ $proposal->skema->kategori }}</small>
                             @endif
@@ -191,6 +196,21 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                         </button>
                                     @endif
 
+                                    {{-- KIRIM PENGAJUAN langsung dari daftar (hanya untuk
+                                         Draft / Revisi Administrasi milik sendiri dan
+                                         masih dalam masa hibah — jalurnya sama dengan
+                                         Edit -> Kirim Pengajuan). --}}
+                                    @if($isMasaHibah && in_array($proposal->status, ['Draft', 'Revisi Administrasi'], true))
+                                        <form action="{{ route('proposal.kirim', $proposal->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Kirim proposal ini untuk diverifikasi?')">
+                                            @csrf
+                                            <button type="submit" class="btn btn-md border-0 shadow-sm d-flex align-items-center justify-content-center"
+                                                    title="Kirim Pengajuan"
+                                                    style="background-color: #e8f5e9; color: #2e7d32; width: 38px; height: 38px; border-radius: 10px;">
+                                                <i class="bi bi-send-fill fs-5"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+
                                     {{-- FITUR HAPUS --}}
                                     @php
                                         $allowedDelete = ['Draft', 'Dikirim', 'Ditolak', 'Direvisi', 'Sedang Direview', 'Hasil Revisi'];
@@ -212,7 +232,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="text-center py-4 text-muted">Tidak ada data proposal untuk tahun ini.</td>
+                        <td colspan="6" class="text-center py-4 text-muted">Tidak ada data proposal untuk tahun ini.</td>
                     </tr>
                 @endforelse
             </tbody>
