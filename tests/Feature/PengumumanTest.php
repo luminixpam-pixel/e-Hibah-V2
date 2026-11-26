@@ -65,7 +65,7 @@ test('admin bisa mengubah dan menghapus pengumuman beserta filenya', function ()
     ]);
 
     $response->assertRedirect(route('admin.pengumuman.index'));
-    expect($pengumuman->fresh()->judul)->toBe('Judul diperbarui.');
+    expect($pengumuman->fresh()->judul)->toBe('Judul diperbarui');
     Storage::disk('public')->assertMissing('pengumuman/lama.pdf');
     $fileBaru = $pengumuman->fresh()->file;
     Storage::disk('public')->assertExists($fileBaru);
