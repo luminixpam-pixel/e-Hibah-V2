@@ -26,26 +26,26 @@ return [
     |
     */
 
-   'connections' => [
-    'default' => [
-        'hosts' => [env('LDAP_HOST', 'pdc.yarsi.ac.id')],
-        'port' => env('LDAP_PORT', 389),
-        'base_dn' => env('LDAP_BASE_DN', 'dc=yarsi,dc=ac,dc=id'),
+    'connections' => [
+        'default' => [
+            'hosts' => [env('LDAP_HOST', 'pdc.yarsi.ac.id')],
+            'port' => env('LDAP_PORT', 389),
+            'base_dn' => env('LDAP_BASE_DN', 'dc=yarsi,dc=ac,dc=id'),
 
-        'username' => env('LDAP_USERNAME'),
-        'password' => env('LDAP_PASSWORD'),
+            'username' => env('LDAP_USERNAME'),
+            'password' => env('LDAP_PASSWORD'),
 
-        'use_ssl' => env('LDAP_SSL', false),
-        'use_tls' => env('LDAP_TLS', false),
-        'timeout' => 5,
+            'use_ssl' => env('LDAP_SSL', false),
+            'use_tls' => env('LDAP_TLS', false),
+            'timeout' => 5,
 
-        // PINDAHKAN OPTIONS KE SINI
-        'options' => [
-            LDAP_OPT_PROTOCOL_VERSION => 3,
-            LDAP_OPT_REFERRALS => 0,
+            // PINDAHKAN OPTIONS KE SINI
+            'options' => [
+                LDAP_OPT_PROTOCOL_VERSION => 3,
+                LDAP_OPT_REFERRALS => 0,
+            ],
         ],
     ],
-],
 
     /*
     |--------------------------------------------------------------------------
@@ -79,7 +79,5 @@ return [
         'enabled' => env('LDAP_CACHE', false),
         'driver' => env('CACHE_DRIVER', 'file'),
     ],
-
-
 
 ];

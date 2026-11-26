@@ -10,11 +10,11 @@ return new class extends Migration
     {
         Schema::table('proposals', function (Blueprint $table) {
 
-            if (!Schema::hasColumn('proposals', 'biaya')) {
+            if (! Schema::hasColumn('proposals', 'biaya')) {
                 $table->decimal('biaya', 15, 2)->default(0);
             }
 
-            if (!Schema::hasColumn('proposals', 'status_pendanaan')) {
+            if (! Schema::hasColumn('proposals', 'status_pendanaan')) {
                 $table->string('status_pendanaan')->default('Proses');
             }
 

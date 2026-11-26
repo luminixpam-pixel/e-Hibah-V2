@@ -120,7 +120,7 @@ class MonevController extends Controller
         }
 
         if ($proposal->status !== 'Disetujui') {
-            return redirect()->back()->with('error', 'Temuan monev hanya tersedia untuk proposal yang sudah Disetujui (status saat ini: ' . $proposal->status . ').');
+            return redirect()->back()->with('error', 'Temuan monev hanya tersedia untuk proposal yang sudah Disetujui (status saat ini: '.$proposal->status.').');
         }
 
         $findings = MonevFinding::where('proposal_id', $proposal->id)
@@ -146,7 +146,7 @@ class MonevController extends Controller
         }
 
         if ($proposal->status !== 'Disetujui') {
-            return redirect()->back()->with('error', 'Temuan monev hanya bisa dibuat untuk proposal yang sudah Disetujui (status saat ini: ' . $proposal->status . ').');
+            return redirect()->back()->with('error', 'Temuan monev hanya bisa dibuat untuk proposal yang sudah Disetujui (status saat ini: '.$proposal->status.').');
         }
 
         $request->validate([
@@ -236,7 +236,7 @@ class MonevController extends Controller
         ]);
 
         if ($finding->status_temuan !== 'In_Review') {
-            return redirect()->back()->with('error', 'Hanya temuan berstatus In_Review yang bisa diverifikasi (status saat ini: ' . $finding->status_temuan . ').');
+            return redirect()->back()->with('error', 'Hanya temuan berstatus In_Review yang bisa diverifikasi (status saat ini: '.$finding->status_temuan.').');
         }
 
         $proposal = $finding->proposal;
@@ -249,7 +249,7 @@ class MonevController extends Controller
             NotificationHelper::send(
                 (int) $proposal->user_id,
                 'Temuan Monev Ditutup',
-                'RTL untuk proposal "' . $proposal->judul . '" telah diverifikasi LPPM dan temuan dinyatakan selesai (Closed).',
+                'RTL untuk proposal "'.$proposal->judul.'" telah diverifikasi LPPM dan temuan dinyatakan selesai (Closed).',
                 'success',
                 $proposal->id
             );
@@ -265,7 +265,7 @@ class MonevController extends Controller
         NotificationHelper::send(
             (int) $proposal->user_id,
             'RTL Dikembalikan',
-            'RTL untuk proposal "' . $proposal->judul . '" dikembalikan oleh LPPM. Silakan perbaiki dan kirim ulang RTL beserta bukti perbaikan.',
+            'RTL untuk proposal "'.$proposal->judul.'" dikembalikan oleh LPPM. Silakan perbaiki dan kirim ulang RTL beserta bukti perbaikan.',
             'warning',
             $proposal->id
         );
@@ -302,7 +302,7 @@ class MonevController extends Controller
 
         $extension = pathinfo($path, PATHINFO_EXTENSION);
         $cleanTitle = str_replace([' ', '/', '\\'], '_', $proposal->judul);
-        $downloadName = $label . '_' . $cleanTitle . '.' . $extension;
+        $downloadName = $label.'_'.$cleanTitle.'.'.$extension;
 
         return Storage::disk('public')->download($path, $downloadName);
     }

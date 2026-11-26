@@ -10,15 +10,15 @@ return new class extends Migration
     {
         Schema::table('proposals', function (Blueprint $table) {
             // tambahkan kolom baru kalau diperlukan
-            if (!Schema::hasColumn('proposals', 'pengusul')) {
+            if (! Schema::hasColumn('proposals', 'pengusul')) {
                 $table->string('pengusul')->nullable();
             }
 
-            if (!Schema::hasColumn('proposals', 'reviewer')) {
+            if (! Schema::hasColumn('proposals', 'reviewer')) {
                 $table->string('reviewer')->nullable();
             }
 
-            if (!Schema::hasColumn('proposals', 'status')) {
+            if (! Schema::hasColumn('proposals', 'status')) {
                 $table->string('status')->default('dikirim');
             }
         });

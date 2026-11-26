@@ -11,13 +11,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'fakultas_id')) {
+            if (! Schema::hasColumn('users', 'fakultas_id')) {
                 $table->foreignId('fakultas_id')->nullable()->constrained('fakultas')->nullOnDelete();
             }
-            if (!Schema::hasColumn('users', 'bidang_keahlian')) {
+            if (! Schema::hasColumn('users', 'bidang_keahlian')) {
                 $table->string('bidang_keahlian')->nullable();
             }
-            if (!Schema::hasColumn('users', 'is_blacklisted')) {
+            if (! Schema::hasColumn('users', 'is_blacklisted')) {
                 $table->boolean('is_blacklisted')->default(false);
             }
         });

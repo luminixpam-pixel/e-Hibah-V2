@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::table('proposals', function (Blueprint $table) {
-    $table->string('status', 50)->default('Dikirim')->change();
-});
+        Schema::table('proposals', function (Blueprint $table) {
+            $table->string('status', 50)->default('Dikirim')->change();
+        });
 
     }
 

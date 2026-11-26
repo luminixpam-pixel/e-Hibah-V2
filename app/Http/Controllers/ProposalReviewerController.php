@@ -4,11 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Proposal;
 use App\Models\User;
-use App\Models\Notification;
-use App\Helpers\NotificationHelper; // ✅ pakai helper biar pasti masuk
+// ✅ pakai helper biar pasti masuk
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Carbon\Carbon;
 
 class ProposalReviewerController extends Controller
 {
@@ -85,9 +83,8 @@ class ProposalReviewerController extends Controller
     public function search(Request $request)
     {
         return User::where('role', 'reviewer')
-            ->where('name', 'like', '%' . $request->q . '%')
+            ->where('name', 'like', '%'.$request->q.'%')
             ->limit(10)
             ->get(['id', 'name', 'penempatan']);
     }
-
 }

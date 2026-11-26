@@ -13,27 +13,27 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
 
-            if (!Schema::hasColumn('users', 'nidn')) {
+            if (! Schema::hasColumn('users', 'nidn')) {
                 $table->string('nidn')->nullable();
             }
 
-            if (!Schema::hasColumn('users', 'phone')) {
+            if (! Schema::hasColumn('users', 'phone')) {
                 $table->string('phone')->nullable();
             }
 
-            if (!Schema::hasColumn('users', 'fakultas')) {
+            if (! Schema::hasColumn('users', 'fakultas')) {
                 $table->string('fakultas')->nullable();
             }
 
-            if (!Schema::hasColumn('users', 'prodi')) {
+            if (! Schema::hasColumn('users', 'prodi')) {
                 $table->string('prodi')->nullable();
             }
 
-            if (!Schema::hasColumn('users', 'jabatan')) {
+            if (! Schema::hasColumn('users', 'jabatan')) {
                 $table->string('jabatan')->nullable();
             }
 
-            if (!Schema::hasColumn('users', 'role')) {
+            if (! Schema::hasColumn('users', 'role')) {
                 $table->string('role')->default('User');
             }
         });

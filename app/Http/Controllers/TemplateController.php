@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Template;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
 
 class TemplateController extends Controller
 {
@@ -17,7 +16,7 @@ class TemplateController extends Controller
         // 1. Validasi Input
         $request->validate([
             'file_template' => 'required|mimes:docx,doc,pdf,xlsx|max:5120', // Maks 5MB
-            'jenis'         => 'required|string', // misal: 'laporan_kemajuan'
+            'jenis' => 'required|string', // misal: 'laporan_kemajuan'
         ]);
 
         try {
@@ -32,7 +31,7 @@ class TemplateController extends Controller
                 }
 
                 // 3. Simpan file baru ke folder 'templates' di public storage
-                $fileName = time() . '_' . $file->getClientOriginalName();
+                $fileName = time().'_'.$file->getClientOriginalName();
                 $path = $file->storeAs('templates', $fileName, 'public');
 
                 // 4. Update Database
@@ -40,14 +39,14 @@ class TemplateController extends Controller
                     ['jenis' => $jenis],
                     [
                         'nama_template' => $file->getClientOriginalName(),
-                        'file_path'     => $path
+                        'file_path' => $path,
                     ]
                 );
 
-                return back()->with('success', 'Template ' . str_replace('_', ' ', $jenis) . ' berhasil diperbarui!');
+                return back()->with('success', 'Template '.str_replace('_', ' ', $jenis).' berhasil diperbarui!');
             }
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengunggah template: ' . $e->getMessage());
+            return back()->with('error', 'Gagal mengunggah template: '.$e->getMessage());
         }
     }
 
@@ -63,6 +62,7 @@ class TemplateController extends Controller
         }
 
         $template->delete();
+
         return back()->with('success', 'Template berhasil dihapus.');
     }
 }

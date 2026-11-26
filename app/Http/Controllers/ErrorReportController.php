@@ -96,6 +96,6 @@ class ErrorReportController extends Controller
         $laporan->update(['status' => $validated['status']]);
 
         return redirect()->route('admin.error-report.show', $laporan)
-            ->with('success', 'Status laporan berhasil diubah menjadi ' . $validated['status'] . '.');
+            ->with('success', 'Status laporan berhasil diubah menjadi '.$validated['status'].'.');
     }
 }

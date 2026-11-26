@@ -9,7 +9,7 @@ class RoleMiddleware
 {
     public function handle($request, Closure $next, ...$roles)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect('/login')->with('error', 'Silakan login dahulu');
         }
 
@@ -17,7 +17,7 @@ class RoleMiddleware
         $userRole = Auth::user()->role;
 
         // Cek apakah role user ada di daftar middleware (admin, reviewer)
-        if (!in_array($userRole, $roles)) {
+        if (! in_array($userRole, $roles)) {
             abort(403, 'Akses ditolak.');
         }
 

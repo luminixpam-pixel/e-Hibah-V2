@@ -2,14 +2,11 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class ProposalAssigned extends Notification
 {
@@ -32,10 +29,10 @@ class ProposalAssigned extends Notification
     public function toMail($notifiable)
     {
         return (new MailMessage)
-                    ->subject('Proposal Baru Ditugaskan')
-                    ->line('Anda ditugaskan untuk mereview proposal: ' . $this->proposal->judul)
-                    ->action('Lihat Proposal', url('/review/' . $this->proposal->id))
-                    ->line('Terima kasih telah membantu proses review!');
+            ->subject('Proposal Baru Ditugaskan')
+            ->line('Anda ditugaskan untuk mereview proposal: '.$this->proposal->judul)
+            ->action('Lihat Proposal', url('/review/'.$this->proposal->id))
+            ->line('Terima kasih telah membantu proses review!');
     }
 
     // Notifikasi via database
@@ -44,7 +41,7 @@ class ProposalAssigned extends Notification
         return [
             'proposal_id' => $this->proposal->id,
             'judul' => $this->proposal->judul,
-            'message' => 'Anda ditugaskan untuk mereview proposal baru.'
+            'message' => 'Anda ditugaskan untuk mereview proposal baru.',
         ];
     }
 }

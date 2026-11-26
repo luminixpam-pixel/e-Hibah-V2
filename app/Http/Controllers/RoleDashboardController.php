@@ -54,14 +54,14 @@ class RoleDashboardController extends Controller
         $user = Auth::user();
 
         $stats = [
-            'totalUsers'     => User::count(),
+            'totalUsers' => User::count(),
             'totalProposals' => Proposal::count(),
-            'disetujui'      => Proposal::where('status_pendanaan', 'Disetujui')->count(),
-            'ditolak'        => Proposal::where('status_pendanaan', 'Ditolak')->count(),
-            'direvisi'       => Proposal::where('status_pendanaan', 'Direvisi')->count(),
+            'disetujui' => Proposal::where('status_pendanaan', 'Disetujui')->count(),
+            'ditolak' => Proposal::where('status_pendanaan', 'Ditolak')->count(),
+            'direvisi' => Proposal::where('status_pendanaan', 'Direvisi')->count(),
         ];
 
-        $recentLogs  = ActivityLog::with('user')->latest()->take(5)->get();
+        $recentLogs = ActivityLog::with('user')->latest()->take(5)->get();
         $recentUsers = User::latest()->take(5)->get();
 
         return view('dashboard.admin', array_merge(
@@ -81,11 +81,11 @@ class RoleDashboardController extends Controller
             ->where('user_id', $user->id)->latest()->get();
 
         $stats = [
-            'total'     => $myProposals->count(),
-            'draft'     => $myProposals->where('status', 'Draft')->count(),
-            'dikirim'   => $myProposals->where('status', 'Dikirim')->count(),
+            'total' => $myProposals->count(),
+            'draft' => $myProposals->where('status', 'Draft')->count(),
+            'dikirim' => $myProposals->where('status', 'Dikirim')->count(),
             'disetujui' => $myProposals->where('status_pendanaan', 'Disetujui')->count(),
-            'ditolak'   => $myProposals->where('status_pendanaan', 'Ditolak')->count(),
+            'ditolak' => $myProposals->where('status_pendanaan', 'Ditolak')->count(),
         ];
 
         $notifications = Notification::where('user_id', $user->id)->latest()->take(5)->get();
@@ -116,8 +116,8 @@ class RoleDashboardController extends Controller
 
         $stats = [
             'totalTugas' => $tugasReview->count(),
-            'menunggu'   => $tugasReview->whereNotIn('id', $reviewedIds)->count(),
-            'selesai'    => $reviewedIds->count(),
+            'menunggu' => $tugasReview->whereNotIn('id', $reviewedIds)->count(),
+            'selesai' => $reviewedIds->count(),
         ];
 
         return view('dashboard.reviewer', array_merge(
@@ -137,8 +137,8 @@ class RoleDashboardController extends Controller
 
         $stats = [
             'antrean_count' => $antrean->count(),
-            'lolos'         => Proposal::where('status', 'Lolos Administrasi')->count(),
-            'revisi'        => Proposal::where('status', 'Revisi Administrasi')->count(),
+            'lolos' => Proposal::where('status', 'Lolos Administrasi')->count(),
+            'revisi' => Proposal::where('status', 'Revisi Administrasi')->count(),
         ];
 
         return view('dashboard.verifikator', array_merge(
@@ -155,10 +155,10 @@ class RoleDashboardController extends Controller
         $user = Auth::user();
 
         $stats = [
-            'lolosAdmin'     => Proposal::where('status', 'Lolos Administrasi')->count(),
+            'lolosAdmin' => Proposal::where('status', 'Lolos Administrasi')->count(),
             'sedangDireview' => Proposal::where('status', 'Sedang Direview')->count(),
-            'reviewSelesai'  => Proposal::where('status', 'Review Selesai')->count(),
-            'disetujui'      => Proposal::where('status_pendanaan', 'Disetujui')->count(),
+            'reviewSelesai' => Proposal::where('status', 'Review Selesai')->count(),
+            'disetujui' => Proposal::where('status_pendanaan', 'Disetujui')->count(),
         ];
 
         $siapPlotting = Proposal::where('status', 'Lolos Administrasi')
@@ -196,9 +196,9 @@ class RoleDashboardController extends Controller
         }
 
         $stats = [
-            'total'     => (clone $base)->count(),
+            'total' => (clone $base)->count(),
             'disetujui' => (clone $base)->where('status_pendanaan', 'Disetujui')->count(),
-            'ditolak'   => (clone $base)->where('status_pendanaan', 'Ditolak')->count(),
+            'ditolak' => (clone $base)->where('status_pendanaan', 'Ditolak')->count(),
         ];
 
         $proposals = (clone $base)->with('user')->latest()->take(10)->get();
@@ -223,9 +223,9 @@ class RoleDashboardController extends Controller
 
         $stats = [
             'menungguKeputusan' => Proposal::where('status', 'Review Selesai')->count(),
-            'disetujui'         => Proposal::where('status_pendanaan', 'Disetujui')->count(),
-            'ditolak'           => Proposal::where('status_pendanaan', 'Ditolak')->count(),
-            'direvisi'          => Proposal::where('status_pendanaan', 'Direvisi')->count(),
+            'disetujui' => Proposal::where('status_pendanaan', 'Disetujui')->count(),
+            'ditolak' => Proposal::where('status_pendanaan', 'Ditolak')->count(),
+            'direvisi' => Proposal::where('status_pendanaan', 'Direvisi')->count(),
         ];
 
         $siapDiputuskan = Proposal::where('status', 'Review Selesai')
@@ -293,14 +293,14 @@ class RoleDashboardController extends Controller
     protected function routeNameFor(?string $role): string
     {
         return match ($role) {
-            'admin'       => 'dashboard.admin',
-            'pengaju'     => 'dashboard.pengaju',
-            'reviewer'    => 'dashboard.reviewer',
+            'admin' => 'dashboard.admin',
+            'pengaju' => 'dashboard.pengaju',
+            'reviewer' => 'dashboard.reviewer',
             'verifikator' => 'dashboard.verifikator',
-            'lppm'        => 'dashboard.lppm',
-            'dekan'       => 'dashboard.dekan',
+            'lppm' => 'dashboard.lppm',
+            'dekan' => 'dashboard.dekan',
             'kepala_lppm' => 'dashboard.kepala-lppm',
-            default       => 'dashboard.pengaju',
+            default => 'dashboard.pengaju',
         };
     }
 }

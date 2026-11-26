@@ -23,7 +23,7 @@ class VerificationController extends Controller
         $proposal = Proposal::findOrFail($proposalId);
 
         if ($proposal->status !== 'Dikirim') {
-            return redirect()->back()->with('error', 'Proposal ini sudah tidak menunggu verifikasi (status: ' . $proposal->status . ').');
+            return redirect()->back()->with('error', 'Proposal ini sudah tidak menunggu verifikasi (status: '.$proposal->status.').');
         }
 
         $request->validate([
@@ -51,19 +51,19 @@ class VerificationController extends Controller
             (int) $proposal->user_id,
             $request->hasil === 'Lolos' ? 'Verifikasi Lolos Administrasi' : 'Perlu Revisi Administrasi',
             $request->hasil === 'Lolos'
-                ? 'Proposal "' . $proposal->judul . '" lolos verifikasi administrasi dan diteruskan ke LPPM untuk plotting reviewer.'
-                : 'Proposal "' . $proposal->judul . '" perlu diperbaiki: ' . ($request->catatan ?? '-'),
+                ? 'Proposal "'.$proposal->judul.'" lolos verifikasi administrasi dan diteruskan ke LPPM untuk plotting reviewer.'
+                : 'Proposal "'.$proposal->judul.'" perlu diperbaiki: '.($request->catatan ?? '-'),
             $request->hasil === 'Lolos' ? 'success' : 'warning',
             $proposal->id
         );
 
         ActivityLog::create([
             'user_id' => auth()->user()->id,
-            'activity' => 'Verifikator ' . auth()->user()->name . ' ' . ($request->hasil === 'Lolos' ? 'meloloskan' : 'mengembalikan') . ' proposal "' . $proposal->judul . '" (' . $statusBaru . ')',
+            'activity' => 'Verifikator '.auth()->user()->name.' '.($request->hasil === 'Lolos' ? 'meloloskan' : 'mengembalikan').' proposal "'.$proposal->judul.'" ('.$statusBaru.')',
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
         ]);
 
-        return redirect()->back()->with('success', 'Hasil verifikasi tersimpan: ' . $statusBaru . '.');
+        return redirect()->back()->with('success', 'Hasil verifikasi tersimpan: '.$statusBaru.'.');
     }
 }

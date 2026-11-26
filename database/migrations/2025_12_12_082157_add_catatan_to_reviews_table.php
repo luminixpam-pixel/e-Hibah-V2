@@ -12,7 +12,7 @@ return new class extends Migration
     public function up()
     {
         // CEK DULU: kalau kolom belum ada, baru ditambahkan
-        if (!Schema::hasColumn('reviews', 'catatan')) {
+        if (! Schema::hasColumn('reviews', 'catatan')) {
             Schema::table('reviews', function (Blueprint $table) {
                 $table->text('catatan')->nullable()->after('nilai_7');
             });

@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Fakultas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Models\Fakultas;
 
 class ProfileController extends Controller
 {
     public function show()
     {
         $user = Auth::user();
+
         return view('profile.show', compact('user'));
     }
 
@@ -19,35 +20,35 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
         $list_fakultas = Fakultas::all();
+
         return view('profile.edit', compact('user', 'list_fakultas'));
     }
 
     public function update(Request $request)
-{
-    $user = Auth::user();
+    {
+        $user = Auth::user();
 
-    $request->validate([
-        'name'  => 'required|string|max:255',
-        'email' => 'required|email|unique:users,email,' . $user->id,
-        'password' => 'nullable|min:6'
-    ]);
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,'.$user->id,
+            'password' => 'nullable|min:6',
+        ]);
 
-    $user->name = $request->name;
-    $user->email = $request->email;
-    $user->nidn = $request->nidn;
-    $user->phone = $request->phone;
-    $user->fakultas = $request->fakultas;
-    $user->prodi = $request->prodi;
-    $user->jabatan = $request->jabatan;
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->nidn = $request->nidn;
+        $user->phone = $request->phone;
+        $user->fakultas = $request->fakultas;
+        $user->prodi = $request->prodi;
+        $user->jabatan = $request->jabatan;
 
-    if ($request->filled('password')) {
-        $user->password = Hash::make($request->password);
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
+
+        /** @var \App\Models\User $user */
+        $user->save();
+
+        return redirect()->route('profile.show')->with('success', 'Profil berhasil diperbarui!');
     }
-
-    /** @var \App\Models\User $user */
-    $user->save();
-
-    return redirect()->route('profile.show')->with('success', 'Profil berhasil diperbarui!');
-}
-
 }

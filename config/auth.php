@@ -14,7 +14,7 @@ return [
     */
 
     'defaults' => [
-     'guard' => 'web',
+        'guard' => 'web',
         'passwords' => 'users',
     ],
 
@@ -59,34 +59,33 @@ return [
     |
     */
 
- 'providers' => [
-    'users' => [
-        'driver' => 'ldap',
-        'model' => App\Ldap\User::class, // Model LdapRecord
-        'locate_users_by' => 'uid',
-        'rules' => [],
-        'database' => [
-            'model' => App\Models\User::class, // Model Eloquent (DB Lokal)
-            'sync_passwords' => true,
-            'sync_attributes' => [
-                'name' => 'cn',
-                'username' => 'uid',
-                'email' => 'mail',
-                'nidn' => 'description',
-                'fakultas' => 'department',
-                'program_studi' => 'title',
-                'jabatan' => 'physicaldeliveryofficename',
+    'providers' => [
+        'users' => [
+            'driver' => 'ldap',
+            'model' => App\Ldap\User::class, // Model LdapRecord
+            'locate_users_by' => 'uid',
+            'rules' => [],
+            'database' => [
+                'model' => App\Models\User::class, // Model Eloquent (DB Lokal)
+                'sync_passwords' => true,
+                'sync_attributes' => [
+                    'name' => 'cn',
+                    'username' => 'uid',
+                    'email' => 'mail',
+                    'nidn' => 'description',
+                    'fakultas' => 'department',
+                    'program_studi' => 'title',
+                    'jabatan' => 'physicaldeliveryofficename',
+                ],
             ],
         ],
-    ],
 
-    // Jika Anda ingin tetap memiliki opsi login database biasa (tanpa LDAP)
-    'eloquent_users' => [
-        'driver' => 'eloquent',
-        'model' => App\Models\User::class,
+        // Jika Anda ingin tetap memiliki opsi login database biasa (tanpa LDAP)
+        'eloquent_users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\User::class,
+        ],
     ],
-],
-
 
     /*
     |--------------------------------------------------------------------------

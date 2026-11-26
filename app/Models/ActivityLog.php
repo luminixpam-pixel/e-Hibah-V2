@@ -13,7 +13,7 @@ class ActivityLog extends Model
         'user_id',
         'activity',
         'ip_address',
-        'user_agent'
+        'user_agent',
     ];
 
     /**

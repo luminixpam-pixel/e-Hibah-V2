@@ -5,10 +5,10 @@ use App\Models\Notification;
 /**
  * Kirim notifikasi ke user tertentu
  *
- * @param int $userId
- * @param string $title
- * @param string|null $message
- * @param string $type
+ * @param  int  $userId
+ * @param  string  $title
+ * @param  string|null  $message
+ * @param  string  $type
  * @return \App\Models\Notification
  */
 function sendNotification($userId, $title, $message = null, $type = 'info')
@@ -20,10 +20,10 @@ function sendNotification($userId, $title, $message = null, $type = 'info')
         'type' => $type,
     ]);
 
-    if (!function_exists('formatRupiah')) {
-    function formatRupiah($nominal)
-    {
-        return 'Rp ' . number_format($nominal, 0, ',', '.');
+    if (! function_exists('formatRupiah')) {
+        function formatRupiah($nominal)
+        {
+            return 'Rp '.number_format($nominal, 0, ',', '.');
+        }
     }
-}
 }

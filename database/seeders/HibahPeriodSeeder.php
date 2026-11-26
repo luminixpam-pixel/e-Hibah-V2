@@ -17,7 +17,7 @@ class HibahPeriodSeeder extends Seeder
 
         DB::table('hibah_periods')->insert([
             // Nama sementara — LPPM dapat mengubahnya lewat master data.
-            'nama' => 'Periode ' . now()->year,
+            'nama' => 'Periode '.now()->year,
             'start_date' => now(),
             'end_date' => now()->addMonth(),
             'created_at' => now(),

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->text('keterangan_akhir')->nullable();
         });
     }
+
     /**
      * Reverse the migrations.
      */
@@ -27,5 +28,5 @@ return new class extends Migration
         Schema::table('proposals', function (Blueprint $table) {
             $table->dropColumn(['file_laporan_akhir', 'keterangan_akhir']);
         });
-}
+    }
 };

@@ -2,8 +2,8 @@
 
 namespace App\Observers;
 
-use App\Models\Review;
 use App\Models\Notification;
+use App\Models\Review;
 
 class ReviewObserver
 {
@@ -16,15 +16,15 @@ class ReviewObserver
         $review->loadMissing('proposal');
 
         // kalau proposal tidak ada, hentikan supaya tidak error
-        if (!$review->proposal) {
+        if (! $review->proposal) {
             return;
         }
 
         // Notifikasi ke pengaju saat review dibuat
         Notification::create([
             'user_id' => $review->proposal->user_id,
-            'title'   => "Proposal Anda sedang direview",
-            'type'    => 'info',
+            'title' => 'Proposal Anda sedang direview',
+            'type' => 'info',
             'is_read' => false,
         ]);
     }
@@ -37,22 +37,22 @@ class ReviewObserver
         // pastikan relasi proposal sudah dimuat
         $review->loadMissing('proposal');
 
-        if (!$review->proposal) {
+        if (! $review->proposal) {
             return;
         }
 
         if ($review->status === 'ditolak') {
             Notification::create([
                 'user_id' => $review->proposal->user_id,
-                'title'   => "Proposal Anda ditolak ❌",
-                'type'    => 'warning',
+                'title' => 'Proposal Anda ditolak ❌',
+                'type' => 'warning',
                 'is_read' => false,
             ]);
         } elseif ($review->status === 'disetujui') {
             Notification::create([
                 'user_id' => $review->proposal->user_id,
-                'title'   => "Proposal Anda disetujui 🎉",
-                'type'    => 'success',
+                'title' => 'Proposal Anda disetujui 🎉',
+                'type' => 'success',
                 'is_read' => false,
             ]);
         }

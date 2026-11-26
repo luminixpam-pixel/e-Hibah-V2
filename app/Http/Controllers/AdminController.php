@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Proposal;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash; // Tambahkan ini untuk hashing password
 use Illuminate\Validation\Rule;       // Tambahkan ini untuk validasi unique
 
@@ -43,22 +43,27 @@ class AdminController extends Controller
      */
     // app/Http/Controllers/DashboardController.php
 
-    public function index() {
+    public function index()
+    {
         $role = auth()->user()->role;
 
         // Ambil jumlah dokumen panduan yang aktif
         $templateCount = \App\Models\AdminDocument::where('is_visible', true)->count();
 
         // Pastikan variabel ini dikirim ke view dashboard
-       // Sebutkan saja variabel apa saja yang mau dikirim ke view
-    return view('dashboard', compact('templateCount', 'role'));
+        // Sebutkan saja variabel apa saja yang mau dikirim ke view
+        return view('dashboard', compact('templateCount', 'role'));
 
     }
+
     public function indexUsers()
     {
-        if (auth()->user()->role !== 'admin') { abort(403); }
+        if (auth()->user()->role !== 'admin') {
+            abort(403);
+        }
 
         $users = User::all();
+
         return view('admin.users.index', compact('users'));
     }
 
@@ -76,9 +81,9 @@ class AdminController extends Controller
 
         // ✅ validasi
         $request->validate([
-            'name'     => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'username' => ['required', 'string', Rule::unique('users')->ignore($user->id)],
-            'role'     => 'required|in:admin,pengaju,reviewer,verifikator,lppm,dekan,kepala_lppm',
+            'role' => 'required|in:admin,pengaju,reviewer,verifikator,lppm,dekan,kepala_lppm',
             'password' => 'nullable|min:8|confirmed', // 'confirmed' berarti butuh input password_confirmation
         ]);
 
@@ -97,10 +102,10 @@ class AdminController extends Controller
         return back()->with('success', 'Data user berhasil diperbarui.');
     }
 
-        public function update(Request $request, $id)
+    public function update(Request $request, $id)
     {
         $request->validate([
-            'username' => 'required|unique:users,username,' . $id,
+            'username' => 'required|unique:users,username,'.$id,
             'password' => 'nullable|min:6|confirmed', // password opsional, diisi jika ingin diubah
         ]);
 

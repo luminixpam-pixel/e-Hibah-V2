@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
 
 class DokumenResmi extends Model
 {
@@ -14,7 +13,7 @@ class DokumenResmi extends Model
         'kategori',
         'deskripsi',
         'file_path',
-        'uploaded_by'
+        'uploaded_by',
     ];
 
     public function admin()
@@ -22,4 +21,3 @@ class DokumenResmi extends Model
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 }
-

@@ -45,8 +45,7 @@ return [
     |
     */
 
-   'username' => 'username',
-
+    'username' => 'username',
 
     /*
     |--------------------------------------------------------------------------
@@ -142,7 +141,7 @@ return [
     |
     */
 
-   'features' => [
+    'features' => [
         // Features::registration(), // MATIKAN: User login langsung via LDAP, tidak daftar manual
         // Features::resetPasswords(), // MATIKAN: Reset password harus dilakukan di sistem IT YARSI / AD
 

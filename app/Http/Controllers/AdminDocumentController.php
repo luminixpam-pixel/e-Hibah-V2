@@ -12,16 +12,16 @@ class AdminDocumentController extends Controller
     /**
      * Menampilkan halaman dokumen untuk semua role
      */
- public function index()
-{
-    // Admin melihat semua, User hanya yang is_visible
-    $docs = (Auth::user()->role === 'admin')
-            ? AdminDocument::latest()->get()
-            : AdminDocument::where('is_visible', true)->latest()->get();
+    public function index()
+    {
+        // Admin melihat semua, User hanya yang is_visible
+        $docs = (Auth::user()->role === 'admin')
+                ? AdminDocument::latest()->get()
+                : AdminDocument::where('is_visible', true)->latest()->get();
 
-    // Arahkan ke file view yang Anda inginkan (misal di folder user)
-    return view('user.dokumen.index', compact('docs'));
-}
+        // Arahkan ke file view yang Anda inginkan (misal di folder user)
+        return view('user.dokumen.index', compact('docs'));
+    }
 
     /**
      * Simpan dokumen baru (Admin Only)
@@ -30,7 +30,7 @@ class AdminDocumentController extends Controller
     {
         $request->validate([
             'judul' => 'required|string|max:255',
-            'file' => 'required|mimes:pdf,doc,docx|max:5120'
+            'file' => 'required|mimes:pdf,doc,docx|max:5120',
         ]);
 
         if ($request->hasFile('file')) {
@@ -45,6 +45,7 @@ class AdminDocumentController extends Controller
 
             return back()->with('success', 'Dokumen berhasil dipublikasikan!');
         }
+
         return back()->with('error', 'Gagal mengunggah file.');
     }
 
@@ -54,7 +55,7 @@ class AdminDocumentController extends Controller
     public function toggleVisibility($id)
     {
         $doc = AdminDocument::findOrFail($id);
-        $doc->is_visible = !$doc->is_visible;
+        $doc->is_visible = ! $doc->is_visible;
         $doc->save();
 
         $status = $doc->is_visible ? 'ditampilkan' : 'disembunyikan';
@@ -88,16 +89,16 @@ class AdminDocumentController extends Controller
         $doc = AdminDocument::findOrFail($id);
 
         // Keamanan: Cegah user biasa unduh file yang sedang disembunyikan via URL
-        if (Auth::user()->role !== 'admin' && !$doc->is_visible) {
+        if (Auth::user()->role !== 'admin' && ! $doc->is_visible) {
             abort(403);
         }
 
-        if (!Storage::disk('public')->exists($doc->file_path)) {
+        if (! Storage::disk('public')->exists($doc->file_path)) {
             return back()->with('error', 'Berkas fisik tidak ditemukan.');
         }
 
         $ext = pathinfo($doc->file_path, PATHINFO_EXTENSION);
-        return Storage::disk('public')->download($doc->file_path, $doc->judul . '.' . $ext);
-    }
 
+        return Storage::disk('public')->download($doc->file_path, $doc->judul.'.'.$ext);
+    }
 }

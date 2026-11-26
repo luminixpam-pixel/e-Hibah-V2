@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Proposal;
 use App\Models\ActivityLog;
+use App\Models\Proposal;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class LaporanKemajuanController extends Controller
 {
@@ -25,49 +25,49 @@ class LaporanKemajuanController extends Controller
     }
 
     public function index(Request $request)
-{
-    $search = $request->input('search');
-    $user = Auth::user();
+    {
+        $search = $request->input('search');
+        $user = Auth::user();
 
-    // 1. Query Dasar untuk Tabel
-    $query = Proposal::with(['user', 'reviewers']);
+        // 1. Query Dasar untuk Tabel
+        $query = Proposal::with(['user', 'reviewers']);
 
-    // 2. Filter Role (Security Filter)
-    if ($user->role === 'pengaju') {
-        $query->where('user_id', $user->id);
-    } elseif ($user->role === 'reviewer') {
-        $query->whereHas('reviewers', function ($q) use ($user) {
-            $q->where('users.id', $user->id);
-        });
+        // 2. Filter Role (Security Filter)
+        if ($user->role === 'pengaju') {
+            $query->where('user_id', $user->id);
+        } elseif ($user->role === 'reviewer') {
+            $query->whereHas('reviewers', function ($q) use ($user) {
+                $q->where('users.id', $user->id);
+            });
+        }
+
+        // 3. Search Logic
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('judul', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($u) use ($search) {
+                        $u->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $proposals = $query->latest()->paginate(10);
+
+        // 4. Data untuk Dropdown Pilih Proposal (Khusus Pengaju)
+        $myProposals = null;
+        if ($user->role === 'pengaju') {
+            $myProposals = Proposal::where('user_id', $user->id)
+                ->where('status') // Pastikan hanya yang disetujui
+                ->latest()
+                ->get(['id', 'judul']);
+        }
+
+        return view('reviewer.laporan-kemajuan', [
+            'proposals' => $proposals,
+            'myProposals' => $myProposals,
+            'user' => $user, // Mengirim data user login untuk Profile
+        ]);
     }
-
-    // 3. Search Logic
-    if ($search) {
-        $query->where(function ($q) use ($search) {
-            $q->where('judul', 'like', "%{$search}%")
-              ->orWhereHas('user', function ($u) use ($search) {
-                  $u->where('name', 'like', "%{$search}%");
-              });
-        });
-    }
-
-    $proposals = $query->latest()->paginate(10);
-
-    // 4. Data untuk Dropdown Pilih Proposal (Khusus Pengaju)
-    $myProposals = null;
-    if ($user->role === 'pengaju') {
-        $myProposals = Proposal::where('user_id', $user->id)
-            ->where('status',) // Pastikan hanya yang disetujui
-            ->latest()
-            ->get(['id', 'judul']);
-    }
-
-    return view('reviewer.laporan-kemajuan', [
-        'proposals' => $proposals,
-        'myProposals' => $myProposals,
-        'user' => $user, // Mengirim data user login untuk Profile
-    ]);
-}
 
     public function store(Request $request)
     {
@@ -80,12 +80,12 @@ class LaporanKemajuanController extends Controller
         if ($request->hasFile('file')) {
 
             // ✅ ambil proposal yang dipilih + pastikan milik user login
-           $proposal = Proposal::where('id', $request->proposal_id)
-    ->whereHas('user', function($q) {
-        $q->where('username', Auth::user()->username);
-    })->first();
+            $proposal = Proposal::where('id', $request->proposal_id)
+                ->whereHas('user', function ($q) {
+                    $q->where('username', Auth::user()->username);
+                })->first();
 
-            if (!$proposal) {
+            if (! $proposal) {
                 return redirect()->back()->with('error', 'Proposal tidak valid / bukan milik Anda.');
             }
 
@@ -116,15 +116,14 @@ class LaporanKemajuanController extends Controller
     {
         $proposal = Proposal::findOrFail($id);
 
-        if (!$proposal->file_laporan) {
+        if (! $proposal->file_laporan) {
             return redirect()->back()->with('error', 'File laporan belum tersedia.');
         }
 
-        if (!Storage::disk('public')->exists($proposal->file_laporan)) {
+        if (! Storage::disk('public')->exists($proposal->file_laporan)) {
             return redirect()->back()->with('error', 'File laporan tidak ditemukan di storage.');
         }
 
         return Storage::disk('public')->download($proposal->file_laporan);
     }
-
 }

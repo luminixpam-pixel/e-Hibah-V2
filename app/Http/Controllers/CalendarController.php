@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\HibahPeriod;
-use App\Helpers\NotificationHelper;
-use App\Http\Controllers\NotificationController; // import class NotificationController
+use Illuminate\Http\Request;
+
+// import class NotificationController
 
 class CalendarController extends Controller
 {
@@ -15,6 +15,7 @@ class CalendarController extends Controller
     public function index()
     {
         $hibahPeriod = HibahPeriod::first();
+
         return view('monitoring-data', compact('hibahPeriod'));
     }
 
@@ -26,7 +27,7 @@ class CalendarController extends Controller
     {
         $validated = $request->validate([
             'start_date' => ['required', 'date'],
-            'end_date'   => ['required', 'date', 'after_or_equal:start_date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
         ]);
 
         $existing = HibahPeriod::first();

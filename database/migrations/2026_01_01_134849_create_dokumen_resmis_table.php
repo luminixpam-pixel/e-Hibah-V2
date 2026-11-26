@@ -12,14 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('dokumen_resmi', function (Blueprint $table) {
-        $table->id();
-        $table->string('judul');
-        $table->enum('kategori', ['Panduan', 'RAB', 'Template', 'Pengumuman']);
-        $table->text('deskripsi')->nullable();
-        $table->string('file_path');
-        $table->foreignId('uploaded_by')->constrained('users');
-        $table->timestamps();
-    });
+            $table->id();
+            $table->string('judul');
+            $table->enum('kategori', ['Panduan', 'RAB', 'Template', 'Pengumuman']);
+            $table->text('deskripsi')->nullable();
+            $table->string('file_path');
+            $table->foreignId('uploaded_by')->constrained('users');
+            $table->timestamps();
+        });
 
     }
 

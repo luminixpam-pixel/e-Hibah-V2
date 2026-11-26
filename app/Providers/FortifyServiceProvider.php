@@ -15,7 +15,6 @@ use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Fortify;
 use Laravel\Fortify\Http\Requests\LoginRequest; // Tambahkan ini
 
-
 class FortifyServiceProvider extends ServiceProvider
 {
     /**
@@ -42,8 +41,10 @@ class FortifyServiceProvider extends ServiceProvider
 
         // 2. FIX UTAMA: Paksa validasi Fortify untuk menggunakan 'username', bukan 'email'
         $this->app->bind(LoginRequest::class, function ($app) {
-            return new class extends LoginRequest {
-                public function rules(): array {
+            return new class extends LoginRequest
+            {
+                public function rules(): array
+                {
                     return [
                         'username' => 'required|string',
                         'password' => 'required|string',

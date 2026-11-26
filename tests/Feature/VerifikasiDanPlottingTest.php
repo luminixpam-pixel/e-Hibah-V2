@@ -1,12 +1,12 @@
 <?php
 
+use App\Http\Controllers\ProposalReviewerController;
 use App\Models\Fakultas;
 use App\Models\Proposal;
 use App\Models\ProposalMember;
 use App\Models\Review;
 use App\Models\Skema;
 use App\Models\User;
-use App\Http\Controllers\ProposalReviewerController;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;

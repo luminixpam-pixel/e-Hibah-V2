@@ -3,18 +3,20 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function showLoginForm() {
+    public function showLoginForm()
+    {
         return view('auth.login');
     }
 
-    public function login(Request $request) {
+    public function login(Request $request)
+    {
         $request->validate([
             'username' => 'required',
             'password' => 'required',
@@ -25,6 +27,7 @@ class AuthController extends Controller
         if ($userLokal && $userLokal->password && Hash::check($request->password, $userLokal->password)) {
             Auth::login($userLokal);
             $request->session()->regenerate();
+
             return redirect()->intended($this->dashboardUrlFor($userLokal));
         }
 
@@ -33,12 +36,13 @@ class AuthController extends Controller
             if (Auth::attempt(['uid' => $request->username, 'password' => $request->password])) {
                 $user = Auth::user();
 
-                if (!$user->role) {
+                if (! $user->role) {
                     $user->role = 'pengaju';
                     $user->save();
                 }
 
                 $request->session()->regenerate();
+
                 return redirect()->intended($this->dashboardUrlFor($user));
             }
 
@@ -47,8 +51,8 @@ class AuthController extends Controller
                 'login' => 'Username atau kata sandi salah. Periksa kembali dan coba lagi.',
             ])->withInput($request->only('username'));
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('LDAP login error: ' . $e->getMessage(), [
-                'exception' => $e
+            \Illuminate\Support\Facades\Log::error('LDAP login error: '.$e->getMessage(), [
+                'exception' => $e,
             ]);
 
             // Server LDAP tidak merespon
@@ -57,6 +61,7 @@ class AuthController extends Controller
             ])->withInput($request->only('username'));
         }
     }
+
     /**
      * URL dashboard sesuai role user.
      * Dipakai setelah login berhasil (redirect()->intended() memakai
@@ -65,48 +70,50 @@ class AuthController extends Controller
     protected function dashboardUrlFor($user): string
     {
         return match ($user->role) {
-            'admin'       => route('dashboard.admin'),
-            'pengaju'     => route('dashboard.pengaju'),
-            'reviewer'    => route('dashboard.reviewer'),
+            'admin' => route('dashboard.admin'),
+            'pengaju' => route('dashboard.pengaju'),
+            'reviewer' => route('dashboard.reviewer'),
             'verifikator' => route('dashboard.verifikator'),
-            'lppm'        => route('dashboard.lppm'),
-            'dekan'       => route('dashboard.dekan'),
+            'lppm' => route('dashboard.lppm'),
+            'dekan' => route('dashboard.dekan'),
             'kepala_lppm' => route('dashboard.kepala-lppm'),
-            default       => route('dashboard.pengaju'),
+            default => route('dashboard.pengaju'),
         };
     }
 
-public function update(Request $request, $id)
-{
-    $user = User::findOrFail($id);
+    public function update(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
 
-    // Hanya admin atau pemilik akun yang boleh mengubah profil ini.
-    $currentUser = auth()->user();
-    if ($currentUser->role !== 'admin' && $currentUser->id !== $user->id) {
-        return back()->with('error', 'Akses ditolak.');
+        // Hanya admin atau pemilik akun yang boleh mengubah profil ini.
+        $currentUser = auth()->user();
+        if ($currentUser->role !== 'admin' && $currentUser->id !== $user->id) {
+            return back()->with('error', 'Akses ditolak.');
+        }
+
+        // Validasi input
+        $request->validate([
+            'email' => 'required|email|unique:users,email,'.$user->id,
+            'nidn' => 'nullable|string',
+            'fakultas' => 'nullable|string',
+        ]);
+
+        // Update data
+        $user->update([
+            'email' => $request->email,
+            'nidn' => $request->nidn,
+            'fakultas' => $request->fakultas,
+        ]);
+
+        return redirect()->back()->with('success', 'Profil berhasil diperbarui!');
     }
 
-    // Validasi input
-    $request->validate([
-        'email' => 'required|email|unique:users,email,' . $user->id,
-        'nidn' => 'nullable|string',
-        'fakultas' => 'nullable|string',
-    ]);
-
-    // Update data
-    $user->update([
-        'email' => $request->email,
-        'nidn' => $request->nidn,
-        'fakultas' => $request->fakultas,
-    ]);
-
-    return redirect()->back()->with('success', 'Profil berhasil diperbarui!');
-}
-  public function logout(Request $request) {
+    public function logout(Request $request)
+    {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect('/login');
     }
-
 }

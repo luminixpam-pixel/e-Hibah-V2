@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DokumenResmi;
+use App\Models\Fakultas;
+use App\Models\Notification;
+use App\Models\Proposal;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Models\User;
-use App\Models\Fakultas;
-use App\Models\Proposal;
-use App\Models\Notification;
-use App\Models\DokumenResmi;
 
 class DashboardController extends Controller
 {
@@ -43,20 +43,20 @@ class DashboardController extends Controller
 
         // ================= HITUNG STATISTIK (Untuk Card) =================
         $stats = [
-            'daftarProposalCount'  => (clone $baseQuery)->where('status', 'Dikirim')->count(),
-            'perluDireviewCount'   => (clone $baseQuery)->where('status', 'Perlu Direview')->count(),
-            'sedangDireviewCount'  => (clone $baseQuery)->where('status', 'Sedang Direview')->count(),
-            'reviewSelesaiCount'   => (clone $baseQuery)->whereIn('status', ['Review Selesai', 'Hasil Revisi', 'Disetujui'])->count(),
-            'disetujuiCount'       => (clone $baseQuery)->where('status_pendanaan', 'Disetujui')->count(),
-            'ditolakCount'         => (clone $baseQuery)->where('status_pendanaan', 'Ditolak')->count(),
-            'direvisiCount'        => (clone $baseQuery)->where('status_pendanaan', 'Direvisi')->count(),
-            'hasilRevisiCount'     => (clone $baseQuery)->where('status', 'Hasil Revisi')->count(),
+            'daftarProposalCount' => (clone $baseQuery)->where('status', 'Dikirim')->count(),
+            'perluDireviewCount' => (clone $baseQuery)->where('status', 'Perlu Direview')->count(),
+            'sedangDireviewCount' => (clone $baseQuery)->where('status', 'Sedang Direview')->count(),
+            'reviewSelesaiCount' => (clone $baseQuery)->whereIn('status', ['Review Selesai', 'Hasil Revisi', 'Disetujui'])->count(),
+            'disetujuiCount' => (clone $baseQuery)->where('status_pendanaan', 'Disetujui')->count(),
+            'ditolakCount' => (clone $baseQuery)->where('status_pendanaan', 'Ditolak')->count(),
+            'direvisiCount' => (clone $baseQuery)->where('status_pendanaan', 'Direvisi')->count(),
+            'hasilRevisiCount' => (clone $baseQuery)->where('status', 'Hasil Revisi')->count(),
         ];
 
         // ================= DATA KHUSUS REVIEWER =================
         $tugasReview = null;
         if ($role === 'reviewer') {
-            $tugasReview = Proposal::whereIn('id', function($q) use ($user) {
+            $tugasReview = Proposal::whereIn('id', function ($q) use ($user) {
                 $q->select('proposal_id')->from('proposal_reviewers')->where('reviewer_id', $user->id);
             })->with('user')->latest()->get();
         }
@@ -74,7 +74,7 @@ class DashboardController extends Controller
         // Tambahkan 'list_fakultas' ke dalam compact
         return view('dashboard', array_merge($stats, compact(
             'user', 'role', 'tahun', 'latestProposal', 'tugasReview', 'list_fakultas',
-            'rekapFakultas', 'ringkasanLaporan', 'dokumenResmi', 'notifications','all_dosen'
+            'rekapFakultas', 'ringkasanLaporan', 'dokumenResmi', 'notifications', 'all_dosen'
         )));
     }
 
@@ -87,12 +87,12 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'name'          => 'required|string|max:255',
-            'nidn'          => 'nullable|string|max:50',
-            'no_telepon'    => 'nullable|string|max:20',
-            'fakultas'      => 'nullable|string',
+            'name' => 'required|string|max:255',
+            'nidn' => 'nullable|string|max:50',
+            'no_telepon' => 'nullable|string|max:20',
+            'fakultas' => 'nullable|string',
             'program_studi' => 'nullable|string|max:100',
-            'jabatan'       => 'nullable|string|max:100',
+            'jabatan' => 'nullable|string|max:100',
         ]);
 
         $user->update($request->only([
@@ -105,31 +105,31 @@ class DashboardController extends Controller
     /**
      * Menampilkan Riwayat Dosen (Khusus Admin)
      */
-   public function riwayatDosen(Request $request)
-{
-    $search = $request->get('search');
+    public function riwayatDosen(Request $request)
+    {
+        $search = $request->get('search');
 
-    $riwayatDosen = User::whereIn('role', ['pengaju', 'reviewer']) // Menampilkan keduanya
-        ->when($search, function ($query) use ($search) {
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('nidn', 'like', "%{$search}%");
-            });
-        })
-        ->withCount([
-            'proposals as total_pengajuan',
-            'proposals as total_disetujui' => function ($query) {
-                // Pastikan string 'Disetujui' sesuai dengan enum di database Anda
+        $riwayatDosen = User::whereIn('role', ['pengaju', 'reviewer']) // Menampilkan keduanya
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('nidn', 'like', "%{$search}%");
+                });
+            })
+            ->withCount([
+                'proposals as total_pengajuan',
+                'proposals as total_disetujui' => function ($query) {
+                    // Pastikan string 'Disetujui' sesuai dengan enum di database Anda
+                    $query->where('status_pendanaan', 'Disetujui');
+                },
+            ])
+            ->withSum(['proposals as total_dana' => function ($query) {
                 $query->where('status_pendanaan', 'Disetujui');
-            }
-        ])
-        ->withSum(['proposals as total_dana' => function ($query) {
-            $query->where('status_pendanaan', 'Disetujui');
-        }], 'biaya') // 'biaya' adalah kolom nominal uang di tabel proposals
-        ->get();
+            }], 'biaya') // 'biaya' adalah kolom nominal uang di tabel proposals
+            ->get();
 
-    return view('admin.riwayat_dosen', compact('riwayatDosen'));
-}
+        return view('admin.riwayat_dosen', compact('riwayatDosen'));
+    }
 
     /**
      * DETAIL RIWAYAT DOSEN (Khusus Admin)
@@ -146,10 +146,10 @@ class DashboardController extends Controller
 
         $totalPengajuan = $proposals->count();
         $totalDisetujui = $proposals->where('status_pendanaan', 'Disetujui')->count();
-        $totalDitolak   = $proposals->where('status_pendanaan', 'Ditolak')->count();
-        $totalDirevisi  = $proposals->where('status_pendanaan', 'Direvisi')->count();
-        $totalDana      = $proposals->where('status_pendanaan', 'Disetujui')->sum('biaya');
-        $successRate    = $totalPengajuan > 0 ? ($totalDisetujui / $totalPengajuan) * 100 : 0;
+        $totalDitolak = $proposals->where('status_pendanaan', 'Ditolak')->count();
+        $totalDirevisi = $proposals->where('status_pendanaan', 'Direvisi')->count();
+        $totalDana = $proposals->where('status_pendanaan', 'Disetujui')->sum('biaya');
+        $successRate = $totalPengajuan > 0 ? ($totalDisetujui / $totalPengajuan) * 100 : 0;
 
         $stats = compact(
             'totalPengajuan',
@@ -165,7 +165,8 @@ class DashboardController extends Controller
 
     // ================= HELPER METHODS (Private) =================
 
-    private function getRekapFakultas($tahun) {
+    private function getRekapFakultas($tahun)
+    {
         return DB::table('fakultas')
             // Kita hubungkan tabel fakultas dengan tabel proposals
             ->leftJoin('proposals', 'fakultas.id', '=', 'proposals.fakultas_prodi')
@@ -181,7 +182,8 @@ class DashboardController extends Controller
             ->get();
     }
 
-    private function getRingkasanAdmin($tahun) {
+    private function getRingkasanAdmin($tahun)
+    {
         return [
             'total_dana' => Proposal::whereYear('created_at', $tahun)->where('status_pendanaan', 'Disetujui')->sum('biaya'),
             'total_penerima' => Proposal::whereYear('created_at', $tahun)->where('status_pendanaan', 'Disetujui')->count(),
@@ -200,6 +202,6 @@ class DashboardController extends Controller
         $user->role = $request->role; // 'admin', 'reviewer', atau 'pengaju'
         $user->save();
 
-        return back()->with('success', 'Role user ' . $user->name . ' berhasil diubah!');
+        return back()->with('success', 'Role user '.$user->name.' berhasil diubah!');
     }
 }

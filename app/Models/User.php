@@ -42,10 +42,10 @@ class User extends Authenticatable implements LdapAuthenticatable
     ];
 
     protected $casts = [
-    'email_verified_at' => 'datetime',
-    'password' => 'hashed',
-    'is_blacklisted' => 'boolean',
-];
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'is_blacklisted' => 'boolean',
+    ];
     /*
     |--------------------------------------------------------------------------
     | LdapRecord Required Methods
@@ -96,7 +96,7 @@ class User extends Authenticatable implements LdapAuthenticatable
         };
     }
 
-        public function getLdapDiscoveryAttribute(): string
+    public function getLdapDiscoveryAttribute(): string
     {
         return 'uid';
     }

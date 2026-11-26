@@ -65,7 +65,7 @@ class ProposalMemberController extends Controller
             NotificationHelper::send(
                 (int) $proposal->user_id,
                 'Jawaban Undangan Anggota Tim',
-                auth()->user()->name . ' ' . $jawaban . ' undangan menjadi anggota tim proposal "' . ($proposal->judul ?? '-') . '".',
+                auth()->user()->name.' '.$jawaban.' undangan menjadi anggota tim proposal "'.($proposal->judul ?? '-').'".',
                 'info',
                 $proposal->id
             );

@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Helpers\NotificationHelper;
 use App\Models\ActivityLog;
 use App\Models\Proposal;
 use App\Models\Review;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use App\Models\Notification; // ⬅️ WAJIB INI
-use App\Helpers\NotificationHelper; // ✅ TAMBAH INI (buat notif bell)
+use Illuminate\Http\Request;
+// ⬅️ WAJIB INI
+use Illuminate\Support\Facades\Auth; // ✅ TAMBAH INI (buat notif bell)
 
 class ReviewerController extends Controller
 {
@@ -63,6 +62,7 @@ class ReviewerController extends Controller
     {
         if (Auth::check() && Auth::user()->role === 'admin') {
             $users = User::orderBy('name')->get();
+
             return view('reviewer.pilih-reviewer', compact('users'));
         }
 
@@ -87,7 +87,7 @@ class ReviewerController extends Controller
     public function setReviewer(User $user)
     {
         // 🔒 pastikan admin
-        if (!Auth::check() || Auth::user()->role !== 'admin') {
+        if (! Auth::check() || Auth::user()->role !== 'admin') {
             abort(403);
         }
 
@@ -122,7 +122,7 @@ class ReviewerController extends Controller
     public function removeReviewer(User $user)
     {
         // 🔒 pastikan admin
-        if (!Auth::check() || Auth::user()->role !== 'admin') {
+        if (! Auth::check() || Auth::user()->role !== 'admin') {
             abort(403);
         }
 
@@ -158,7 +158,7 @@ class ReviewerController extends Controller
         if (Auth::user()->role === 'reviewer') {
             $isAssigned = $proposal->reviewers->pluck('id')->contains($userId);
 
-            if (!$isAssigned) {
+            if (! $isAssigned) {
                 abort(403, 'Anda bukan reviewer yang ditugaskan. (ID Anda: '.$userId.')');
             }
         }
@@ -179,7 +179,7 @@ class ReviewerController extends Controller
         if (Auth::user()->role === 'reviewer') {
             $isAssigned = $proposal->reviewers->pluck('id')->contains(Auth::user()->id);
 
-            if (!$isAssigned) {
+            if (! $isAssigned) {
                 abort(403, 'Anda bukan reviewer yang ditugaskan. (ID Anda: '.Auth::user()->id.')');
             }
         }
@@ -205,7 +205,7 @@ class ReviewerController extends Controller
         $totalSkorMurni = 0;
         for ($i = 1; $i <= 7; $i++) {
             $skorMurni = $request->input("nilai_$i");
-            $totalSkorMurni += ($skorMurni * $bobot[$i-1]);
+            $totalSkorMurni += ($skorMurni * $bobot[$i - 1]);
         }
 
         // maksimum murni = 190 (berdasarkan bobot di atas)
@@ -218,20 +218,20 @@ class ReviewerController extends Controller
         Review::create([
             'proposal_id' => $proposal->id,
             'reviewer_id' => Auth::user()->id,
-            'nilai_1'     => $request->nilai_1,
-            'nilai_2'     => $request->nilai_2,
-            'nilai_3'     => $request->nilai_3,
-            'nilai_4'     => $request->nilai_4,
-            'nilai_5'     => $request->nilai_5,
-            'nilai_6'     => $request->nilai_6,
-            'nilai_7'     => $request->nilai_7,
+            'nilai_1' => $request->nilai_1,
+            'nilai_2' => $request->nilai_2,
+            'nilai_3' => $request->nilai_3,
+            'nilai_4' => $request->nilai_4,
+            'nilai_5' => $request->nilai_5,
+            'nilai_6' => $request->nilai_6,
+            'nilai_7' => $request->nilai_7,
             'total_score' => $finalScore500,
             // Form isi-review mengirim field `komentar` (bukan `catatan`);
             // simpan ke kolom `catatan` agar tampil di hasil review.
-            'catatan'     => $request->catatan ?? $request->komentar,
+            'catatan' => $request->catatan ?? $request->komentar,
             // Keputusan review dari form (disetujui/ditolak); kolom
             // `status` ditambah migrasi 2026_11_26_140000.
-            'status'      => $request->status,
+            'status' => $request->status,
             'rekomendasi_biaya' => $request->rekomendasi_biaya,
         ]);
 
@@ -240,7 +240,7 @@ class ReviewerController extends Controller
 
         $this->logActivity("Reviewer mengirim review untuk proposal ID {$id} (skor: {$finalScore500})");
 
-        return redirect()->route('proposal.index')->with('success', 'Review berhasil dikirim dengan skor: ' . $finalScore500);
+        return redirect()->route('proposal.index')->with('success', 'Review berhasil dikirim dengan skor: '.$finalScore500);
     }
 
     /**

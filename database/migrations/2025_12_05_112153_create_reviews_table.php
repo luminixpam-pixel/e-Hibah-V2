@@ -11,27 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('reviews', function (Blueprint $table) {
-    $table->id();
-    $table->unsignedBigInteger('proposal_id');
-    $table->unsignedBigInteger('reviewer_id');
+        Schema::create('reviews', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('proposal_id');
+            $table->unsignedBigInteger('reviewer_id');
 
-    $table->integer('nilai_1')->nullable();
-    $table->integer('nilai_2')->nullable();
-    $table->integer('nilai_3')->nullable();
-    $table->integer('nilai_4')->nullable();
-    $table->integer('nilai_5')->nullable();
-    $table->integer('nilai_6')->nullable();
-    $table->integer('nilai_7')->nullable();
+            $table->integer('nilai_1')->nullable();
+            $table->integer('nilai_2')->nullable();
+            $table->integer('nilai_3')->nullable();
+            $table->integer('nilai_4')->nullable();
+            $table->integer('nilai_5')->nullable();
+            $table->integer('nilai_6')->nullable();
+            $table->integer('nilai_7')->nullable();
 
-    $table->integer('total_score')->nullable();
-    $table->timestamps();
+            $table->integer('total_score')->nullable();
+            $table->timestamps();
 
-     // foreign key
-    $table->foreign('proposal_id')->references('id')->on('proposals')->onDelete('cascade');
-    $table->foreign('reviewer_id')->references('id')->on('users')->onDelete('cascade');
+            // foreign key
+            $table->foreign('proposal_id')->references('id')->on('proposals')->onDelete('cascade');
+            $table->foreign('reviewer_id')->references('id')->on('users')->onDelete('cascade');
 
-});
+        });
 
     }
 

@@ -1,17 +1,33 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminDocumentController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\{
-    DashboardController, ProposalController, ReviewerController,
-    AdminController, NotificationController, CalendarController,
-    ProposalReviewerController, LaporanKemajuanController, ProfileController,
-    AdminDocumentController, TemplateController, LaporanAkhirController,
-    RoleDashboardController, ProposalMemberController, VerificationController,
-    LogbookController, LuaranController, MonevController,
-    SkemaController, PeriodeController, FakultasController, DokumenResmiController,
-    PengumumanController, ErrorReportController, AuditLogController, SettingController
-};
+use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DokumenResmiController;
+use App\Http\Controllers\ErrorReportController;
+use App\Http\Controllers\FakultasController;
+use App\Http\Controllers\LaporanAkhirController;
+use App\Http\Controllers\LaporanKemajuanController;
+use App\Http\Controllers\LogbookController;
+use App\Http\Controllers\LuaranController;
+use App\Http\Controllers\MonevController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PengumumanController;
+use App\Http\Controllers\PeriodeController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProposalController;
+use App\Http\Controllers\ProposalMemberController;
+use App\Http\Controllers\ProposalReviewerController;
+use App\Http\Controllers\ReviewerController;
+use App\Http\Controllers\RoleDashboardController;
+use App\Http\Controllers\SettingController;
+use App\Http\Controllers\SkemaController;
+use App\Http\Controllers\TemplateController;
+use App\Http\Controllers\VerificationController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -204,9 +220,9 @@ Route::middleware('auth')->group(function () {
             ->get()
             ->map(function ($n) {
                 return [
-                    'title'    => $n->title,
-                    'message'  => $n->message,
-                    'is_read'  => (bool) $n->is_read,
+                    'title' => $n->title,
+                    'message' => $n->message,
+                    'is_read' => (bool) $n->is_read,
                     'time_ago' => $n->created_at->diffForHumans(),
                 ];
             });

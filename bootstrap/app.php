@@ -1,7 +1,7 @@
 <?php
 
 // TAMBAHKAN INI DI SINI
-if (!defined('LDAP_OPT_PROTOCOL_VERSION')) {
+if (! defined('LDAP_OPT_PROTOCOL_VERSION')) {
     define('LDAP_OPT_PROTOCOL_VERSION', 3);
 }
 

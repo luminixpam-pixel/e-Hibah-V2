@@ -15,7 +15,7 @@ return new class extends Migration
         // Form isi-review mengirim field `status` (disetujui/ditolak)
         // yang selama ini diabaikan submitReview() karena kolomnya
         // tidak ada (hanya tercantum di Review::$fillable).
-        if (!Schema::hasColumn('reviews', 'status')) {
+        if (! Schema::hasColumn('reviews', 'status')) {
             Schema::table('reviews', function (Blueprint $table) {
                 $table->string('status')->nullable()->after('rekomendasi_biaya');
             });

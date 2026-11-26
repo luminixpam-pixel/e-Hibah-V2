@@ -2,15 +2,15 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-// TAMBAHKAN 3 BARIS DI BAWAH INI:
-use Illuminate\Support\Facades\View;
 use App\Models\Fakultas;
-use App\Models\User;
-use App\Models\Template;
+// TAMBAHKAN 3 BARIS DI BAWAH INI:
 use App\Models\Notification;
+use App\Models\Template;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {

@@ -21,7 +21,7 @@ class Template extends Model
     protected $fillable = [
         'nama_template',
         'file_path',
-        'jenis'
+        'jenis',
     ];
 
     /**
@@ -31,7 +31,7 @@ class Template extends Model
     public function getFileUrlAttribute()
     {
         if ($this->file_path && Storage::disk('public')->exists($this->file_path)) {
-            return asset('storage/' . $this->file_path);
+            return asset('storage/'.$this->file_path);
         }
 
         return null;

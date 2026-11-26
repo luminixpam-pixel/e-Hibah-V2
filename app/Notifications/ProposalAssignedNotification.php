@@ -3,8 +3,8 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class ProposalAssignedNotification extends Notification
 {
@@ -24,17 +24,17 @@ class ProposalAssignedNotification extends Notification
     }
 
     // isi notifikasi database
-   public function toDatabase($notifiable)
-{
-    return [
-        'title'       => 'Penugasan Review Proposal',
-        'message'     => 'Anda ditugaskan untuk mereview proposal: ' . $this->proposal->judul,
-        'proposal_id' => $this->proposal->id,
-        'judul'       => $this->proposal->judul,
-        'pengusul'    => $this->proposal->nama_ketua,
-        'url'         => route('reviewer.isi-review', $this->proposal->id),
-    ];
-}
+    public function toDatabase($notifiable)
+    {
+        return [
+            'title' => 'Penugasan Review Proposal',
+            'message' => 'Anda ditugaskan untuk mereview proposal: '.$this->proposal->judul,
+            'proposal_id' => $this->proposal->id,
+            'judul' => $this->proposal->judul,
+            'pengusul' => $this->proposal->nama_ketua,
+            'url' => route('reviewer.isi-review', $this->proposal->id),
+        ];
+    }
 
     // OPTIONAL email
     /*

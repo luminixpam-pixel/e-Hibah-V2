@@ -1,11 +1,10 @@
 <?php
 
+use App\Ldap\User as LdapUser;
+use App\Models\User as DbUser;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
-
-use App\Ldap\User as LdapUser;
-use App\Models\User as DbUser;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -40,24 +39,24 @@ Artisan::command('ldap:sync-dosen
         ?: env('LDAP_DOSEN_FILTER', '(uid=*)');
 
     $pageSize = (int) ($this->option('page') ?: 500);
-    $limit    = (int) ($this->option('limit') ?: 0);
-    $dryRun   = (bool) $this->option('dry-run');
-    $role     = (string) ($this->option('role') ?: 'pengaju');
+    $limit = (int) ($this->option('limit') ?: 0);
+    $dryRun = (bool) $this->option('dry-run');
+    $role = (string) ($this->option('role') ?: 'pengaju');
 
-    $this->info("LDAP Sync Dosen");
+    $this->info('LDAP Sync Dosen');
     $this->line("Base DN : {$baseDn}");
     $this->line("Filter  : {$filter}");
     $this->line("Page    : {$pageSize}");
-    $this->line("Limit   : " . ($limit > 0 ? $limit : 'no limit'));
-    $this->line("Mode    : " . ($dryRun ? 'DRY RUN' : 'WRITE DB'));
+    $this->line('Limit   : '.($limit > 0 ? $limit : 'no limit'));
+    $this->line('Mode    : '.($dryRun ? 'DRY RUN' : 'WRITE DB'));
     $this->newLine();
 
     $stats = [
         'processed' => 0,
-        'created'   => 0,
-        'updated'   => 0,
+        'created' => 0,
+        'updated' => 0,
         'skipped_admin' => 0,
-        'no_username'   => 0,
+        'no_username' => 0,
     ];
 
     $counter = 0;
@@ -85,11 +84,13 @@ Artisan::command('ldap:sync-dosen
                 ?: $ldap->getFirstAttribute('samaccountname')
                 ?: (function () use ($ldap) {
                     $upn = $ldap->getFirstAttribute('userprincipalname');
+
                     return $upn ? explode('@', $upn)[0] : null;
                 })();
 
-            if (!$username) {
+            if (! $username) {
                 $stats['no_username']++;
+
                 continue;
             }
 
@@ -101,16 +102,16 @@ Artisan::command('ldap:sync-dosen
             $email = $ldap->getFirstAttribute('mail');
 
             $payload = [
-                'name'          => $name,
-                'email'         => $email,
+                'name' => $name,
+                'email' => $email,
                 // Mapping sesuai login kamu yang sekarang:
-                'nidn'          => $ldap->getFirstAttribute('description'),
-                'fakultas'      => $ldap->getFirstAttribute('department'),
+                'nidn' => $ldap->getFirstAttribute('description'),
+                'fakultas' => $ldap->getFirstAttribute('department'),
                 'program_studi' => $ldap->getFirstAttribute('title'),
-                'jabatan'       => $ldap->getFirstAttribute('physicaldeliveryofficename'),
-                'guid'          => method_exists($ldap, 'getConvertedGuid') ? ($ldap->getConvertedGuid() ?: $ldap->getFirstAttribute('entryuuid')) : $ldap->getFirstAttribute('entryuuid'),
-                'domain'        => 'default',
-                'role'          => $role,
+                'jabatan' => $ldap->getFirstAttribute('physicaldeliveryofficename'),
+                'guid' => method_exists($ldap, 'getConvertedGuid') ? ($ldap->getConvertedGuid() ?: $ldap->getFirstAttribute('entryuuid')) : $ldap->getFirstAttribute('entryuuid'),
+                'domain' => 'default',
+                'role' => $role,
             ];
 
             $existing = DbUser::where('username', $username)->first();
@@ -118,11 +119,13 @@ Artisan::command('ldap:sync-dosen
             // Jangan timpa admin lokal
             if ($existing && $existing->role === 'admin') {
                 $stats['skipped_admin']++;
+
                 continue;
             }
 
             if ($dryRun) {
                 $stats['processed']++;
+
                 continue;
             }
 
@@ -146,7 +149,7 @@ Artisan::command('ldap:sync-dosen
     }, false, true);
 
     $this->newLine();
-    $this->info("DONE. Statistik:");
+    $this->info('DONE. Statistik:');
     foreach ($stats as $k => $v) {
         $this->line("- {$k}: {$v}");
     }
