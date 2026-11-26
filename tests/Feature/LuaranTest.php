@@ -128,7 +128,7 @@ test('proposal bukan Disetujui ditolak 403 untuk luaran', function () {
     $pengaju = f5luarBuatPengaju();
     $proposal = f5luarBuatProposalDisetujui($pengaju, f5luarBuatSkema(), [
         'status' => 'Dikirim',
-        'status_pendanaan' => null,
+        'status_pendanaan' => 'Proses',
     ]);
 
     $this->actingAs($pengaju)->get(route('luaran.show', $proposal))->assertForbidden();

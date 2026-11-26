@@ -122,9 +122,15 @@ test('pemilik bisa tambah entri logbook', function () {
 
     $this->assertDatabaseHas('logbooks', [
         'proposal_id' => $proposal->id,
-        'tanggal' => '2026-11-20',
         'uraian_kegiatan' => 'Observasi laboratorium.',
     ]);
+
+    // 'tanggal' dicek lewat model (cast date), bukan assertDatabaseHas:
+    // SQLite menyimpan cast date sebagai '2026-11-20 00:00:00', sedangkan
+    // kolom date di MySQL menyimpan '2026-11-20' — asersi string mentah
+    // gagal di SQLite padahal datanya benar.
+    $logbook = Logbook::where('proposal_id', $proposal->id)->firstOrFail();
+    expect($logbook->tanggal->toDateString())->toBe('2026-11-20');
 });
 
 test('pengaju bukan pemilik ditolak 403 saat lihat dan tambah logbook', function () {
@@ -159,7 +165,9 @@ test('proposal bukan Disetujui ditolak 403 untuk logbook', function () {
     $pengaju = f5logBuatPengaju();
     $proposal = f5logBuatProposalDisetujui($pengaju, f5logBuatSkema(), [
         'status' => 'Dikirim',
-        'status_pendanaan' => null,
+        // Proposal yang baru dikirim di alur nyata berstatus_pendanaan
+        // 'Proses' (default kolom, NOT NULL) — bukan null.
+        'status_pendanaan' => 'Proses',
     ]);
 
     $this->actingAs($pengaju)->get(route('logbook.show', $proposal))->assertForbidden();

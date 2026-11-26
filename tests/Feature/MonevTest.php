@@ -283,7 +283,7 @@ test('temuan hanya untuk proposal Disetujui: buat dan lihat pada proposal Dikiri
     $pengaju = f5monBuatUser('pengaju');
     $proposal = f5monBuatProposalDisetujui($pengaju, [
         'status' => 'Dikirim',
-        'status_pendanaan' => null,
+        'status_pendanaan' => 'Proses',
     ]);
 
     $response = $this->actingAs($lppm)->post(route('monev.store', $proposal), [
