@@ -12,22 +12,24 @@ test('login screen can be rendered', function () {
 });
 
 test('users can authenticate using the login screen', function () {
-    $user = User::factory()->create();
+    // Login aplikasi ini memakai username (bukan email) lewat
+    // AuthController kustom; password dicek dulu ke database lokal.
+    $user = User::factory()->create(['role' => 'pengaju']);
 
     $response = $this->post('/login', [
-        'email' => $user->email,
+        'username' => $user->username,
         'password' => 'password',
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('dashboard.pengaju', absolute: false));
 });
 
 test('users cannot authenticate with invalid password', function () {
     $user = User::factory()->create();
 
     $this->post('/login', [
-        'email' => $user->email,
+        'username' => $user->username,
         'password' => 'wrong-password',
     ]);
 

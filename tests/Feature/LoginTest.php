@@ -19,7 +19,7 @@ class LoginTest extends TestCase
         'name'     => 'Dosen Testing',
         'email'    => 'test@yarsi.ac.id',
         'password' => \Illuminate\Support\Facades\Hash::make('rahasia123'),
-        'role'     => 'user',
+        'role'     => 'pengaju',
     ]);
 
     // 2. Jalankan Login
@@ -34,7 +34,7 @@ class LoginTest extends TestCase
         $this->fail("Login gagal. Pesan error: " . session('errors')?->first('username'));
     }
 
-    $response->assertRedirect('/dashboard');
+    $response->assertRedirect('/dashboard/pengaju');
     $this->assertAuthenticatedAs($user);
 }
 }
