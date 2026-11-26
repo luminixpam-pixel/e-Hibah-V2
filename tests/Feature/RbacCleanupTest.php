@@ -16,7 +16,12 @@ test('kelas AdminMiddleware sudah dihapus (digantikan RoleMiddleware dengan role
     // Bukti: alias 'admin' di bootstrap/app.php memetakan ke
     // RoleMiddleware, bukan ke kelas ini; tidak ada pemakai kelas ini
     // di route, controller, atau view mana pun (grep 26 Nov 2026).
-    expect(class_exists(AdminMiddleware::class))->toBeFalse();
+    // Dicek lewat file_exists + class_exists tanpa autoload: class_exists()
+    // biasa memicu autoloader, dan classmap composer yang belum
+    // di-regenerate masih menyimpan path file yang sudah dihapus
+    // sehingga include-nya error (bukan karena kelasnya masih ada).
+    expect(file_exists(app_path('Http/Middleware/AdminMiddleware.php')))->toBeFalse();
+    expect(class_exists(AdminMiddleware::class, false))->toBeFalse();
 });
 
 test('method adminUpdate sudah dihapus dari AuthController', function () {
