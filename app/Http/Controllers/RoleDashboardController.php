@@ -80,6 +80,17 @@ class RoleDashboardController extends Controller
         $myProposals = Proposal::with(['skema', 'reviews', 'verifications'])
             ->where('user_id', $user->id)->latest()->get();
 
+        // Proposal yang diikuti sebagai anggota tim (cara B: keanggotaan
+        // dicek lewat proposal_members, bukan lewat role). Hanya yang
+        // statusnya Menunggu/Diterima; yang Ditolak sudah bukan anggota
+        // tim lagi. Proposal sendiri tidak masuk sini (sudah ada di
+        // "Proposal Saya" di atas).
+        $proposalDiikuti = Proposal::with(['skema', 'members' => fn ($q) => $q->where('user_id', $user->id)])
+            ->where('user_id', '!=', $user->id)
+            ->whereHas('members', fn ($q) => $q->where('user_id', $user->id)->whereIn('status_konfirmasi', ['Menunggu', 'Diterima']))
+            ->latest()
+            ->get();
+
         $stats = [
             'total' => $myProposals->count(),
             'draft' => $myProposals->where('status', 'Draft')->count(),
@@ -91,7 +102,7 @@ class RoleDashboardController extends Controller
         $notifications = Notification::where('user_id', $user->id)->latest()->take(5)->get();
 
         return view('dashboard.pengaju', array_merge(
-            compact('user', 'myProposals', 'notifications'),
+            compact('user', 'myProposals', 'proposalDiikuti', 'notifications'),
             $stats
         ));
     }

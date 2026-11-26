@@ -394,6 +394,116 @@
 
     </div>
 
+    {{-- PROPOSAL YANG SAYA IKUTI (SEBAGAI ANGGOTA TIM) --}}
+    <div class="row g-4 mt-1">
+
+        <div class="col-12">
+
+            <div class="dashboard-panel">
+
+                <div class="panel-header">
+                    <div>
+                        <h5 class="fw-bold mb-1">Proposal yang Saya Ikuti</h5>
+                        <p class="text-muted small mb-0">
+                            Proposal yang Anda ikuti sebagai anggota tim
+                        </p>
+                    </div>
+
+                    <a href="{{ route('anggota.undangan') }}"
+                       class="panel-link">
+                        Undangan <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="proposal-list">
+
+                    @forelse ($proposalDiikuti ?? [] as $p)
+
+                        @php $keanggotaanSaya = $p->members->first(); @endphp
+
+                        <div class="proposal-item">
+
+                            <div class="proposal-icon">
+                                <i class="bi bi-people"></i>
+                            </div>
+
+                            <div class="proposal-detail">
+
+                                <h6 class="fw-bold mb-2">
+                                    {{ $p->judul }}
+                                </h6>
+
+                                <small class="proposal-no">
+                                    <i class="bi bi-person me-1"></i>Ketua: {{ $p->nama_ketua }}
+                                    @if ($p->skema)
+                                        · {{ $p->skema->kategori }}
+                                    @endif
+                                    @if ($p->no_pengajuan)
+                                        · {{ $p->no_pengajuan }}
+                                    @endif
+                                </small>
+
+                                <div class="proposal-meta">
+
+                                    <span class="proposal-status">
+                                        {{ $p->status }}
+                                    </span>
+
+                                    @if ($keanggotaanSaya && $keanggotaanSaya->status_konfirmasi === 'Diterima')
+                                        <span class="badge bg-success">Anggota — Diterima</span>
+                                    @elseif ($keanggotaanSaya)
+                                        <span class="badge bg-warning text-dark">Menunggu konfirmasi</span>
+                                    @endif
+
+                                </div>
+
+                                <div class="d-flex gap-2 mt-2">
+                                    <a href="{{ route('anggota.proposal.show', $p->id) }}"
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye me-1"></i>Lihat Detail
+                                    </a>
+
+                                    @if ($keanggotaanSaya && $keanggotaanSaya->status_konfirmasi === 'Menunggu')
+                                        <a href="{{ route('anggota.undangan') }}"
+                                           class="btn btn-outline-secondary btn-sm">
+                                            Jawab Undangan
+                                        </a>
+                                    @endif
+                                </div>
+
+                                <small class="proposal-date">
+                                    <i class="bi bi-calendar3 me-1"></i>
+                                    {{ $p->created_at?->format('d M Y') }}
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                    @empty
+
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="bi bi-people"></i>
+                            </div>
+
+                            <h6 class="fw-bold">Belum Ada Proposal yang Diikuti</h6>
+
+                            <p class="text-muted small">
+                                Anda belum terdaftar sebagai anggota tim di proposal mana pun.
+                            </p>
+                        </div>
+
+                    @endforelse
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
 </div>
 
 <style>

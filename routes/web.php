@@ -125,6 +125,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/anggota/undangan', [ProposalMemberController::class, 'index'])->name('anggota.undangan');
     Route::post('/anggota/undangan/{id}/konfirmasi', [ProposalMemberController::class, 'confirm'])->name('anggota.konfirmasi');
 
+    // Detail proposal yang diikuti sebagai anggota tim (read-only).
+    Route::get('/anggota/proposal/{id}', [ProposalMemberController::class, 'show'])->name('anggota.proposal.show');
+
     // Verifikasi administrasi (formulir pemeriksaan oleh verifikator).
     Route::post('/verifikasi/{proposal}', [VerificationController::class, 'store'])
         ->middleware('role:verifikator')->name('verifikasi.store');

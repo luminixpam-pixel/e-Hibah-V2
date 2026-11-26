@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\NotificationHelper;
+use App\Models\ActivityLog;
+use App\Models\Proposal;
 use App\Models\ProposalMember;
 use Illuminate\Http\Request;
 
@@ -74,5 +76,45 @@ class ProposalMemberController extends Controller
         return redirect()->route('anggota.undangan')->with('success', $request->aksi === 'setuju'
             ? 'Terima kasih! Anda tercatat sebagai anggota tim proposal ini.'
             : 'Undangan ditolak. Ketua pengusul telah diberi tahu.');
+    }
+
+    /**
+     * Detail proposal yang diikuti sebagai anggota tim (read-only).
+     * Memakai tampilan detail yang sama dengan tinjau proposal, tanpa
+     * formulir verifikasi (formulir itu hanya dirender untuk role
+     * verifikator, jadi anggota tidak pernah melihatnya).
+     *
+     * Boleh dibuka oleh ketua pengusul dan oleh anggota tim yang
+     * status keanggotaannya Menunggu/Diterima. Sesuai alur UML,
+     * anggota meninjau detail dulu baru menjawab undangan, jadi
+     * status Menunggu tetap boleh melihat. Yang Ditolak sudah bukan
+     * anggota tim lagi dan tidak boleh melihat.
+     */
+    public function show($id)
+    {
+        $userId = (int) auth()->user()->id;
+
+        $proposal = Proposal::with(['user', 'reviewers', 'reviews.reviewer', 'verifications.verifikator'])
+            ->findOrFail($id);
+
+        $isKetua = (int) $proposal->user_id === $userId;
+
+        $keanggotaan = $isKetua ? null : ProposalMember::where('proposal_id', $proposal->id)
+            ->where('user_id', $userId)
+            ->whereIn('status_konfirmasi', ['Menunggu', 'Diterima'])
+            ->first();
+
+        if (! $isKetua && ! $keanggotaan) {
+            abort(403, 'Anda bukan anggota tim proposal ini.');
+        }
+
+        // Riwayat keputusan pendanaan dari log aktivitas admin (pola yang
+        // sama dengan ProposalController@tinjau).
+        $riwayatKeputusan = ActivityLog::where('activity', 'like', '%proposal ID '.$proposal->id.' menjadi:%')
+            ->with('user')
+            ->latest()
+            ->get();
+
+        return view('proposal.tinjau-proposal', compact('proposal', 'riwayatKeputusan'));
     }
 }
