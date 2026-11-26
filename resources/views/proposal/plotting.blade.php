@@ -62,9 +62,8 @@
                 @if (count($kandidat[$p->id] ?? []) < 2)
                     <div class="alert alert-warning small mb-3" role="alert">
                         <i class="bi bi-exclamation-triangle me-1"></i>
-                        Kandidat reviewer hanya {{ count($kandidat[$p->id] ?? []) }} orang — penugasan butuh
-                        2 reviewer berbeda. Tambahkan akun reviewer lewat menu Manajemen Reviewer (admin)
-                        sebelum menugaskan proposal ini.
+                        Kandidat reviewer hanya {{ count($kandidat[$p->id] ?? []) }} orang — penugasan butuh 2 reviewer berbeda.
+                        Tambahkan akun reviewer lewat menu Manajemen Reviewer (admin) sebelum menugaskan proposal ini.
                     </div>
                 @endif
 
