@@ -1,7 +1,10 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Jetstream\Features;
+
+uses(RefreshDatabase::class);
 
 test('confirm password screen can be rendered', function () {
     $user = Features::hasTeamFeatures()

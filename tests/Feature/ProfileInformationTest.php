@@ -1,8 +1,11 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Jetstream\Http\Livewire\UpdateProfileInformationForm;
 use Livewire\Livewire;
+
+uses(RefreshDatabase::class);
 
 test('current profile information is available', function () {
     $this->actingAs($user = User::factory()->create());
