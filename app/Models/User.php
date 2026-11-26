@@ -5,13 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 // Core LDAP traits
 use LdapRecord\Laravel\Auth\AuthenticatesWithLdap;
 use LdapRecord\Laravel\Auth\LdapAuthenticatable;
 
 class User extends Authenticatable implements LdapAuthenticatable
 {
-    use HasFactory, Notifiable, AuthenticatesWithLdap;
+    use HasFactory, Notifiable, AuthenticatesWithLdap, TwoFactorAuthenticatable;
 
     protected $fillable = [
         'name',
@@ -34,6 +35,8 @@ class User extends Authenticatable implements LdapAuthenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     protected $casts = [
