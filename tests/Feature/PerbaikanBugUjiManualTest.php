@@ -306,7 +306,9 @@ test('minor d: daftar pengguna dipaginasi 20 per halaman', function () {
     $page1 = $this->actingAs($admin)->get(route('admin.users.index'));
     $page1->assertOk();
     $page1->assertSee('Pengguna 01');
-    $page1->assertDontSee('Pengguna 25');
+    // Periksa baris tabel, bukan seluruh halaman: layout global memuat
+    // <datalist id="dosenList"> berisi nama semua dosen di setiap halaman.
+    $page1->assertDontSee('<td><strong>Pengguna 25</strong></td>', false);
 
     $page2 = $this->actingAs($admin)->get(route('admin.users.index', ['page' => 2]));
     $page2->assertOk();
@@ -322,5 +324,7 @@ test('minor d: pencarian pengguna memfilter berdasarkan nama', function () {
 
     $response->assertOk();
     $response->assertSee('Citra Lestari');
-    $response->assertDontSee('Dedi Kurnia');
+    // Periksa baris tabel, bukan seluruh halaman (lihat catatan di atas:
+    // datalist global di layout tetap memuat nama Dedi Kurnia).
+    $response->assertDontSee('<td><strong>Dedi Kurnia</strong></td>', false);
 });
