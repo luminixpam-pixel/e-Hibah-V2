@@ -228,7 +228,8 @@
                     <div class="proposal-team-info">
                         <i class="bi bi-calculator"></i>
                         <span>
-                            Tambahkan tiap komponen biaya. Total RAB dihitung
+                            Tambahkan tiap komponen biaya. Nama komponen harus dipilih dari daftar yang tersedia
+                            (komponen kustom ditambahkan admin di menu Setelan). Total RAB dihitung
                             otomatis dan tidak boleh melebihi plafon skema.
                         </span>
                     </div>
@@ -245,6 +246,7 @@
                                     type="text"
                                     name="rab[{{ $index }}][nama_komponen]"
                                     class="proposal-input rab-nama"
+                                    list="komponen-rab-list"
                                     value="{{ $rab['nama_komponen'] ?? '' }}"
                                     placeholder="Nama komponen"
                                 >
@@ -460,6 +462,13 @@
         @endforeach
     </datalist>
 
+    {{-- Daftar komponen RAB (bawaan + kustom dari setelan admin) untuk pilihan nama komponen --}}
+    <datalist id="komponen-rab-list">
+        @foreach ($daftarKomponenRab as $komponen)
+            <option value="{{ $komponen }}">
+        @endforeach
+    </datalist>
+
 </div>
 
 <script>
@@ -609,7 +618,7 @@ function tambahRab() {
     row.className = 'proposal-rab-row';
 
     row.innerHTML = `
-        <input type="text" name="rab[${rabIndex}][nama_komponen]" class="proposal-input rab-nama" placeholder="Nama komponen">
+        <input type="text" name="rab[${rabIndex}][nama_komponen]" class="proposal-input rab-nama" list="komponen-rab-list" placeholder="Nama komponen">
         <input type="number" name="rab[${rabIndex}][jumlah]" class="proposal-input rab-jumlah" placeholder="Jumlah (Rp)" min="0" step="1">
         <input type="text" name="rab[${rabIndex}][keterangan]" class="proposal-input rab-keterangan" placeholder="Keterangan (opsional)">
         <button type="button" class="proposal-remove-member" onclick="hapusRab(this)" title="Hapus komponen">

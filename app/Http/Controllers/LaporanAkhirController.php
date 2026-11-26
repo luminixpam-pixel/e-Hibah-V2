@@ -3,12 +3,27 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\ActivityLog;
 use App\Models\Proposal;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 class LaporanAkhirController extends Controller
 {
+    /**
+     * Helper internal untuk mencatat log aktivitas pengguna
+     * (pola yang sama dengan ProposalController::logActivity).
+     */
+    private function logActivity($activity)
+    {
+        ActivityLog::create([
+            'user_id' => auth()->user()->id,
+            'activity' => $activity,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+    }
+
     /**
      * Menampilkan daftar proposal untuk laporan akhir
      */
@@ -67,6 +82,8 @@ class LaporanAkhirController extends Controller
             ]);
 
             if ($isSuccess) {
+                $this->logActivity("Mengunggah laporan akhir proposal ID {$proposal->id}");
+
                 return back()->with('success', 'Laporan akhir berhasil diunggah!');
             } else {
                 return back()->with('error', 'Database menolak update. Cek $fillable di Model Proposal.');

@@ -13,9 +13,11 @@ use App\Models\HibahPeriod;
 use App\Models\MonevFinding;
 use App\Models\ProposalMember;
 use App\Models\RabItem;
+use App\Models\Setting;
 use App\Models\Skema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use App\Helpers\NotificationHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -176,12 +178,13 @@ class ProposalController extends Controller
             return 'Anda masih memiliki tanggungan laporan (laporan akhir belum diunggah atau temuan Monev masih terbuka) sehingga tidak dapat mengajukan proposal baru. Silakan selesaikan kewajiban pelaporan Anda atau hubungi LPPM.';
         }
 
-        // Kuota 0 berarti batas belum ditetapkan — lewati pengecekan kuota.
-        if ((int) $skema->kuota <= 0) {
-            return null;
-        }
+        // Kuota 0 berarti batas belum ditetapkan — lewati pengecekan
+        // kuota SAJA. Cek blacklist + tanggungan anggota di bawah tetap
+        // berjalan (sebelumnya early-return di sini membuat keduanya
+        // terlewat bila kuota skema = 0).
+        $cekKuota = (int) $skema->kuota > 0;
 
-        if ($this->countParticipation($user->id, $skema->id, $exceptProposalId) >= (int) $skema->kuota) {
+        if ($cekKuota && $this->countParticipation($user->id, $skema->id, $exceptProposalId) >= (int) $skema->kuota) {
             return "Anda sudah mencapai kuota skema {$skema->kategori} ({$skema->kuota} keikutsertaan).";
         }
 
@@ -196,7 +199,7 @@ class ProposalController extends Controller
             if ($this->hasTanggunganLaporan($member->id, $exceptProposalId)) {
                 return "Anggota {$member->name} masih memiliki tanggungan laporan (laporan akhir belum diunggah atau temuan Monev masih terbuka) sehingga tidak dapat diikutsertakan.";
             }
-            if ($this->countParticipation($member->id, $skema->id, $exceptProposalId) >= (int) $skema->kuota) {
+            if ($cekKuota && $this->countParticipation($member->id, $skema->id, $exceptProposalId) >= (int) $skema->kuota) {
                 return "Anggota {$member->name} sudah mencapai kuota skema {$skema->kategori} ({$skema->kuota} keikutsertaan).";
             }
         }
@@ -303,8 +306,11 @@ class ProposalController extends Controller
         $all_dosen = \App\Models\User::whereIn('role', ['pengaju', 'reviewer'])
             ->orderBy('name')
             ->get();
+        // Pilihan nama komponen RAB: bawaan + kustom dari settings
+        // (key 'rab_komponen_kustom'); dipakai datalist di form.
+        $daftarKomponenRab = Setting::daftarKomponenRab();
 
-        return view('proposal.create', compact('list_fakultas', 'list_skema', 'all_dosen'));
+        return view('proposal.create', compact('list_fakultas', 'list_skema', 'all_dosen', 'daftarKomponenRab'));
     }
 
     /**
@@ -417,6 +423,9 @@ public function index(Request $request)
         }
 
         // 3. Validasi form (draft boleh dilengkapi bertahap, submit harus lengkap).
+        // Nama komponen RAB harus ada di daftar bawaan + kustom (settings
+        // key 'rab_komponen_kustom'); bila key belum ada, daftar kustom kosong.
+        $komponenRab = Setting::daftarKomponenRab();
         if ($isDraft) {
             $request->validate([
                 'judul' => 'required|string|max:255',
@@ -426,7 +435,7 @@ public function index(Request $request)
                 'file' => 'nullable|file|mimes:pdf,doc,docx|max:102400',
                 'anggota' => 'nullable|array',
                 'rab' => 'nullable|array',
-                'rab.*.nama_komponen' => 'nullable|string|max:255',
+                'rab.*.nama_komponen' => ['nullable', 'string', 'max:255', Rule::in($komponenRab)],
                 'rab.*.jumlah' => 'nullable|numeric|min:0',
                 'rab.*.keterangan' => 'nullable|string|max:500',
             ]);
@@ -439,7 +448,7 @@ public function index(Request $request)
                 'file' => 'required|file|mimes:pdf,doc,docx|max:102400', // Maks 100 MB
                 'anggota' => 'nullable|array',
                 'rab' => 'required|array|min:1',
-                'rab.*.nama_komponen' => 'required|string|max:255',
+                'rab.*.nama_komponen' => ['required', 'string', 'max:255', Rule::in($komponenRab)],
                 'rab.*.jumlah' => 'required|numeric|min:0',
                 'rab.*.keterangan' => 'nullable|string|max:500',
             ]);
@@ -503,6 +512,7 @@ public function index(Request $request)
                     $proposal->update(['no_pengajuan' => $this->generateNoPengajuan($proposal)]);
                     $this->sendMemberInvitations($proposal);
                     NotificationController::notifyProposalSubmitted($user->id);
+                    $this->logActivity("Mengajukan proposal ID {$proposal->id} (status: Dikirim)");
                 }
 
                 return $proposal;
@@ -538,6 +548,9 @@ public function edit($id)
     // Sesuaikan role jika hanya ingin menampilkan dosen/pengaju saja
     $users = \App\Models\User::all();
     $list_skema = Skema::orderBy('kategori')->get();
+    // Pilihan nama komponen RAB: bawaan + kustom dari settings
+    // (key 'rab_komponen_kustom'); dipakai datalist di form.
+    $daftarKomponenRab = Setting::daftarKomponenRab();
 
     // 3. Cek Masa Hibah (Keamanan)
     $now = now();
@@ -551,7 +564,7 @@ public function edit($id)
     }
 
     // 4. Kirim semua variabel ke view
-    return view('proposal.edit-proposal', compact('proposal', 'users', 'list_skema'));
+    return view('proposal.edit-proposal', compact('proposal', 'users', 'list_skema', 'daftarKomponenRab'));
 }
     /**
      * Update Data Proposal (lengkapi draft, kirim draft, atau revisi).
@@ -573,6 +586,8 @@ public function update(Request $request, $id)
     $kirimPengajuan = $aksi === 'submit' && in_array($proposal->status, ['Draft', 'Revisi Administrasi']);
 
     // Validasi: draft boleh dilengkapi bertahap; pengiriman dan revisi harus lengkap.
+    // Nama komponen RAB harus ada di daftar bawaan + kustom (settings
+    // key 'rab_komponen_kustom'); bila key belum ada, daftar kustom kosong.
     $request->validate([
         'judul' => 'required|string',
         'nama_ketua' => 'required|string',
@@ -581,7 +596,7 @@ public function update(Request $request, $id)
         'file' => 'nullable|file|mimes:pdf,doc,docx|max:102400',
         'anggota' => 'nullable|array',
         'rab' => 'nullable|array',
-        'rab.*.nama_komponen' => 'nullable|string|max:255',
+        'rab.*.nama_komponen' => ['nullable', 'string', 'max:255', Rule::in(Setting::daftarKomponenRab())],
         'rab.*.jumlah' => 'nullable|numeric|min:0',
         'rab.*.keterangan' => 'nullable|string|max:500',
     ]);
@@ -670,6 +685,7 @@ public function update(Request $request, $id)
         if ($kirimPengajuan) {
             $this->sendMemberInvitations($proposal);
             NotificationController::notifyProposalSubmitted($user->id);
+            $this->logActivity("Mengirim proposal ID {$proposal->id} (status: Dikirim)");
         }
     });
 
@@ -754,6 +770,10 @@ public function update(Request $request, $id)
 
         NotificationHelper::send((int)$request->reviewer_1, $title, $message, 'info', $proposal->id);
         NotificationHelper::send((int)$request->reviewer_2, $title, $message, 'info', $proposal->id);
+
+        // Plotting tercatat di sini juga (endpoint ini yang dipakai
+        // halaman plotting LPPM): penugasan 2 reviewer + tenggat.
+        $this->logActivity("Menugaskan reviewer untuk proposal ID {$id} (status: Sedang Direview)");
 
         return back()->with('success', 'Berhasil! Reviewer telah ditugaskan.');
     } catch (\Exception $e) {

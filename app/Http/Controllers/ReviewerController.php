@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\ActivityLog;
 use App\Models\Proposal;
 use App\Models\Review;
 use App\Models\User;
@@ -13,6 +14,20 @@ use App\Helpers\NotificationHelper; // ✅ TAMBAH INI (buat notif bell)
 
 class ReviewerController extends Controller
 {
+    /**
+     * Helper internal untuk mencatat log aktivitas pengguna
+     * (pola yang sama dengan ProposalController::logActivity).
+     */
+    private function logActivity($activity)
+    {
+        ActivityLog::create([
+            'user_id' => auth()->user()->id,
+            'activity' => $activity,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+    }
+
     /**
      * Ambil daftar reviewer (buat search di admin) - DIPANGGIL VIA AJAX
      */
@@ -158,6 +173,17 @@ class ReviewerController extends Controller
     {
         $proposal = Proposal::with('reviewers')->findOrFail($id);
 
+        // ✅ Pastikan reviewer benar-benar ditugaskan (seperti isiReview).
+        // Tanpa cek ini, reviewer mana pun bisa mengirim review untuk
+        // proposal yang bukan tugasnya lewat POST langsung.
+        if (Auth::user()->role === 'reviewer') {
+            $isAssigned = $proposal->reviewers->pluck('id')->contains(Auth::user()->id);
+
+            if (!$isAssigned) {
+                abort(403, 'Anda bukan reviewer yang ditugaskan. (ID Anda: '.Auth::user()->id.')');
+            }
+        }
+
         // ✅ validasi
         $request->validate([
             'nilai_1' => 'required|integer|min:0|max:5',
@@ -168,6 +194,8 @@ class ReviewerController extends Controller
             'nilai_6' => 'required|integer|min:0|max:5',
             'nilai_7' => 'required|integer|min:0|max:5',
             'catatan' => 'nullable|string',
+            'komentar' => 'nullable|string',
+            'status' => 'nullable|in:disetujui,ditolak',
             'rekomendasi_biaya' => 'nullable|numeric|min:0',
         ]);
 
@@ -198,12 +226,19 @@ class ReviewerController extends Controller
             'nilai_6'     => $request->nilai_6,
             'nilai_7'     => $request->nilai_7,
             'total_score' => $finalScore500,
-            'catatan'     => $request->catatan,
+            // Form isi-review mengirim field `komentar` (bukan `catatan`);
+            // simpan ke kolom `catatan` agar tampil di hasil review.
+            'catatan'     => $request->catatan ?? $request->komentar,
+            // Keputusan review dari form (disetujui/ditolak); kolom
+            // `status` ditambah migrasi 2026_11_26_140000.
+            'status'      => $request->status,
             'rekomendasi_biaya' => $request->rekomendasi_biaya,
         ]);
 
         // update status proposal
         $this->updateProposalStatus($proposal);
+
+        $this->logActivity("Reviewer mengirim review untuk proposal ID {$id} (skor: {$finalScore500})");
 
         return redirect()->route('proposal.index')->with('success', 'Review berhasil dikirim dengan skor: ' . $finalScore500);
     }

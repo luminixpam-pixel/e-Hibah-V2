@@ -1091,6 +1091,11 @@ body.sidebar-collapsed .sidebar-toggle {
                 <a href="{{ route('proposal.pengumuman') }}">
                     <i class="bi bi-megaphone"></i> Pengumuman Hibah
                 </a>
+                @if(in_array(Auth::user()->role, ['admin', 'lppm']))
+                <a href="{{ route('admin.pengumuman.index') }}">
+                    <i class="bi bi-megaphone"></i> Kelola Pengumuman
+                </a>
+                @endif
                 <a href="{{ route('monitoring.kalender') }}">
                     <i class="bi bi-calendar3"></i> Kalender Hibah
                 </a>
@@ -1190,6 +1195,9 @@ body.sidebar-collapsed .sidebar-toggle {
                 <a href="{{ route('monev.index') }}">
                     <i class="bi bi-clipboard-check"></i> Monev
                 </a>
+                <a href="{{ route('admin.error-report.index') }}">
+                    <i class="bi bi-bug"></i> Laporan Error
+                </a>
             </div>
         </div>
         @endif
@@ -1215,6 +1223,9 @@ body.sidebar-collapsed .sidebar-toggle {
                 </a>
                 <a href="{{ route('monitoring.proposalSedangDireview') }}">
                     <i class="bi bi-hourglass-split"></i> Sedang Direview
+                </a>
+                <a href="{{ route('monitoring.daftarReview') }}">
+                    <i class="bi bi-list-check"></i> Daftar Review
                 </a>
                 <a href="{{ route('monitoring.reviewSelesai') }}">
                     <i class="bi bi-check2-circle"></i> Review Selesai
@@ -1292,6 +1303,18 @@ body.sidebar-collapsed .sidebar-toggle {
                     <i class="bi bi-folder2-open"></i> Database Proposal
                 </a>
 
+                @if(in_array(Auth::user()->role, ['admin', 'lppm']))
+                <a href="{{ route('admin.skema.index') }}">
+                    <i class="bi bi-diagram-3"></i> Master Skema
+                </a>
+                <a href="{{ route('admin.periode.index') }}">
+                    <i class="bi bi-calendar-range"></i> Master Periode
+                </a>
+                <a href="{{ route('admin.fakultas.index') }}">
+                    <i class="bi bi-bank"></i> Master Fakultas
+                </a>
+                @endif
+
                 @if(Auth::user()->role === 'admin')
                 <a href="{{ route('admin.riwayatDosen') }}">
                     <i class="bi bi-person-vcard"></i> Riwayat Dosen
@@ -1322,13 +1345,25 @@ body.sidebar-collapsed .sidebar-toggle {
                 <span class="sidebar-disabled">
                     <i class="bi bi-bar-chart-line"></i> Analitik Institusi
                 </span>
-                <span class="sidebar-disabled">
-                    <i class="bi bi-question-circle"></i> Panduan & Layanan
-                </span>
+                <a href="{{ route('dokumentasi') }}">
+                    <i class="bi bi-book"></i> Dokumentasi Teknis
+                </a>
+                <a href="{{ route('error-report.create') }}">
+                    <i class="bi bi-bug"></i> Laporkan Error
+                </a>
 
                 @if(Auth::user()->role === 'admin')
                 <a href="{{ route('admin.dokumen.index') }}">
                     <i class="bi bi-gear"></i> Administrasi Sistem
+                </a>
+                <a href="{{ route('admin.error-report.index') }}">
+                    <i class="bi bi-bug"></i> Laporan Error
+                </a>
+                <a href="{{ route('admin.audit-log.index') }}">
+                    <i class="bi bi-clock-history"></i> Audit Log
+                </a>
+                <a href="{{ route('admin.settings.index') }}">
+                    <i class="bi bi-sliders"></i> Setelan Admin
                 </a>
                 @endif
             </div>
@@ -1827,20 +1862,6 @@ document.addEventListener("DOMContentLoaded",()=>{
 
     runDeadlineCheckOnce();
 
-    // CALENDAR
-    const calendarEl=document.getElementById('calendar');
-    if(calendarEl){
-        new FullCalendar.Calendar(calendarEl,{
-            initialView:'dayGridMonth',
-            events: [
-                @if(request()->routeIs('monitoring.kalender'))
-                @foreach(\App\Models\Proposal::all() as $p)
-                { title:'{{ $p->judul }}', start:'{{ $p->created_at->format("Y-m-d") }}', color:'{{ $p->status=="Disetujui"?"green":"blue" }}' },
-                @endforeach
-                @endif
-            ]
-        }).render();
-    }
 });
 </script>
 

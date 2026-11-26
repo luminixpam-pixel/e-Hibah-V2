@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\NotificationHelper;
+use App\Models\ActivityLog;
 use App\Models\MonevFinding;
 use App\Models\Proposal;
 use App\Models\User;
@@ -29,6 +30,20 @@ use Illuminate\Support\Facades\Storage;
  */
 class MonevController extends Controller
 {
+    /**
+     * Helper internal untuk mencatat log aktivitas pengguna
+     * (pola yang sama dengan ProposalController::logActivity).
+     */
+    private function logActivity($activity)
+    {
+        ActivityLog::create([
+            'user_id' => auth()->user()->id,
+            'activity' => $activity,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+    }
+
     /**
      * Apakah user boleh melihat proposal ini (dan temuannya)?
      *  - admin / lppm / kepala_lppm: semua proposal.
@@ -148,6 +163,8 @@ class MonevController extends Controller
 
         NotificationController::notifyMonevDibuat($proposal, $finding);
 
+        $this->logActivity("LPPM mencatat temuan Monev untuk proposal ID {$proposal->id} (status temuan: Open)");
+
         return redirect()->route('monev.show', $proposal)
             ->with('success', 'Temuan monev berhasil dicatat (status: Open).');
     }
@@ -196,6 +213,8 @@ class MonevController extends Controller
 
         NotificationController::notifyRtlDikirim($proposal, $finding);
 
+        $this->logActivity("Pengaju mengirim RTL untuk temuan Monev ID {$finding->id} proposal ID {$proposal->id} (status temuan: In_Review)");
+
         return redirect()->route('monev.show', $proposal)
             ->with('success', 'RTL dan bukti perbaikan berhasil dikirim (status: In_Review).');
     }
@@ -225,6 +244,8 @@ class MonevController extends Controller
         if ($request->keputusan === 'tutup') {
             $finding->update(['status_temuan' => 'Closed']);
 
+            $this->logActivity("LPPM memverifikasi RTL temuan Monev ID {$finding->id} proposal ID {$proposal->id} (status temuan: Closed)");
+
             NotificationHelper::send(
                 (int) $proposal->user_id,
                 'Temuan Monev Ditutup',
@@ -238,6 +259,8 @@ class MonevController extends Controller
         }
 
         $finding->update(['status_temuan' => 'Open']);
+
+        $this->logActivity("LPPM memverifikasi RTL temuan Monev ID {$finding->id} proposal ID {$proposal->id} (status temuan: Open)");
 
         NotificationHelper::send(
             (int) $proposal->user_id,

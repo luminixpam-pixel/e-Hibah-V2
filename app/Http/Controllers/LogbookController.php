@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Logbook;
 use App\Models\Proposal;
 use Illuminate\Http\Request;
@@ -27,6 +28,20 @@ use Illuminate\Support\Facades\Storage;
  */
 class LogbookController extends Controller
 {
+    /**
+     * Helper internal untuk mencatat log aktivitas pengguna
+     * (pola yang sama dengan ProposalController::logActivity).
+     */
+    private function logActivity($activity)
+    {
+        ActivityLog::create([
+            'user_id' => auth()->user()->id,
+            'activity' => $activity,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+    }
+
     /**
      * Daftar proposal Disetujui yang boleh dilihat user login.
      */
@@ -85,6 +100,8 @@ class LogbookController extends Controller
             'file_bukti' => $path,
         ]);
 
+        $this->logActivity("Menambah entri logbook proposal ID {$proposal->id}");
+
         return redirect()->route('logbook.show', $proposal)->with('success', 'Entri logbook berhasil ditambahkan.');
     }
 
@@ -133,6 +150,8 @@ class LogbookController extends Controller
 
         $logbook->update($data);
 
+        $this->logActivity("Mengubah entri logbook ID {$logbook->id} proposal ID {$proposal->id}");
+
         return redirect()->route('logbook.show', $proposal)->with('success', 'Entri logbook berhasil diperbarui.');
     }
 
@@ -151,7 +170,11 @@ class LogbookController extends Controller
             Storage::disk('public')->delete($logbook->file_bukti);
         }
 
+        $logbookId = $logbook->id;
+        $proposalId = $proposal->id;
         $logbook->delete();
+
+        $this->logActivity("Menghapus entri logbook ID {$logbookId} proposal ID {$proposalId}");
 
         return redirect()->route('logbook.show', $proposal)->with('success', 'Entri logbook berhasil dihapus.');
     }

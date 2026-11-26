@@ -76,44 +76,6 @@ class AuthController extends Controller
         };
     }
 
-public function adminUpdate(Request $request, $id)
-{
-    $user = User::findOrFail($id);
-    $currentUser = auth()->user();
-
-    // 1. Validasi: Admin bisa edit semua orang, User hanya bisa edit dirinya sendiri
-    if ($currentUser->role !== 'admin' && $currentUser->id !== $user->id) {
-        return back()->with('error', 'Akses ditolak.');
-    }
-
-    if ($currentUser->role === 'admin') {
-        // --- LOGIKA ADMIN ---
-        $request->validate([
-            'email'    => 'required|email|unique:users,email,' . $id,
-            'password' => 'nullable|min:6',
-        ]);
-
-        $user->email = $request->email;
-        if ($request->filled('password')) {
-            $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
-        }
-    } else {
-        // --- LOGIKA USER (Pengaju/Reviewer) ---
-        $request->validate([
-            'email'    => 'required|email|unique:users,email,' . $id,
-            'nidn'     => 'required|string|max:20',
-            'fakultas' => 'required|string',
-        ]);
-
-        $user->email = $request->email;
-        $user->nidn = $request->nidn;
-        $user->fakultas = $request->fakultas;
-    }
-
-    $user->save();
-    return back()->with('success', 'Profil berhasil diperbarui!');
-}
-
 public function update(Request $request, $id)
 {
     $user = User::findOrFail($id);

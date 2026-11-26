@@ -20,7 +20,6 @@ return Application::configure(basePath: dirname(__DIR__))
         // Alias middleware role
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
-            'admin' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
 
     })

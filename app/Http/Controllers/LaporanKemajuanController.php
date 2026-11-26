@@ -3,12 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\Proposal;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 class LaporanKemajuanController extends Controller
 {
+    /**
+     * Helper internal untuk mencatat log aktivitas pengguna
+     * (pola yang sama dengan ProposalController::logActivity).
+     */
+    private function logActivity($activity)
+    {
+        ActivityLog::create([
+            'user_id' => auth()->user()->id,
+            'activity' => $activity,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+    }
+
     public function index(Request $request)
 {
     $search = $request->input('search');
@@ -85,6 +100,8 @@ class LaporanKemajuanController extends Controller
                 'file_laporan' => $path,
                 'keterangan' => $request->keterangan,
             ]);
+
+            $this->logActivity("Mengunggah laporan kemajuan proposal ID {$proposal->id}");
 
             return redirect()->back()->with('success', 'Laporan berhasil diunggah!');
         }

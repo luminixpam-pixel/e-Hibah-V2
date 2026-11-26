@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Luaran;
 use App\Models\Proposal;
 use Illuminate\Http\Request;
@@ -27,6 +28,20 @@ use Illuminate\Support\Facades\Storage;
  */
 class LuaranController extends Controller
 {
+    /**
+     * Helper internal untuk mencatat log aktivitas pengguna
+     * (pola yang sama dengan ProposalController::logActivity).
+     */
+    private function logActivity($activity)
+    {
+        ActivityLog::create([
+            'user_id' => auth()->user()->id,
+            'activity' => $activity,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+    }
+
     /**
      * Daftar proposal Disetujui yang boleh dilihat user login.
      */
@@ -87,6 +102,8 @@ class LuaranController extends Controller
             'file' => $path,
         ]);
 
+        $this->logActivity("Menambah luaran proposal ID {$proposal->id}");
+
         return redirect()->route('luaran.show', $proposal)->with('success', 'Luaran berhasil ditambahkan.');
     }
 
@@ -137,6 +154,8 @@ class LuaranController extends Controller
 
         $luaran->update($data);
 
+        $this->logActivity("Mengubah luaran ID {$luaran->id} proposal ID {$proposal->id}");
+
         return redirect()->route('luaran.show', $proposal)->with('success', 'Luaran berhasil diperbarui.');
     }
 
@@ -155,7 +174,11 @@ class LuaranController extends Controller
             Storage::disk('public')->delete($luaran->file);
         }
 
+        $luaranId = $luaran->id;
+        $proposalId = $proposal->id;
         $luaran->delete();
+
+        $this->logActivity("Menghapus luaran ID {$luaranId} proposal ID {$proposalId}");
 
         return redirect()->route('luaran.show', $proposal)->with('success', 'Luaran berhasil dihapus.');
     }

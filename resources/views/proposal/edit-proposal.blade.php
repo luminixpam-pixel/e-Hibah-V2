@@ -114,6 +114,7 @@
                                         @foreach($rabRows as $i => $item)
                                             <div class="d-flex gap-2 mb-2 rab-row">
                                                 <input type="text" name="rab[{{ $i }}][nama_komponen]" class="form-control border-0 shadow-sm"
+                                                       list="komponen-rab-list"
                                                        value="{{ $item['nama_komponen'] ?? '' }}" placeholder="Nama komponen" style="border-radius: 10px;">
                                                 <input type="number" name="rab[{{ $i }}][jumlah]" class="form-control border-0 shadow-sm rab-jumlah"
                                                        value="{{ $item['jumlah'] ?? '' }}" placeholder="Jumlah (Rp)" min="0" step="1" style="border-radius: 10px; max-width: 170px;">
@@ -211,6 +212,13 @@
 <datalist id="user-list">
     @foreach($users as $user)
         <option value="{{ $user->name }}">
+    @endforeach
+</datalist>
+
+{{-- Daftar komponen RAB (bawaan + kustom dari setelan admin) untuk pilihan nama komponen --}}
+<datalist id="komponen-rab-list">
+    @foreach($daftarKomponenRab as $komponen)
+        <option value="{{ $komponen }}">
     @endforeach
 </datalist>
 
@@ -316,6 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
         div.className = 'd-flex gap-2 mb-2 rab-row';
         div.innerHTML = `
             <input type="text" name="rab[${rabIndex}][nama_komponen]" class="form-control border-0 shadow-sm"
+                   list="komponen-rab-list"
                    placeholder="Nama komponen" style="border-radius: 10px;">
             <input type="number" name="rab[${rabIndex}][jumlah]" class="form-control border-0 shadow-sm rab-jumlah"
                    placeholder="Jumlah (Rp)" min="0" step="1" style="border-radius: 10px; max-width: 170px;">

@@ -8,7 +8,9 @@ use App\Http\Controllers\{
     ProposalReviewerController, LaporanKemajuanController, ProfileController,
     AdminDocumentController, TemplateController, LaporanAkhirController,
     RoleDashboardController, ProposalMemberController, VerificationController,
-    LogbookController, LuaranController, MonevController
+    LogbookController, LuaranController, MonevController,
+    SkemaController, PeriodeController, FakultasController, DokumenResmiController,
+    PengumumanController, ErrorReportController, AuditLogController, SettingController
 };
 
 /*
@@ -172,6 +174,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/dokumen', [AdminDocumentController::class, 'index'])->name('dokumen.index');
     Route::get('/dokumen/download/{id}', [AdminDocumentController::class, 'download'])->name('dokumen.download');
 
+    // Dokumen resmi — unduh (Fase 6, story 8)
+    Route::get('/dokumen-resmi/{id}/download', [DokumenResmiController::class, 'download'])->name('dokumen-resmi.download');
+
+    // Dokumentasi teknis (Fase 6, story 30)
+    Route::view('/dokumentasi', 'dokumentasi')->name('dokumentasi');
+
+    // Pelaporan error — form untuk semua user login (Fase 6, story 30)
+    Route::get('/laporan-error/buat', [ErrorReportController::class, 'create'])->name('error-report.create');
+    Route::post('/laporan-error', [ErrorReportController::class, 'store'])->name('error-report.store');
+
     // Notifikasi — SATU definisi saja, semua di belakang auth
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/fetch', [NotificationController::class, 'fetch'])->name('fetch');
@@ -207,10 +219,9 @@ Route::middleware('auth')->group(function () {
     // Perbaiki di AuthController@update bila sudah siap.
     Route::put('/user/profile/{user}', [AuthController::class, 'update'])->name('admin.user.update');
 
-    // Penugasan reviewer oleh admin (pencarian + submit)
+    // Penugasan reviewer oleh admin (pencarian)
     Route::prefix('admin/proposal')->group(function () {
         Route::get('/search-reviewer', [ProposalReviewerController::class, 'search'])->name('admin.proposal.search-reviewer');
-        Route::post('/{id}/assign', [ProposalReviewerController::class, 'assign'])->name('admin.proposal.assign');
     });
 
     // Plotting reviewer oleh LPPM (Fase 3, story 16 + 19).
@@ -220,6 +231,44 @@ Route::middleware('auth')->group(function () {
     // Tetapkan 2 reviewer + tenggat (dipakai admin & LPPM).
     Route::post('/proposal/{id}/assign-reviewer', [ProposalController::class, 'assignReviewer'])
         ->middleware('role:admin,lppm')->name('proposal.assignReviewer');
+
+    // Master data LPPM + pengumuman + laporan error (Fase 6) — admin & LPPM.
+    Route::middleware('role:admin,lppm')->group(function () {
+        // Master data (story 15)
+        Route::get('/admin/skema', [SkemaController::class, 'index'])->name('admin.skema.index');
+        Route::get('/admin/skema/create', [SkemaController::class, 'create'])->name('admin.skema.create');
+        Route::post('/admin/skema', [SkemaController::class, 'store'])->name('admin.skema.store');
+        Route::get('/admin/skema/{skema}/edit', [SkemaController::class, 'edit'])->name('admin.skema.edit');
+        Route::put('/admin/skema/{skema}', [SkemaController::class, 'update'])->name('admin.skema.update');
+        Route::delete('/admin/skema/{skema}', [SkemaController::class, 'destroy'])->name('admin.skema.destroy');
+
+        Route::get('/admin/periode', [PeriodeController::class, 'index'])->name('admin.periode.index');
+        Route::get('/admin/periode/create', [PeriodeController::class, 'create'])->name('admin.periode.create');
+        Route::post('/admin/periode', [PeriodeController::class, 'store'])->name('admin.periode.store');
+        Route::get('/admin/periode/{periode}/edit', [PeriodeController::class, 'edit'])->name('admin.periode.edit');
+        Route::put('/admin/periode/{periode}', [PeriodeController::class, 'update'])->name('admin.periode.update');
+        Route::delete('/admin/periode/{periode}', [PeriodeController::class, 'destroy'])->name('admin.periode.destroy');
+
+        Route::get('/admin/fakultas', [FakultasController::class, 'index'])->name('admin.fakultas.index');
+        Route::get('/admin/fakultas/create', [FakultasController::class, 'create'])->name('admin.fakultas.create');
+        Route::post('/admin/fakultas', [FakultasController::class, 'store'])->name('admin.fakultas.store');
+        Route::get('/admin/fakultas/{fakultas}/edit', [FakultasController::class, 'edit'])->name('admin.fakultas.edit');
+        Route::put('/admin/fakultas/{fakultas}', [FakultasController::class, 'update'])->name('admin.fakultas.update');
+        Route::delete('/admin/fakultas/{fakultas}', [FakultasController::class, 'destroy'])->name('admin.fakultas.destroy');
+
+        // Pengumuman (story 18)
+        Route::get('/admin/pengumuman', [PengumumanController::class, 'index'])->name('admin.pengumuman.index');
+        Route::get('/admin/pengumuman/buat', [PengumumanController::class, 'create'])->name('admin.pengumuman.create');
+        Route::post('/admin/pengumuman', [PengumumanController::class, 'store'])->name('admin.pengumuman.store');
+        Route::get('/admin/pengumuman/{id}/edit', [PengumumanController::class, 'edit'])->name('admin.pengumuman.edit');
+        Route::put('/admin/pengumuman/{id}', [PengumumanController::class, 'update'])->name('admin.pengumuman.update');
+        Route::delete('/admin/pengumuman/{id}', [PengumumanController::class, 'destroy'])->name('admin.pengumuman.destroy');
+
+        // Laporan error — daftar, detail, ubah status (story 30)
+        Route::get('/admin/laporan-error', [ErrorReportController::class, 'index'])->name('admin.error-report.index');
+        Route::get('/admin/laporan-error/{id}', [ErrorReportController::class, 'show'])->name('admin.error-report.show');
+        Route::patch('/admin/laporan-error/{id}', [ErrorReportController::class, 'update'])->name('admin.error-report.update');
+    });
 });
 
 /* --- ROLE: ADMIN ONLY --- */
@@ -253,6 +302,15 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/admin/template/upload', [TemplateController::class, 'store'])->name('admin.template.upload');
     Route::delete('/admin/template/{id}', [TemplateController::class, 'destroy'])->name('admin.template.destroy');
 
+    // Audit Log (Fase 6, story 29) — baca saja, admin only.
+    Route::get('/admin/audit-log', [AuditLogController::class, 'index'])->name('admin.audit-log.index');
+
+    // Setelan Admin (Fase 6, story 31) — admin only.
+    Route::get('/admin/setelan', [SettingController::class, 'index'])->name('admin.settings.index');
+    Route::post('/admin/setelan', [SettingController::class, 'store'])->name('admin.settings.store');
+    Route::put('/admin/setelan/{id}', [SettingController::class, 'update'])->name('admin.settings.update');
+    Route::delete('/admin/setelan/{id}', [SettingController::class, 'destroy'])->name('admin.settings.destroy');
+
     // Proposal Assignments
     Route::patch('/proposal/{id}/set-review', [ProposalController::class, 'setReview'])->name('proposal.set-review');
 });
@@ -273,4 +331,5 @@ Route::middleware(['auth', 'role:reviewer'])->group(function () {
 Route::middleware(['auth', 'role:admin,reviewer'])->group(function () {
     Route::get('/proposal-perlu-direview', [ProposalController::class, 'perluDireview'])->name('monitoring.proposalPerluDireview');
     Route::get('/proposal-sedang-direview', [ProposalController::class, 'proposalSedangDireview'])->name('monitoring.proposalSedangDireview');
+    Route::get('/daftar-review', [ProposalController::class, 'daftarReview'])->name('monitoring.daftarReview');
 });

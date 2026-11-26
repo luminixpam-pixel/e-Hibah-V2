@@ -1473,44 +1473,44 @@
                 </p>
             </div>
 
+            @php
+                // Landing page memakai Route::view (tanpa controller), jadi
+                // daftar pengumuman diambil langsung di sini. Hanya yang
+                // sudah terbit (published_at <= now), terbaru dulu, maks 5.
+                // Yang tampil hanya judul/isi/kategori/tanggal + tautan
+                // unduh file bila ada — tanpa data internal.
+                $pengumumanLanding = \App\Models\Announcement::whereNotNull('published_at')
+                    ->where('published_at', '<=', now())
+                    ->latest('published_at')
+                    ->take(5)
+                    ->get();
+            @endphp
+
             <div class="announcement-grid">
 
-                <div class="announcement-card">
-                    <span class="announcement-tag">Informasi</span>
-                    <h3>Informasi Program Hibah</h3>
-                    <p>
-                        Informasi mengenai skema dan ketentuan
-                        program hibah dapat dilihat melalui
-                        pengumuman resmi.
-                    </p>
-                </div>
+                @forelse ($pengumumanLanding as $pengumuman)
+                    <div class="announcement-card">
+                        <span class="announcement-tag">{{ $pengumuman->kategori === 'eksternal' ? 'Eksternal' : 'Internal' }}</span>
+                        <h3>{{ $pengumuman->judul }}</h3>
+                        <p>{{ $pengumuman->isi }}</p>
+                        <p>
+                            <small>{{ $pengumuman->published_at->format('d M Y') }}</small>
+                            @if ($pengumuman->file)
+                                &middot; <a href="{{ asset('storage/' . $pengumuman->file) }}" target="_blank">Unduh Lampiran</a>
+                            @endif
+                        </p>
+                    </div>
+                @empty
+                    <div class="announcement-card">
+                        <span class="announcement-tag">Informasi</span>
+                        <h3>Belum ada pengumuman.</h3>
+                        <p>
+                            Saat ini belum ada pengumuman hibah yang
+                            diterbitkan. Silakan periksa kembali nanti.
+                        </p>
+                    </div>
+                @endforelse
 
-                <div class="announcement-card">
-                    <span class="announcement-tag">Panduan</span>
-                    <h3>Persiapan Pengajuan Proposal</h3>
-                    <p>
-                        Pelajari persyaratan dan dokumen yang
-                        diperlukan sebelum mengajukan proposal.
-                    </p>
-                </div>
-
-                <div class="announcement-card">
-                    <span class="announcement-tag">Layanan</span>
-                    <h3>Layanan Informasi E-Hibah</h3>
-                    <p>
-                        Pengguna dapat mengakses panduan dan
-                        informasi layanan melalui pengelola E-Hibah.
-                    </p>
-                </div>
-
-            </div>
-
-            <div class="info-note">
-                <i class="bi bi-info-circle-fill"></i>
-                <span>
-                    Konten pengumuman ini merupakan contoh sementara
-                    dan dapat dihubungkan dengan database pengumuman.
-                </span>
             </div>
 
         </div>
