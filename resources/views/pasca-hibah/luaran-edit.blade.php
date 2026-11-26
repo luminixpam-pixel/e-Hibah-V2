@@ -1,0 +1,100 @@
+@extends('layouts.app')
+
+@section('title', 'Ubah Luaran')
+
+@section('content')
+<style>
+    body { background-color: #f0fdf4; } /* Tema Hijau YARSI */
+
+    .main-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        border: none;
+    }
+
+    .form-section {
+        background: #fcfdfd;
+        border-radius: 15px;
+        border: 1px solid #eef2f3;
+        padding: 25px;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="main-card">
+        {{-- HEADER --}}
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-extrabold text-dark mb-1">Ubah Luaran</h4>
+                <p class="text-muted small mb-0">{{ $proposal->judul }}</p>
+            </div>
+            <a href="{{ route('luaran.show', $proposal) }}" class="btn btn-sm btn-outline-secondary px-3" style="border-radius: 8px;">
+                <i class="bi bi-arrow-left me-1"></i> Kembali
+            </a>
+        </div>
+
+        {{-- ALERT MESSAGES --}}
+        @if (session('error'))
+            <div class="alert alert-danger border-0 shadow-sm mb-4" role="alert">
+                <i class="bi bi-exclamation-circle-fill me-2"></i> {{ session('error') }}
+            </div>
+        @endif
+
+        <div class="form-section">
+            <form action="{{ route('luaran.update', $luaran) }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold small text-muted">Jenis Luaran</label>
+                        <select name="jenis" class="form-select @error('jenis') is-invalid @enderror" required style="border-radius: 10px; padding: 10px;">
+                            @foreach (['Jurnal', 'Prosiding', 'HKI', 'Paten', 'Buku'] as $jenis)
+                                <option value="{{ $jenis }}" {{ old('jenis', $luaran->jenis) == $jenis ? 'selected' : '' }}>{{ $jenis }}</option>
+                            @endforeach
+                        </select>
+                        @error('jenis')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold small text-muted">Status</label>
+                        <select name="status" class="form-select @error('status') is-invalid @enderror" required style="border-radius: 10px; padding: 10px;">
+                            @foreach (['Draft', 'Submitted', 'Published', 'Granted'] as $status)
+                                <option value="{{ $status }}" {{ old('status', $luaran->status) == $status ? 'selected' : '' }}>{{ $status }}</option>
+                            @endforeach
+                        </select>
+                        @error('status')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold small text-muted">File Baru (PDF, maks 2 MB, opsional — file lama dihapus bila diganti)</label>
+                        <input type="file" name="file" class="form-control @error('file') is-invalid @enderror" accept=".pdf" style="border-radius: 10px; padding: 10px;">
+                        @error('file')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        @if ($luaran->file)
+                            <div class="mt-2 small">
+                                File saat ini:
+                                <a href="{{ route('luaran.download', $luaran) }}" class="fw-bold">Unduh PDF</a>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="col-12 mb-4">
+                        <label class="form-label fw-bold small text-muted">Judul Luaran</label>
+                        <input type="text" name="judul" class="form-control @error('judul') is-invalid @enderror" value="{{ old('judul', $luaran->judul) }}" maxlength="255" required style="border-radius: 10px; padding: 10px;">
+                        @error('judul')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success px-5 fw-bold shadow-sm" style="border-radius: 10px; height: 45px;">
+                    <i class="bi bi-check-circle me-2"></i>Simpan Perubahan
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+@endsection

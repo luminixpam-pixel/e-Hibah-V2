@@ -10,6 +10,7 @@ use App\Models\Review;
 use App\Models\ActivityLog;
 use App\Models\Fakultas;
 use App\Models\HibahPeriod;
+use App\Models\MonevFinding;
 use App\Models\ProposalMember;
 use App\Models\RabItem;
 use App\Models\Skema;
@@ -114,17 +115,65 @@ class ProposalController extends Controller
     }
 
     /**
-     * Cek aturan pengajuan untuk satu skema: blacklist + kuota.
-     * Mengembalikan pesan error, atau null bila boleh dilanjutkan.
+     * Cek apakah seorang dosen masih punya tanggungan laporan.
      *
-     * TODO (Fase 5): tolak juga bila pengusul/anggota punya laporan
-     * kemajuan atau laporan akhir yang tertunggak dari periode
-     * sebelumnya (tabel logbook/laporan belum ada).
+     * Aturan awal (bisa diubah LPPM — jawaban LPPM atas pertanyaan
+     * "aturan tanggungan" masih ditunggu): pengaju dianggap bertanggungan
+     * bila punya proposal berstatus 'Disetujui' (kecuali
+     * $exceptProposalId) yang (i) belum mengunggah laporan akhir
+     * (kolom proposals.file_laporan_akhir null/kosong), ATAU (ii) masih
+     * punya temuan Monev berstatus Open atau In_Review (tabel
+     * monev_findings, kolom status_temuan).
+     *
+     * Catatan: keputusan() menulis kolom status dan status_pendanaan
+     * dengan nilai yang sama, jadi cukup cek kolom status.
+     */
+    private function hasTanggunganLaporan(int $userId, ?int $exceptProposalId = null): bool
+    {
+        $proposalIds = Proposal::where('user_id', $userId)
+            ->where('status', 'Disetujui')
+            ->when($exceptProposalId, fn ($q) => $q->where('id', '!=', $exceptProposalId))
+            ->pluck('id');
+
+        if ($proposalIds->isEmpty()) {
+            return false;
+        }
+
+        // (i) Ada proposal Disetujui yang laporan akhirnya belum diunggah.
+        $belumLapor = Proposal::whereIn('id', $proposalIds)
+            ->where(function ($q) {
+                $q->whereNull('file_laporan_akhir')->orWhere('file_laporan_akhir', '');
+            })
+            ->exists();
+
+        if ($belumLapor) {
+            return true;
+        }
+
+        // (ii) Masih ada temuan Monev berstatus Open atau In_Review.
+        return MonevFinding::whereIn('proposal_id', $proposalIds)
+            ->whereIn('status_temuan', ['Open', 'In_Review'])
+            ->exists();
+    }
+
+    /**
+     * Cek aturan pengajuan untuk satu skema: blacklist + tanggungan
+     * laporan + kuota. Mengembalikan pesan error, atau null bila boleh
+     * dilanjutkan.
+     *
+     * Cek tanggungan sudah diimplementasikan (Fase 5, story 12):
+     * pengusul/anggota yang punya proposal 'Disetujui' tanpa laporan
+     * akhir atau dengan temuan Monev Open/In_Review tidak boleh
+     * mengajukan baru. Aturan awalnya ada di hasTanggunganLaporan().
      */
     private function checkPengajuan(User $user, Skema $skema, array $memberUserIds, ?int $exceptProposalId = null): ?string
     {
         if ($user->is_blacklisted) {
             return 'Akun Anda ditandai memiliki tanggungan laporan (blacklist) sehingga tidak dapat mengajukan proposal baru. Silakan hubungi LPPM.';
+        }
+
+        if ($this->hasTanggunganLaporan($user->id, $exceptProposalId)) {
+            return 'Anda masih memiliki tanggungan laporan (laporan akhir belum diunggah atau temuan Monev masih terbuka) sehingga tidak dapat mengajukan proposal baru. Silakan selesaikan kewajiban pelaporan Anda atau hubungi LPPM.';
         }
 
         // Kuota 0 berarti batas belum ditetapkan — lewati pengecekan kuota.
@@ -143,6 +192,9 @@ class ProposalController extends Controller
             }
             if ($member->is_blacklisted) {
                 return "Anggota {$member->name} ditandai memiliki tanggungan laporan (blacklist) sehingga tidak dapat diikutsertakan.";
+            }
+            if ($this->hasTanggunganLaporan($member->id, $exceptProposalId)) {
+                return "Anggota {$member->name} masih memiliki tanggungan laporan (laporan akhir belum diunggah atau temuan Monev masih terbuka) sehingga tidak dapat diikutsertakan.";
             }
             if ($this->countParticipation($member->id, $skema->id, $exceptProposalId) >= (int) $skema->kuota) {
                 return "Anggota {$member->name} sudah mencapai kuota skema {$skema->kategori} ({$skema->kuota} keikutsertaan).";

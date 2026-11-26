@@ -161,6 +161,48 @@
                 </a>
             </div>
 
+            <div class="col-md-6 col-xl-3">
+                <a href="{{ route('logbook.index') }}"
+                   class="quick-menu-card">
+                    <div class="quick-icon green">
+                        <i class="bi bi-journal-text"></i>
+                    </div>
+                    <div>
+                        <h6>Logbook</h6>
+                        <p>Catat kegiatan pelaksanaan hibah.</p>
+                    </div>
+                    <i class="bi bi-arrow-up-right quick-arrow"></i>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-xl-3">
+                <a href="{{ route('luaran.index') }}"
+                   class="quick-menu-card">
+                    <div class="quick-icon blue">
+                        <i class="bi bi-award"></i>
+                    </div>
+                    <div>
+                        <h6>Luaran</h6>
+                        <p>Kelola luaran hibah Anda.</p>
+                    </div>
+                    <i class="bi bi-arrow-up-right quick-arrow"></i>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-xl-3">
+                <a href="{{ route('monev.index') }}"
+                   class="quick-menu-card">
+                    <div class="quick-icon orange">
+                        <i class="bi bi-clipboard-check"></i>
+                    </div>
+                    <div>
+                        <h6>Monev & RTL</h6>
+                        <p>Lihat temuan Monev dan tindak lanjut.</p>
+                    </div>
+                    <i class="bi bi-arrow-up-right quick-arrow"></i>
+                </a>
+            </div>
+
         </div>
 
     </div>

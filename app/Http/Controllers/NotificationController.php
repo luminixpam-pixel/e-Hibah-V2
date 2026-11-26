@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Notification;
+use App\Models\MonevFinding;
 use App\Models\User;
 use App\Models\Proposal;
 use Illuminate\Http\Request;
@@ -475,6 +476,36 @@ class NotificationController extends Controller
             'Proposal Ditolak',
             'Proposal Anda ditolak. Silakan cek catatan dari reviewer.',
             'warning'
+        );
+    }
+
+    /**
+     * Fase 5, story 10 — LPPM mencatat temuan monev: beri tahu
+     * pengaju pemilik proposal.
+     */
+    public static function notifyMonevDibuat(Proposal $proposal, MonevFinding $finding)
+    {
+        NotificationHelper::send(
+            (int) $proposal->user_id,
+            'Temuan Monev Baru',
+            'LPPM mencatat temuan monev pada proposal "' . $proposal->judul . '": ' . $finding->uraian_temuan,
+            'warning',
+            $proposal->id
+        );
+    }
+
+    /**
+     * Fase 5, story 10 — pengaju mengirim RTL + bukti perbaikan:
+     * beri tahu SEMUA user role lppm.
+     */
+    public static function notifyRtlDikirim(Proposal $proposal, MonevFinding $finding)
+    {
+        NotificationHelper::sendToAll(
+            'RTL Dikirim',
+            'Pengaju mengirim RTL dan bukti perbaikan untuk temuan monev pada proposal "' . $proposal->judul . '". Silakan verifikasi.',
+            'info',
+            'lppm',
+            $proposal->id
         );
     }
 }

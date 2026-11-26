@@ -1,0 +1,228 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Luaran;
+use App\Models\Proposal;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
+/**
+ * Luaran pasca-hibah (Fase 5, story 9).
+ *
+ * Hanya untuk proposal berstatus 'Disetujui' (kolom status; keputusan
+ * pendanaan menulis 'Disetujui' ke status sekaligus status_pendanaan).
+ *
+ * Kepemilikan / visibilitas (sama seperti LogbookController):
+ *  - pengaju      : hanya proposal milik sendiri (user_id = id user login).
+ *  - lppm, kepala_lppm, admin : semua proposal Disetujui.
+ *  - dekan        : hanya proposal di fakultasnya (fakultas_prodi =
+ *    fakultas_id user); bila fakultas_id belum diisi, semua proposal
+ *    (meniru RoleDashboardController::dekan()).
+ *  - reviewer, verifikator : tidak berhak melihat apa pun (403).
+ *  - Tulis / ubah / hapus : hanya pengaju pemilik proposal.
+ *
+ * Catatan Auth::id(): mengembalikan USERNAME, bukan users.id — di sini
+ * selalu dipakai auth()->user()->id untuk membandingkan ID angka.
+ */
+class LuaranController extends Controller
+{
+    /**
+     * Daftar proposal Disetujui yang boleh dilihat user login.
+     */
+    public function index()
+    {
+        $user = auth()->user();
+        $proposals = $this->queryDisetujui($user)->with('user')->latest()->get();
+
+        $jumlah = Luaran::selectRaw('proposal_id, COUNT(*) as jumlah')
+            ->whereIn('proposal_id', $proposals->pluck('id'))
+            ->groupBy('proposal_id')
+            ->pluck('jumlah', 'proposal_id');
+
+        return view('pasca-hibah.luaran-index', compact('proposals', 'jumlah'));
+    }
+
+    /**
+     * Daftar luaran satu proposal + form tambah.
+     */
+    public function show(Proposal $proposal)
+    {
+        if (! $this->canView(auth()->user(), $proposal)) {
+            abort(403, 'Anda tidak berhak melihat luaran proposal ini.');
+        }
+
+        $luarans = Luaran::where('proposal_id', $proposal->id)->latest()->get();
+        $isOwner = $this->isOwner(auth()->user(), $proposal);
+
+        return view('pasca-hibah.luaran-show', compact('proposal', 'luarans', 'isOwner'));
+    }
+
+    /**
+     * Simpan luaran baru. Hanya pengaju pemilik proposal Disetujui.
+     */
+    public function store(Request $request, Proposal $proposal)
+    {
+        if (! $this->isOwner(auth()->user(), $proposal) || $proposal->status !== 'Disetujui') {
+            abort(403, 'Hanya pengaju pemilik proposal yang disetujui yang bisa menambah luaran.');
+        }
+
+        $validated = $request->validate([
+            'jenis' => 'required|in:Jurnal,Prosiding,HKI,Paten,Buku',
+            'judul' => 'required|string|max:255',
+            'status' => 'required|in:Draft,Submitted,Published,Granted',
+            'file' => 'nullable|file|mimes:pdf|max:2048',
+        ]);
+
+        $path = null;
+        if ($request->hasFile('file')) {
+            $path = $request->file('file')->store('luaran', 'public');
+        }
+
+        Luaran::create([
+            'proposal_id' => $proposal->id,
+            'jenis' => $validated['jenis'],
+            'judul' => $validated['judul'],
+            'status' => $validated['status'],
+            'file' => $path,
+        ]);
+
+        return redirect()->route('luaran.show', $proposal)->with('success', 'Luaran berhasil ditambahkan.');
+    }
+
+    /**
+     * Form ubah luaran. Hanya pengaju pemilik proposal Disetujui.
+     */
+    public function edit(Luaran $luaran)
+    {
+        $proposal = $luaran->proposal;
+
+        if (! $this->isOwner(auth()->user(), $proposal) || $proposal->status !== 'Disetujui') {
+            abort(403, 'Hanya pengaju pemilik proposal yang disetujui yang bisa mengubah luaran.');
+        }
+
+        return view('pasca-hibah.luaran-edit', compact('luaran', 'proposal'));
+    }
+
+    /**
+     * Simpan perubahan luaran. File lama dihapus bila diganti.
+     */
+    public function update(Request $request, Luaran $luaran)
+    {
+        $proposal = $luaran->proposal;
+
+        if (! $this->isOwner(auth()->user(), $proposal) || $proposal->status !== 'Disetujui') {
+            abort(403, 'Hanya pengaju pemilik proposal yang disetujui yang bisa mengubah luaran.');
+        }
+
+        $validated = $request->validate([
+            'jenis' => 'required|in:Jurnal,Prosiding,HKI,Paten,Buku',
+            'judul' => 'required|string|max:255',
+            'status' => 'required|in:Draft,Submitted,Published,Granted',
+            'file' => 'nullable|file|mimes:pdf|max:2048',
+        ]);
+
+        $data = [
+            'jenis' => $validated['jenis'],
+            'judul' => $validated['judul'],
+            'status' => $validated['status'],
+        ];
+
+        if ($request->hasFile('file')) {
+            if ($luaran->file && Storage::disk('public')->exists($luaran->file)) {
+                Storage::disk('public')->delete($luaran->file);
+            }
+            $data['file'] = $request->file('file')->store('luaran', 'public');
+        }
+
+        $luaran->update($data);
+
+        return redirect()->route('luaran.show', $proposal)->with('success', 'Luaran berhasil diperbarui.');
+    }
+
+    /**
+     * Hapus luaran beserta filenya.
+     */
+    public function destroy(Luaran $luaran)
+    {
+        $proposal = $luaran->proposal;
+
+        if (! $this->isOwner(auth()->user(), $proposal) || $proposal->status !== 'Disetujui') {
+            abort(403, 'Hanya pengaju pemilik proposal yang disetujui yang bisa menghapus luaran.');
+        }
+
+        if ($luaran->file && Storage::disk('public')->exists($luaran->file)) {
+            Storage::disk('public')->delete($luaran->file);
+        }
+
+        $luaran->delete();
+
+        return redirect()->route('luaran.show', $proposal)->with('success', 'Luaran berhasil dihapus.');
+    }
+
+    /**
+     * Unduh file luaran.
+     */
+    public function download(Luaran $luaran)
+    {
+        if (! $this->canView(auth()->user(), $luaran->proposal)) {
+            abort(403, 'Anda tidak berhak mengunduh file luaran ini.');
+        }
+
+        if (! $luaran->file || ! Storage::disk('public')->exists($luaran->file)) {
+            return redirect()->back()->with('error', 'File luaran tidak ditemukan di server.');
+        }
+
+        return Storage::disk('public')->download($luaran->file);
+    }
+
+    /**
+     * Query proposal Disetujui yang boleh dilihat user login.
+     * Reviewer / verifikator / role lain: 403.
+     */
+    protected function queryDisetujui($user)
+    {
+        $query = Proposal::where('status', 'Disetujui');
+
+        if ($user->role === 'pengaju') {
+            $query->where('user_id', $user->id);
+        } elseif ($user->role === 'dekan') {
+            if ($user->fakultas_id) {
+                $query->where('fakultas_prodi', $user->fakultas_id);
+            }
+        } elseif (! in_array($user->role, ['lppm', 'kepala_lppm', 'admin'], true)) {
+            abort(403, 'Anda tidak berhak melihat luaran.');
+        }
+
+        return $query;
+    }
+
+    /**
+     * Apakah user boleh melihat luaran proposal ini (baca + unduh)?
+     */
+    protected function canView($user, Proposal $proposal): bool
+    {
+        if ($proposal->status !== 'Disetujui') {
+            return false;
+        }
+
+        if ($user->role === 'pengaju') {
+            return (int) $proposal->user_id === (int) $user->id;
+        }
+
+        if ($user->role === 'dekan') {
+            return ! $user->fakultas_id || (int) $proposal->fakultas_prodi === (int) $user->fakultas_id;
+        }
+
+        return in_array($user->role, ['lppm', 'kepala_lppm', 'admin'], true);
+    }
+
+    /**
+     * Apakah user adalah pengaju pemilik proposal ini?
+     */
+    protected function isOwner($user, Proposal $proposal): bool
+    {
+        return $user->role === 'pengaju'
+            && (int) $proposal->user_id === (int) $user->id;
+    }
+}

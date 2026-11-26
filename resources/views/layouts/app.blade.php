@@ -1123,6 +1123,17 @@ body.sidebar-collapsed .sidebar-toggle {
                 <a href="{{ route('laporan.akhir.index') }}">
                     <i class="bi bi-file-earmark-check"></i> Laporan Akhir
                 </a>
+                @if(Auth::user()->role === 'pengaju')
+                <a href="{{ route('logbook.index') }}">
+                    <i class="bi bi-journal-text"></i> Logbook
+                </a>
+                <a href="{{ route('luaran.index') }}">
+                    <i class="bi bi-award"></i> Luaran
+                </a>
+                <a href="{{ route('monev.index') }}">
+                    <i class="bi bi-clipboard-check"></i> Monev
+                </a>
+                @endif
             </div>
         </div>
         @endif
@@ -1175,6 +1186,9 @@ body.sidebar-collapsed .sidebar-toggle {
                 </a>
                 <a href="{{ route('dashboard.lppm') }}">
                     <i class="bi bi-activity"></i> Pemantauan Review
+                </a>
+                <a href="{{ route('monev.index') }}">
+                    <i class="bi bi-clipboard-check"></i> Monev
                 </a>
             </div>
         </div>
@@ -1256,6 +1270,11 @@ body.sidebar-collapsed .sidebar-toggle {
                 <a href="{{ route('laporan.akhir.index') }}">
                     <i class="bi bi-file-earmark-check"></i> Laporan Akhir
                 </a>
+                @if(in_array(Auth::user()->role, ['dekan', 'kepala_lppm', 'admin']))
+                <a href="{{ route('monev.index') }}">
+                    <i class="bi bi-clipboard-check"></i> Monev & RTL
+                </a>
+                @endif
             </div>
         </div>
 

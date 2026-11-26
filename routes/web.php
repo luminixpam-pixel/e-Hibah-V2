@@ -7,7 +7,8 @@ use App\Http\Controllers\{
     AdminController, NotificationController, CalendarController,
     ProposalReviewerController, LaporanKemajuanController, ProfileController,
     AdminDocumentController, TemplateController, LaporanAkhirController,
-    RoleDashboardController, ProposalMemberController, VerificationController
+    RoleDashboardController, ProposalMemberController, VerificationController,
+    LogbookController, LuaranController, MonevController
 };
 
 /*
@@ -138,6 +139,34 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan-akhir', [LaporanAkhirController::class, 'index'])->name('laporan.akhir.index');
     Route::post('/laporan-akhir/store', [LaporanAkhirController::class, 'store'])->name('laporan.akhir.store');
     Route::get('/laporan-akhir/download/{id}', [LaporanAkhirController::class, 'download'])->name('laporan.akhir.download');
+
+    // Pasca-hibah (Fase 5, story 9 & 10) — hanya proposal Disetujui.
+    // Otorisasi per role dicek di controller (pemilik / LPPM / dekan /
+    // kepala_lppm / admin); store + verifikasi Monev khusus LPPM.
+    Route::get('/logbook', [LogbookController::class, 'index'])->name('logbook.index');
+    Route::get('/logbook/{proposal}', [LogbookController::class, 'show'])->name('logbook.show');
+    Route::post('/logbook/{proposal}', [LogbookController::class, 'store'])->name('logbook.store');
+    Route::get('/logbook/{logbook}/edit', [LogbookController::class, 'edit'])->name('logbook.edit');
+    Route::put('/logbook/{logbook}', [LogbookController::class, 'update'])->name('logbook.update');
+    Route::delete('/logbook/{logbook}', [LogbookController::class, 'destroy'])->name('logbook.destroy');
+    Route::get('/logbook/{logbook}/download', [LogbookController::class, 'download'])->name('logbook.download');
+
+    Route::get('/luaran', [LuaranController::class, 'index'])->name('luaran.index');
+    Route::get('/luaran/{proposal}', [LuaranController::class, 'show'])->name('luaran.show');
+    Route::post('/luaran/{proposal}', [LuaranController::class, 'store'])->name('luaran.store');
+    Route::get('/luaran/{luaran}/edit', [LuaranController::class, 'edit'])->name('luaran.edit');
+    Route::put('/luaran/{luaran}', [LuaranController::class, 'update'])->name('luaran.update');
+    Route::delete('/luaran/{luaran}', [LuaranController::class, 'destroy'])->name('luaran.destroy');
+    Route::get('/luaran/{luaran}/download', [LuaranController::class, 'download'])->name('luaran.download');
+
+    Route::get('/monev', [MonevController::class, 'index'])->name('monev.index');
+    Route::get('/monev/{proposal}', [MonevController::class, 'show'])->name('monev.show');
+    Route::post('/monev/{proposal}', [MonevController::class, 'store'])
+        ->middleware('role:lppm')->name('monev.store');
+    Route::post('/monev/{finding}/rtl', [MonevController::class, 'kirimRtl'])->name('monev.kirimRtl');
+    Route::post('/monev/{finding}/verifikasi', [MonevController::class, 'verifikasi'])
+        ->middleware('role:lppm')->name('monev.verifikasi');
+    Route::get('/monev/{finding}/download/{jenis}', [MonevController::class, 'download'])->name('monev.download');
 
     // Dokumen (lihat & unduh — semua role yang login)
     Route::get('/dokumen', [AdminDocumentController::class, 'index'])->name('dokumen.index');

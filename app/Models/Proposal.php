@@ -121,6 +121,30 @@ class Proposal extends Model
     }
 
     /**
+     * Entri logbook pasca-hibah (One to Many, Fase 5, story 9).
+     */
+    public function logbooks()
+    {
+        return $this->hasMany(Logbook::class, 'proposal_id');
+    }
+
+    /**
+     * Luaran pasca-hibah (One to Many, Fase 5, story 9).
+     */
+    public function luarans()
+    {
+        return $this->hasMany(Luaran::class, 'proposal_id');
+    }
+
+    /**
+     * Temuan Monev + RTL (One to Many, Fase 5, story 10).
+     */
+    public function monevFindings()
+    {
+        return $this->hasMany(MonevFinding::class, 'proposal_id');
+    }
+
+    /**
      * Accessor untuk mempermudah pemanggilan format Rupiah di Blade
      * Contoh penggunaan: $proposal->biaya_rupiah
      */
