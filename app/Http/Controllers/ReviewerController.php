@@ -168,6 +168,7 @@ class ReviewerController extends Controller
             'nilai_6' => 'required|integer|min:0|max:5',
             'nilai_7' => 'required|integer|min:0|max:5',
             'catatan' => 'nullable|string',
+            'rekomendasi_biaya' => 'nullable|numeric|min:0',
         ]);
 
         // ✅ bobot (sesuaikan kalau berbeda)
@@ -198,6 +199,7 @@ class ReviewerController extends Controller
             'nilai_7'     => $request->nilai_7,
             'total_score' => $finalScore500,
             'catatan'     => $request->catatan,
+            'rekomendasi_biaya' => $request->rekomendasi_biaya,
         ]);
 
         // update status proposal

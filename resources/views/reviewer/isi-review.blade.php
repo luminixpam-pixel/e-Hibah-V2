@@ -78,6 +78,16 @@
             <textarea name="komentar" id="komentar" rows="4" class="form-control" placeholder="Tulis komentar..."></textarea>
         </div>
 
+        {{-- REKOMENDASI BIAYA --}}
+        <div class="mt-3">
+            <label for="rekomendasi_biaya" class="form-label"><strong>Rekomendasi Biaya (Rp):</strong></label>
+            <input type="number" name="rekomendasi_biaya" id="rekomendasi_biaya"
+                class="form-control" min="0" step="any"
+                value="{{ old('rekomendasi_biaya') }}"
+                placeholder="Contoh: 4500000">
+            <div class="form-text">Biaya yang direkomendasikan untuk proposal ini (opsional, kosongkan bila tidak ada rekomendasi).</div>
+        </div>
+
         {{-- TOTAL NILAI --}}
         <div class="mt-3 p-3 rounded" style="background:#e6ffe6; border:1px solid #c8e8c8;">
             <h5 class="fw-bold">Total Nilai: <span id="total_nilai">0</span></h5>

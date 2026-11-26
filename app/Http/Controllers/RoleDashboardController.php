@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\HibahPeriod;
 use App\Models\Notification;
 use App\Models\Proposal;
 use App\Models\Review;
@@ -202,8 +203,13 @@ class RoleDashboardController extends Controller
 
         $proposals = (clone $base)->with('user')->latest()->take(10)->get();
 
+        // Laporan akhir dosen di fakultas ini saja (Fase 4, story 27):
+        // hanya proposal yang sudah punya file laporan akhir.
+        $laporanAkhir = (clone $base)->whereNotNull('file_laporan_akhir')
+            ->with('user')->latest()->take(10)->get();
+
         return view('dashboard.dekan', array_merge(
-            compact('user', 'proposals'),
+            compact('user', 'proposals', 'laporanAkhir'),
             $stats
         ));
     }
@@ -234,8 +240,47 @@ class RoleDashboardController extends Controller
             ->take(5)
             ->get();
 
+        // Analitik per periode (Fase 4, story 26): hitungan proposal per
+        // status untuk tiap periode hibah. Total per periode dihitung
+        // terpisah (COUNT(*)) supaya tetap benar bila ada status di luar
+        // daftar kanonis di bawah.
+        $analitikStatus = ['Draft', 'Dikirim', 'Revisi Administrasi', 'Lolos Administrasi', 'Sedang Direview', 'Review Selesai', 'Hasil Revisi', 'Disetujui', 'Ditolak', 'Direvisi'];
+
+        $counts = Proposal::selectRaw('periode_id, status, COUNT(*) as jumlah')
+            ->groupBy('periode_id', 'status')
+            ->get();
+
+        $analitikPeriode = [];
+        foreach (HibahPeriod::orderBy('start_date')->get() as $periode) {
+            $row = [
+                'periode' => $periode->nama ?: $periode->start_date->format('d M Y'),
+                'total' => 0,
+                'status' => array_fill_keys($analitikStatus, 0),
+            ];
+            foreach ($counts->where('periode_id', $periode->id) as $c) {
+                $row['total'] += $c->jumlah;
+                if (array_key_exists($c->status, $row['status'])) {
+                    $row['status'][$c->status] = $c->jumlah;
+                }
+            }
+            $analitikPeriode[] = $row;
+        }
+
+        // Proposal tanpa periode (periode_id null).
+        $tanpaPeriode = $counts->whereNull('periode_id');
+        if ($tanpaPeriode->isNotEmpty()) {
+            $row = ['periode' => 'Tanpa periode', 'total' => 0, 'status' => array_fill_keys($analitikStatus, 0)];
+            foreach ($tanpaPeriode as $c) {
+                $row['total'] += $c->jumlah;
+                if (array_key_exists($c->status, $row['status'])) {
+                    $row['status'][$c->status] = $c->jumlah;
+                }
+            }
+            $analitikPeriode[] = $row;
+        }
+
         return view('dashboard.kepala-lppm', array_merge(
-            compact('user', 'siapDiputuskan', 'riwayatKeputusan'),
+            compact('user', 'siapDiputuskan', 'riwayatKeputusan', 'analitikPeriode', 'analitikStatus'),
             $stats
         ));
     }

@@ -66,5 +66,22 @@
         @endforelse
     </div></div>
 
+    {{-- Laporan akhir fakultas --}}
+    <div class="card mt-4"><div class="card-body">
+        <h6 class="fw-bold mb-3">Laporan Akhir Fakultas</h6>
+        @forelse ($laporanAkhir ?? [] as $p)
+            <div class="mb-3">
+                <strong>{{ $p->judul }}</strong><br>
+                <small class="text-muted">
+                    Pengusul: {{ $p->user->name ?? '-' }} ·
+                    Status: {{ $p->status }}
+                </small><br>
+                <a href="{{ route('laporan.akhir.download', $p->id) }}" class="btn btn-sm btn-outline-primary mt-1">Unduh Laporan Akhir</a>
+            </div>
+        @empty
+            <p class="text-muted mb-0">Belum ada laporan akhir di fakultas Anda.</p>
+        @endforelse
+    </div></div>
+
 </div>
 @endsection

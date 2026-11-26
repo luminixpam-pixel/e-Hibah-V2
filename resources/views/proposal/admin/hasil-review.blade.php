@@ -78,6 +78,12 @@
             <span class="badge {{ $cls }}">{{ $kat }}</span>
         </div>
 
+        @if($r->rekomendasi_biaya)
+            <div style="margin-top: 10px; font-size: 12px;">
+                <strong>Rekomendasi Biaya:</strong> Rp {{ number_format($r->rekomendasi_biaya, 0, ',', '.') }}
+            </div>
+        @endif
+
         @if($r->catatan)
             <div style="margin-top: 15px; border: 1px solid #ddd; padding: 10px; font-size: 11px;">
                 <strong>Catatan Reviewer:</strong><br>

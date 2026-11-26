@@ -87,5 +87,20 @@
     </div>
     @endif
 
+    {{-- Riwayat keputusan pendanaan (dari log aktivitas admin) --}}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="mb-3">Riwayat Keputusan</h5>
+            @forelse($riwayatKeputusan ?? [] as $log)
+                <p class="mb-1">
+                    {{ $log->activity }}
+                    <small class="text-muted">— {{ $log->user->name ?? '-' }}, {{ $log->created_at?->format('d M Y H:i') }}</small>
+                </p>
+            @empty
+                <p class="text-muted mb-0">Belum ada keputusan pendanaan untuk proposal ini.</p>
+            @endforelse
+        </div>
+    </div>
+
 </div>
 @endsection

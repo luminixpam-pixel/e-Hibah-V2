@@ -890,7 +890,17 @@ public function setReview($id)
  public function tinjau($id)
     {
         $proposal = Proposal::with(['user', 'reviewers', 'reviews.reviewer', 'verifications.verifikator'])->findOrFail($id);
-        return view('proposal.tinjau-proposal', compact('proposal'));
+
+        // Riwayat keputusan pendanaan dari log aktivitas admin. Pola LIKE
+        // dengan ' menjadi:' tepat setelah ID mencegah kecocokan dengan ID
+        // lain (mis. ID 1 vs 12) dan mengecualikan log unduhan
+        // ("Mendownload file proposal ID: ...").
+        $riwayatKeputusan = ActivityLog::where('activity', 'like', '%proposal ID '.$proposal->id.' menjadi:%')
+            ->with('user')
+            ->latest()
+            ->get();
+
+        return view('proposal.tinjau-proposal', compact('proposal', 'riwayatKeputusan'));
     }
      public function daftarReview(Request $request)
 {

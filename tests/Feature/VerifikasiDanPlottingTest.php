@@ -178,9 +178,10 @@ test('halaman plotting LPPM menampilkan proposal lolos administrasi', function (
 
     $response->assertOk();
     $response->assertSee('Proposal lolos');
-    // Judul proposal yang masih Dikirim tetap muncul di script kalender
-    // layout (layout merender semua judul proposal), jadi yang dicek adalah
-    // tidak adanya form penugasan untuk proposal tersebut di daftar plotting.
+    // Judul proposal hanya dirender ke script kalender layout pada halaman
+    // kalender (monitoring.kalender), jadi di halaman plotting judul proposal
+    // yang masih Dikirim tidak boleh muncul sama sekali.
+    $response->assertDontSee('Proposal masih dikirim');
     $response->assertDontSee(route('proposal.assignReviewer', $dikirim->id));
 
     // Bukan LPPM tidak boleh membuka plotting.

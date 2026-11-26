@@ -256,6 +256,61 @@
 
     </div>
 
+    {{-- Analitik per Periode --}}
+    <div class="klppm-section">
+        <div class="klppm-section-heading">
+            <div>
+                <h4>Analitik per Periode</h4>
+                <p>Jumlah proposal per status untuk setiap periode hibah.</p>
+            </div>
+        </div>
+
+        <div class="klppm-panel">
+            <div class="klppm-panel-body">
+
+                @if (count($analitikPeriode ?? []) > 0)
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead>
+                                <tr class="border-b border-gray-200 text-gray-500">
+                                    <th class="px-3 py-3 font-semibold whitespace-nowrap">Periode</th>
+                                    <th class="px-3 py-3 font-semibold text-center">Total</th>
+                                    @foreach ($analitikStatus ?? [] as $status)
+                                        <th class="px-3 py-3 font-semibold text-center whitespace-nowrap">{{ $status }}</th>
+                                    @endforeach
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($analitikPeriode as $baris)
+                                    <tr class="border-b border-gray-100 last:border-0">
+                                        <td class="px-3 py-3 font-semibold whitespace-nowrap">{{ $baris['periode'] }}</td>
+                                        <td class="px-3 py-3 text-center font-bold">{{ $baris['total'] }}</td>
+                                        @foreach ($analitikStatus ?? [] as $status)
+                                            <td class="px-3 py-3 text-center">{{ $baris['status'][$status] ?? 0 }}</td>
+                                        @endforeach
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                @else
+
+                    <div class="klppm-empty">
+                        <div class="klppm-empty-icon">
+                            <i class="bi bi-bar-chart"></i>
+                        </div>
+                        <h6>Belum ada data analitik</h6>
+                        <p>Belum ada periode hibah atau proposal yang tercatat.</p>
+                    </div>
+
+                @endif
+
+            </div>
+        </div>
+    </div>
+
 </div>
 @endsection
 

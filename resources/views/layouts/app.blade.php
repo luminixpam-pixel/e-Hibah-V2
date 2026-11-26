@@ -1814,9 +1814,11 @@ document.addEventListener("DOMContentLoaded",()=>{
         new FullCalendar.Calendar(calendarEl,{
             initialView:'dayGridMonth',
             events: [
+                @if(request()->routeIs('monitoring.kalender'))
                 @foreach(\App\Models\Proposal::all() as $p)
                 { title:'{{ $p->judul }}', start:'{{ $p->created_at->format("Y-m-d") }}', color:'{{ $p->status=="Disetujui"?"green":"blue" }}' },
                 @endforeach
+                @endif
             ]
         }).render();
     }
