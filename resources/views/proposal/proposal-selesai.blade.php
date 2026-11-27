@@ -93,10 +93,23 @@
     /* Custom select pendanaan */
     .select-pendanaan {
         border-radius: 10px;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 700;
-        padding: 8px 12px;
+        padding: 6px 8px;
         cursor: pointer;
+        width: 100%;
+        min-width: 0;
+    }
+
+    /* L1: tabel muat dalam area konten — layout tetap (fixed) dengan
+       lebar kolom yang sudah didefinisikan di <th>; tautan PDF tidak
+       melipat. */
+    .table-responsive .table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    .btn-pdf {
+        white-space: nowrap;
     }
 
     .nav-btn {
@@ -120,6 +133,23 @@
 
 <div class="container pb-5">
     <div class="main-card">
+        {{-- B6: pesan hasil keputusan harus terlihat menetap di halaman ini.
+             Sebelumnya satu-satunya umpan balik adalah toast JS di layout
+             yang menutup sendiri setelah 5 detik, sehingga keputusan yang
+             tersimpan tampak tanpa konfirmasi. --}}
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+            </div>
+        @endif
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+            </div>
+        @endif
+
         {{-- HEADER --}}
         <div class="row align-items-center mb-2">
             <div class="col-md-8">
@@ -196,8 +226,7 @@
                                     @csrf
                                     @method('PATCH')
                                     <select name="status_pendanaan"
-                                            class="form-select shadow-sm border-{{ $proposal->status == 'Disetujui' ? 'success' : ($proposal->status == 'Ditolak' ? 'danger' : 'primary') }}"
-                                            onchange="if(confirm('Simpan keputusan ini?')) this.form.submit()">
+                                            class="form-select keputusan-select shadow-sm border-{{ $proposal->status == 'Disetujui' ? 'success' : ($proposal->status == 'Ditolak' ? 'danger' : 'primary') }}">
 
                                         <option value="" disabled {{ !$isDone ? 'selected' : '' }}>-- Pilih Keputusan --</option>
                                         <option value="Disetujui" {{ $proposal->status == 'Disetujui' ? 'selected' : '' }}>Disetujui</option>
@@ -245,6 +274,33 @@
         let term = this.value.toLowerCase();
         document.querySelectorAll('tbody tr').forEach(row => {
             row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+        });
+    });
+
+    // Keputusan pendanaan: tanya dulu lewat modal bersama (pengganti
+    // confirm() browser). Bila batal, kembalikan pilihan semula —
+    // confirm() lama membiarkan select menunjuk keputusan yang batal.
+    document.querySelectorAll('.keputusan-select').forEach(function (select) {
+        select.addEventListener('focus', function () {
+            select.dataset.nilaiSebelumnya = select.value;
+        });
+        select.addEventListener('change', function () {
+            var pilihan = select.value;
+            var label = select.options[select.selectedIndex]
+                ? select.options[select.selectedIndex].textContent.trim()
+                : pilihan;
+            ehibahConfirm({
+                title: 'Simpan Keputusan',
+                message: 'Simpan keputusan pendanaan "' + label + '" untuk proposal ini?',
+                okLabel: 'Simpan Keputusan',
+                okClass: 'btn-success'
+            }).then(function (ok) {
+                if (ok) {
+                    select.form.submit();
+                } else {
+                    select.value = select.dataset.nilaiSebelumnya || '';
+                }
+            });
         });
     });
 </script>

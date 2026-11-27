@@ -43,7 +43,7 @@
                                 <a href="{{ asset('storage/' . $item->file) }}" class="btn btn-sm btn-outline-primary" target="_blank">Unduh File</a>
                             @endif
                             <a href="{{ route('admin.pengumuman.edit', $item) }}" class="btn btn-sm btn-warning">Ubah</a>
-                            <form action="{{ route('admin.pengumuman.destroy', $item) }}" method="POST" style="display:inline;" onsubmit="return confirm('Hapus pengumuman ini?');">
+                            <form action="{{ route('admin.pengumuman.destroy', $item) }}" method="POST" style="display:inline;" data-ehibah-confirm="Hapus pengumuman ini?" data-ehibah-confirm-title="Hapus Pengumuman" data-ehibah-confirm-label="Hapus" data-ehibah-confirm-btn="btn-danger">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-danger">Hapus</button>

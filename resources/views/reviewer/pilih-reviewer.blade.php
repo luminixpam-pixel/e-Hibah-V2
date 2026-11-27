@@ -19,16 +19,21 @@
     .table thead th {
         background: #f8f9fa !important;
         font-weight: 600;
-        white-space: nowrap;
     }
     .btn-action {
         padding: 6px 12px;
         border-radius: 8px;
         font-size: 13px;
-    }
-    .col-aksi {
-        width: 220px;
         white-space: nowrap;
+    }
+    /* L1: thead boleh melipat dan kolom Aksi tidak dipatok 220px —
+       sebelumnya keduanya memaksa tabel lebih lebar dari konten. */
+    .col-aksi {
+        width: 150px;
+    }
+    .table-responsive .table {
+        table-layout: fixed;
+        width: 100%;
     }
 </style>
 
@@ -51,13 +56,13 @@
         <table class="table table-striped table-hover align-middle shadow-sm">
             <thead>
                 <tr>
-                    <th>No</th>
-                    <th>Nama</th>
-                    <th>Email</th>
-                    <th>NIDN / NIP</th>
-                    <th>Fakultas</th>
-                    <th>Program Studi</th>
-                    <th>Role</th>
+                    <th width="4%">No</th>
+                    <th width="15%">Nama</th>
+                    <th width="19%">Email</th>
+                    <th width="11%">NIDN / NIP</th>
+                    <th width="13%">Fakultas</th>
+                    <th width="13%">Program Studi</th>
+                    <th width="8%">Role</th>
                     <th class="col-aksi">Aksi</th>
                 </tr>
             </thead>
@@ -72,7 +77,7 @@
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $u->name ?? '-' }}</td>
-                    <td>{{ $u->email ?? '-' }}</td>
+                    <td class="text-break">{{ $u->email ?? '-' }}</td>
                     <td>{{ $u->nidn ?? '-' }}</td>
                     <td>{{ $u->fakultas ?? '-' }}</td>
                     <td>{{ $u->program_studi ?? '-' }}</td>
@@ -91,7 +96,10 @@
                             {{-- ✅ reviewer -> pengaju --}}
                             <form action="{{ route('admin.reviewer.remove', $u->id) }}"
                                   method="POST"
-                                  onsubmit="return confirm('Yakin hentikan {{ $u->name }} sebagai reviewer? Role akan dikembalikan jadi Pengaju.')"
+                                  data-ehibah-confirm="Yakin hentikan {{ $u->name }} sebagai reviewer? Role akan dikembalikan jadi Pengaju."
+                                  data-ehibah-confirm-title="Hentikan Reviewer"
+                                  data-ehibah-confirm-label="Hentikan"
+                                  data-ehibah-confirm-btn="btn-danger"
                                   class="d-inline">
                                 @csrf
                                 <button type="submit" class="btn btn-danger btn-sm btn-action">
@@ -102,7 +110,10 @@
                             {{-- ✅ pengaju -> reviewer --}}
                             <form action="{{ route('admin.reviewer.set', $u->id) }}"
                                   method="POST"
-                                  onsubmit="return confirm('Yakin jadikan {{ $u->name }} sebagai reviewer?')"
+                                  data-ehibah-confirm="Yakin jadikan {{ $u->name }} sebagai reviewer?"
+                                  data-ehibah-confirm-title="Jadikan Reviewer"
+                                  data-ehibah-confirm-label="Jadikan Reviewer"
+                                  data-ehibah-confirm-btn="btn-success"
                                   class="d-inline">
                                 @csrf
                                 <button type="submit" class="btn btn-success btn-sm btn-action">

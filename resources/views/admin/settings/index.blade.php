@@ -77,7 +77,7 @@
                                         @method('PUT')
                                         <button type="submit" class="btn btn-sm btn-outline-primary">Simpan</button>
                                     </form>
-                                    <form action="{{ route('admin.settings.destroy', $setting->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus setelan {{ $setting->key }}?')">
+                                    <form action="{{ route('admin.settings.destroy', $setting->id) }}" method="POST" class="d-inline" data-ehibah-confirm="Hapus setelan {{ $setting->key }}?" data-ehibah-confirm-title="Hapus Setelan" data-ehibah-confirm-label="Hapus" data-ehibah-confirm-btn="btn-danger">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>

@@ -38,6 +38,13 @@
         border-radius: 8px;
         font-size: 11px;
     }
+
+    /* L1: layout tetap (fixed) dengan lebar kolom yang sudah
+       didefinisikan di <th> agar tabel muat dalam area konten. */
+    .table-responsive .table {
+        table-layout: fixed;
+        width: 100%;
+    }
 </style>
 
 <div class="container py-4">

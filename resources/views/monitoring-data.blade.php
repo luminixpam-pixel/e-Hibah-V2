@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function openProposalPopup(){
-        if(!canSubmitNow){ alert("Periode pengajuan hibah belum dibuka atau sudah berakhir."); return; }
+        if(!canSubmitNow){ ehibahToast("Periode pengajuan hibah belum dibuka atau sudah berakhir.", "warning"); return; }
         popup.style.display="flex";
         setTimeout(()=>popup.classList.add("active"),10);
     }

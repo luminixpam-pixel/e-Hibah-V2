@@ -25,7 +25,7 @@
                 <p class="text-muted small mb-3">
                     Ketua: {{ $m->proposal->nama_ketua }}
                     @if ($m->proposal->skema)
-                        · Skema {{ $m->proposal->skema->kategori }}
+                        · Skema {{ $m->proposal->skema->label() }}
                     @endif
                     @if ($m->proposal->no_pengajuan)
                         · {{ $m->proposal->no_pengajuan }}
@@ -39,7 +39,7 @@
                             <i class="bi bi-check-lg me-1"></i>Setuju
                         </button>
                     </form>
-                    <form action="{{ route('anggota.konfirmasi', $m->id) }}" method="POST" class="d-inline">
+                    <form action="{{ route('anggota.konfirmasi', $m->id) }}" method="POST" class="d-inline" data-ehibah-confirm="Tolak undangan menjadi anggota tim proposal ini? Ketua pengusul akan diberi tahu." data-ehibah-confirm-title="Tolak Undangan" data-ehibah-confirm-label="Tolak Undangan" data-ehibah-confirm-btn="btn-danger">
                         @csrf
                         <input type="hidden" name="aksi" value="tolak">
                         <button type="submit" class="btn btn-outline-danger btn-sm">

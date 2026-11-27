@@ -13,6 +13,14 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
+    {{-- Bootstrap JS dimuat di <head> (sinkron) agar semua komponen
+         data-API (dropdown pengguna, modal) sudah aktif SEBELUM pengguna
+         bisa mengklik apa pun. Sebelumnya bundle dimuat di akhir body
+         dari CDN sehingga klik pertama kadang tidak direspons bila
+         script belum selesai diunduh (B9: dropdown baru terbuka di
+         klik kedua; B10: tombol Edit Profile tidak merespons). --}}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     {{-- Font --}}
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 
@@ -403,6 +411,121 @@
     border-radius: 12px;
     box-shadow: 0 12px 35px rgba(0,0,0,.12);
     padding: 8px;
+}
+
+/* Wadah toast flash (B9): posisinya fixed di pojok kanan atas, tepat di
+   atas menu pengguna. Bila wadah ini menerima klik, klik pada menu
+   pengguna di bawahnya tertelan — terutama saat ada toast yang tampil.
+   Wadahnya sendiri tembus klik; hanya kotak alert di dalamnya yang
+   bisa diklik (tombol tutup). */
+#alertPlaceholder {
+    pointer-events: none;
+}
+#alertPlaceholder > div {
+    pointer-events: auto;
+}
+
+/* =========================================================
+   PERBAIKAN TAMPILAN L1, L2, L5, L6, L7, L8 (uji ulang 27 Nov)
+   Satu tempat agar semua halaman daftar/dashboard ikut rapi.
+   ========================================================= */
+
+/* L1 — tabel muat dalam area konten tanpa scroll horizontal.
+   Penyebab: padding sel Bootstrap (.75rem) + kolom yang tidak boleh
+   melipat (nowrap) + .container di dalam #mainContent. */
+#mainContent {
+    min-width: 0;
+}
+#mainContent .container,
+#mainContent .container-fluid {
+    max-width: 100%;
+}
+#mainContent .table-responsive .table > :not(caption) > * > * {
+    padding: .55rem .5rem;
+}
+#mainContent .table td,
+#mainContent .table th {
+    overflow-wrap: break-word;
+}
+#mainContent .table td .d-flex.gap-2 {
+    flex-wrap: wrap;
+}
+#mainContent .table .btn,
+#mainContent .table .badge {
+    white-space: nowrap;
+}
+#mainContent .table .btn-laporan {
+    white-space: nowrap;
+}
+
+/* L2 — modal detail proposal: jangan lebih lebar dari viewport. */
+.modal-dialog.modal-xl {
+    max-width: min(1140px, calc(100vw - 2rem));
+}
+.modal-content {
+    overflow-wrap: break-word;
+}
+
+/* L5 — pil tanggal kanan atas ("27 November 2026") jangan melipat.
+   Kolom kanan header tidak boleh menyusut; kolom kiri boleh. */
+#mainContent .d-flex.justify-content-between > div {
+    min-width: 0;
+}
+#mainContent .d-flex > .text-end {
+    flex-shrink: 0;
+}
+#mainContent .d-flex > .text-end > div {
+    white-space: nowrap;
+}
+
+/* L6 — kartu statistik dashboard: label dan angka sejajar.
+   Kartu reviewer/pengaju: beri ruang teks lebih lega (padding dan
+   ikon lebih kecil) supaya label cukup satu baris di desktop. */
+#mainContent .review-stat-card,
+#mainContent .pengaju-stat-card {
+    padding: 20px;
+    gap: 14px;
+}
+#mainContent .review-stat-card .stat-icon,
+#mainContent .pengaju-stat-card .stat-icon {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    font-size: 22px;
+}
+#mainContent .review-stat-card > div:last-child,
+#mainContent .pengaju-stat-card > div:last-child {
+    min-width: 0;
+    flex: 1;
+}
+#mainContent .stat-label {
+    line-height: 1.35;
+}
+/* Kartu verifikator/kepala LPPM/LPPM: baris atas (ikon + label) dibuat
+   setinggi ikon supaya angka di bawahnya sejajar antar kartu walau
+   label melipat dua baris; label boleh menyusut, bukan mendorong. */
+#mainContent .verif-stat-top,
+#mainContent .klppm-stat-top,
+#mainContent .lppm-stat-top {
+    min-height: 45px;
+}
+#mainContent .verif-stat-label,
+#mainContent .klppm-stat-label,
+#mainContent .lppm-stat-label {
+    min-width: 0;
+    line-height: 1.35;
+}
+/* Sapaan dashboard: konten sambutan boleh menyusut di samping ikon. */
+#mainContent .verif-welcome-content,
+#mainContent .klppm-welcome-content,
+#mainContent .lppm-welcome-content {
+    min-width: 0;
+}
+
+/* L7 — badge "Belum ada ..." dan tombol "Lihat ..." jangan melipat. */
+#mainContent .badge-empty {
+    white-space: nowrap;
+    display: inline-block;
 }
 
 /* Scrollbar sidebar */
@@ -1514,25 +1637,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Script untuk mendeteksi pilihan dari datalist
-document.querySelector('input[name="nama_ketua"]').addEventListener('input', function(e) {
-    const val = e.target.value;
-    const options = document.getElementById('dosenList').childNodes;
+// Script untuk mendeteksi pilihan dari datalist (hanya di halaman yang
+// punya input nama_ketua — sebelumnya melempar TypeError di semua halaman
+// lain karena querySelector mengembalikan null).
+const namaKetuaInput = document.querySelector('input[name="nama_ketua"]');
+if (namaKetuaInput) {
+    namaKetuaInput.addEventListener('input', function(e) {
+        const val = e.target.value;
+        const options = document.getElementById('dosenList').childNodes;
 
-    for (let i = 0; i < options.length; i++) {
-        if (options[i].value === val) {
-            console.log("Dosen terpilih: " + val);
-            break;
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value === val) {
+                console.log("Dosen terpilih: " + val);
+                break;
+            }
         }
-    }
-});
+    });
+}
 </script>
 
 <script>
     const biayaDisplay = document.getElementById('biaya_display');
     const biayaHidden = document.getElementById('biaya_hidden');
 
-    biayaDisplay.addEventListener('keyup', function(e) {
+    // Hanya di halaman form proposal (sebelumnya melempar TypeError di
+    // semua halaman lain karena elemennya tidak ada).
+    if (biayaDisplay && biayaHidden) {
+        biayaDisplay.addEventListener('keyup', function(e) {
         let numberString = this.value.replace(/[^,\d]/g, '').toString();
         let split = numberString.split(',');
         let sisa = split[0].length % 3;
@@ -1548,7 +1679,8 @@ document.querySelector('input[name="nama_ketua"]').addEventListener('input', fun
 
         this.value = 'Rp ' + rupiah;
         biayaHidden.value = numberString.replace(/\./g, '');
-    });
+        });
+    }
 </script>
 
 {{-- Notifikasi --}}
@@ -1574,8 +1706,7 @@ document.querySelector('input[name="nama_ketua"]').addEventListener('input', fun
     </div>
 </div>
 
-{{-- Scripts --}}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{{-- Scripts (bundle Bootstrap sudah dimuat di <head>, lihat atas) --}}
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js'></script>
 
 <script>
@@ -1882,6 +2013,136 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.classList.toggle('sidebar-collapsed');
     });
 });
+</script>
+
+{{-- Pindahkan semua modal Bootstrap ke <body> (B3, B10). Modal yang dirender
+     di dalam #mainContent ikut mengandung-block dari backdrop-filter di
+     wadah itu: position:fixed modal jadi relatif terhadap #mainContent
+     (bergeser ke kanan selebar sidebar, atas terpotong) dan backdrop
+     milik body menutupi modal sehingga tombolnya tidak bisa diklik dan
+     Escape tidak menutup. Di <body>, modal kembali terposisi relatif
+     terhadap viewport dan backdrop berada di bawahnya. Skrip lokal yang
+     sama di halaman daftar proposal kini menjadi redundan tapi dibiarkan
+     (tidak berbahaya). --}}
+<script>
+    document.querySelectorAll('.modal').forEach(function (modal) {
+        document.body.appendChild(modal);
+    });
+</script>
+
+{{-- ============================================================
+     POP-UP BERSAMA (Bagian D): pengganti confirm()/alert()/
+     prompt() bawaan browser. Dialog browser menampilkan judul
+     domain situs ("... says") — yang disebut user "pop up local
+     host". Semua konfirmasi hapus/ubah peran/keputusan kini lewat
+     modal Bootstrap ini, dan semua info singkat lewat toast
+     (ehibahToast) di #alertPlaceholder yang sama dengan flash.
+     Pakai: <form data-ehibah-confirm="pesan?" ...> — submit
+     ditahan, modal tampil, form baru terkirim bila dikonfirmasi.
+     Atribut opsional: data-ehibah-confirm-title,
+     data-ehibah-confirm-label (teks tombol), data-ehibah-confirm-btn
+     (kelas tombol, mis. btn-danger). Untuk info tanpa pilihan:
+     ehibahAlert(judul, pesan). Untuk toast: ehibahToast(pesan, tipe).
+     ============================================================ --}}
+<div class="modal fade" id="ehibahConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="ehibahConfirmTitle">Konfirmasi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="mb-0 text-secondary" id="ehibahConfirmMessage"></p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" id="ehibahConfirmCancel" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger" id="ehibahConfirmOk">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    var modalEl = document.getElementById('ehibahConfirmModal');
+    var titleEl = document.getElementById('ehibahConfirmTitle');
+    var messageEl = document.getElementById('ehibahConfirmMessage');
+    var cancelBtn = document.getElementById('ehibahConfirmCancel');
+    var okBtn = document.getElementById('ehibahConfirmOk');
+    var modal = new bootstrap.Modal(modalEl);
+    var resolveCurrent = null;
+
+    function showModal(title, message, okLabel, okClass, showOk) {
+        // textContent (bukan innerHTML): pesan berisi nama dari database.
+        titleEl.textContent = title || 'Konfirmasi';
+        messageEl.textContent = message || '';
+        okBtn.textContent = okLabel || 'Ya, Lanjutkan';
+        okBtn.className = 'btn ' + (okClass || 'btn-danger');
+        okBtn.style.display = showOk === false ? 'none' : '';
+        cancelBtn.textContent = showOk === false ? 'Tutup' : 'Batal';
+        modal.show();
+        // Fokus ke tombol aman (Batal/Tutup), bukan ke aksi destruktif.
+        modalEl.addEventListener('shown.bs.modal', function onShown() {
+            modalEl.removeEventListener('shown.bs.modal', onShown);
+            cancelBtn.focus();
+        });
+    }
+
+    // Konfirmasi dua pilihan; resolve(true) bila tombol aksi ditekan.
+    window.ehibahConfirm = function (options) {
+        var opts = typeof options === 'string' ? { message: options } : (options || {});
+        return new Promise(function (resolve) {
+            resolveCurrent = resolve;
+            showModal(opts.title, opts.message, opts.okLabel, opts.okClass, true);
+        });
+    };
+
+    // Info satu tombol (pengganti alert()/Swal yang tidak termuat).
+    window.ehibahAlert = function (title, message) {
+        resolveCurrent = null;
+        showModal(title, message, '', '', false);
+    };
+
+    // Toast di #alertPlaceholder, sama seperti flash server (showAlert).
+    window.ehibahToast = function (message, type) {
+        var holder = document.getElementById('alertPlaceholder');
+        if (!holder) return;
+        var wrapper = document.createElement('div');
+        wrapper.innerHTML = '<div class="alert alert-' + (type || 'info') + ' alert-dismissible fade show" role="alert"></div>';
+        wrapper.querySelector('.alert').textContent = message;
+        wrapper.querySelector('.alert').insertAdjacentHTML('beforeend', '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>');
+        holder.appendChild(wrapper);
+        setTimeout(function () {
+            var alert = bootstrap.Alert.getOrCreateInstance(wrapper.querySelector('.alert'));
+            alert.close();
+        }, 5000);
+    };
+
+    okBtn.addEventListener('click', function () {
+        modal.hide();
+        if (resolveCurrent) { var r = resolveCurrent; resolveCurrent = null; r(true); }
+    });
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        if (resolveCurrent) { var r = resolveCurrent; resolveCurrent = null; r(false); }
+    });
+
+    // Semua form data-ehibah-confirm: tahan submit, tanya dulu lewat
+    // modal bersama. form.submit() (bukan requestSubmit) melewati
+    // listener ini sehingga tidak berputar.
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if (!form || !form.hasAttribute('data-ehibah-confirm') || form.dataset.ehibahConfirmed) return;
+        e.preventDefault();
+        e.stopPropagation();
+        window.ehibahConfirm({
+            title: form.getAttribute('data-ehibah-confirm-title') || 'Konfirmasi',
+            message: form.getAttribute('data-ehibah-confirm'),
+            okLabel: form.getAttribute('data-ehibah-confirm-label') || 'Ya, Lanjutkan',
+            okClass: form.getAttribute('data-ehibah-confirm-btn') || 'btn-danger'
+        }).then(function (ok) {
+            if (ok) { form.dataset.ehibahConfirmed = '1'; form.submit(); }
+        });
+    }, true);
+})();
 </script>
 </body>
 </html>

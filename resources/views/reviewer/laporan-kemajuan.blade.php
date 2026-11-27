@@ -38,6 +38,13 @@
         text-align: center;
     }
 
+    /* L1: layout tetap (fixed) dengan lebar kolom yang sudah
+       didefinisikan di <th> agar tabel muat dalam area konten. */
+    .table-responsive .table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
     .table tbody td {
         padding: 15px;
         vertical-align: middle;

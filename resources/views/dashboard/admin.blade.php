@@ -15,7 +15,7 @@
         <div>
             <span class="admin-label">ADMINISTRATOR DASHBOARD</span>
             <h2 class="fw-bold mt-2 mb-2">
-                Selamat datang, {{ $user->name ?? 'Admin' }} 👋
+                Selamat datang, <span class="text-nowrap">{{ $user->name ?? 'Admin' }} 👋</span>
             </h2>
             <p class="mb-0">
                 Kelola pengguna, pantau aktivitas sistem, dan administrasikan

@@ -30,7 +30,7 @@
     <td>{{ $item->proposals_count }}</td>
     <td>
         <a href="{{ route('admin.fakultas.edit', $item) }}" class="btn btn-sm btn-warning">Ubah</a>
-        <form action="{{ route('admin.fakultas.destroy', $item) }}" method="POST" style="display:inline;" onsubmit="return confirm('Hapus fakultas {{ $item->nama_fakultas }}? Proposal dan user yang merujuk fakultas ini akan kehilangan fakultasnya.');">
+        <form action="{{ route('admin.fakultas.destroy', $item) }}" method="POST" style="display:inline;" data-ehibah-confirm="Hapus fakultas {{ $item->nama_fakultas }}? Proposal dan user yang merujuk fakultas ini akan kehilangan fakultasnya." data-ehibah-confirm-title="Hapus Fakultas" data-ehibah-confirm-label="Hapus" data-ehibah-confirm-btn="btn-danger">
             @csrf
             @method('DELETE')
             <button type="submit" class="btn btn-sm btn-danger">Hapus</button>

@@ -13,7 +13,7 @@
         <div>
             <span class="welcome-label">REVIEWER DASHBOARD</span>
             <h2 class="fw-bold mt-2 mb-2">
-                Selamat datang, {{ $user->name ?? 'Reviewer' }} 👋
+                Selamat datang, <span class="text-nowrap">{{ $user->name ?? 'Reviewer' }} 👋</span>
             </h2>
             <p class="mb-0">
                 Kelola dan evaluasi proposal hibah yang ditugaskan kepada Anda.

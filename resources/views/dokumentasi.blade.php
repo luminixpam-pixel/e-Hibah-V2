@@ -77,10 +77,10 @@ php artisan test --filter=DokumentasiTest</code></pre>
     <h5 class="fw-bold mt-4">Catatan Penting</h5>
     <ul>
         <li><strong>Jangan pakai <code>Auth::id()</code> / <code>auth()-&gt;id()</code> untuk membandingkan ID angka.</strong> Di codebase ini method tersebut mengembalikan username (string), bukan <code>users.id</code>, karena <code>User::getAuthIdentifierName()</code> mengembalikan <code>username</code> (login LDAP). Selalu pakai <code>auth()-&gt;user()-&gt;id</code> untuk cek kepemilikan.</li>
-        <li><strong>Data dummy SkemaSeeder menunggu LPPM.</strong> Plafon dan kuota skema Pembinaan / Kompetisi / Khusus di seeder masih angka dummy bertanda <code>[DUMMY]</code> dan wajib diganti dengan angka resmi dari SK / panduan internal LPPM begitu jawabannya ada; jangan dipakai untuk validasi produksi.</li>
+        <li><strong>Data resmi SkemaSeeder dari LPPM (27 Nov 2026).</strong> Plafon lima skema mengikuti angka resmi LPPM: Pembinaan Kesehatan Rp15jt, Pembinaan Humaniora Rp10jt, Kompetisi Kesehatan Rp25jt, Kompetisi Humaniora Rp15jt, Khusus Rp50jt. Kuota per skema masih <code>0</code> ("Belum ditetapkan") karena LPPM belum memberikan angka kuota — jangan dikarang.</li>
         <li><strong>File <code>.env</code> tidak boleh di-commit.</strong> Database SQLite dan file sensitif lain tidak boleh masuk repo.</li>
         <li><strong>Login LDAP.</strong> Akun asli dosen YARSI login lewat LDAP memakai akun kampus; saat login pertama dan belum punya peran, sistem memberi peran <code>pengaju</code> — peran sesuai jabatan diatur admin lewat menu Kelola Pengguna.</li>
-        <li><strong>Kuota.</strong> Setiap dosen maksimal terlibat dalam 3 proposal (sebagai ketua atau anggota), sesuai kuota per kategori skema.</li>
+        <li><strong>Kuota.</strong> Kuota keikutsertaan per skema belum ditetapkan LPPM (nilai 0 = "Belum ditetapkan"), sehingga pengecekan kuota saat ini dilewati. Bila angka resmi sudah ada, isi kuota lewat menu Master Skema.</li>
     </ul>
 </div>
 @endsection

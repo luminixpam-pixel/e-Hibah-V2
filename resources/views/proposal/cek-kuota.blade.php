@@ -11,22 +11,25 @@
 
     <div class="card">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            {{-- L1: layout tetap (fixed) dengan lebar kolom eksplisit agar
+                 tabel muat dalam area konten; sel plafon/kuota/sisa tidak
+                 melipat. --}}
+            <table class="table table-hover align-middle mb-0" style="table-layout: fixed; width: 100%;">
                 <thead class="table-light">
                     <tr>
-                        <th>Skema</th>
-                        <th class="text-center">Plafon</th>
-                        <th class="text-center">Sebagai Ketua</th>
-                        <th class="text-center">Sebagai Anggota</th>
-                        <th class="text-center">Total</th>
-                        <th class="text-center">Kuota</th>
-                        <th class="text-center">Sisa</th>
+                        <th width="24%">Skema</th>
+                        <th class="text-center text-nowrap" width="16%">Plafon</th>
+                        <th class="text-center" width="11%">Sebagai Ketua</th>
+                        <th class="text-center" width="12%">Sebagai Anggota</th>
+                        <th class="text-center" width="9%">Total</th>
+                        <th class="text-center text-nowrap" width="14%">Kuota</th>
+                        <th class="text-center text-nowrap" width="14%">Sisa</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($kuotaPerSkema as $row)
                         <tr>
-                            <td class="fw-bold">{{ $row['skema']->kategori }}</td>
+                            <td class="fw-bold">{{ $row['skema']->label() }}</td>
                             {{-- Plafon/kuota 0 berarti belum ditetapkan LPPM (bukan 0 rupiah
                                  atau kuota habis) — jangan tampilkan "Rp 0" / "Penuh". --}}
                             <td class="text-center">{{ $row['skema']->plafon > 0 ? 'Rp '.number_format($row['skema']->plafon, 0, ',', '.') : 'Belum ditetapkan' }}</td>

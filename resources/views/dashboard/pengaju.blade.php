@@ -13,7 +13,7 @@
         <div>
             <span class="welcome-label">E-HIBAH DASHBOARD</span>
             <h2 class="fw-bold mt-2 mb-2">
-                Selamat datang, {{ $user->name ?? 'Pengaju' }} 👋
+                Selamat datang, <span class="text-nowrap">{{ $user->name ?? 'Pengaju' }} 👋</span>
             </h2>
             <p class="mb-0">
                 Kelola pengajuan hibah, pantau status proposal,
@@ -249,12 +249,12 @@
                                     <small class="proposal-no">
                                         <i class="bi bi-hash me-1"></i>{{ $p->no_pengajuan }}
                                         @if ($p->skema)
-                                            · {{ $p->skema->kategori }}
+                                            · {{ $p->skema->label() }}
                                         @endif
                                     </small>
                                 @elseif ($p->skema)
                                     <small class="proposal-no">
-                                        <i class="bi bi-award me-1"></i>{{ $p->skema->kategori }}
+                                        <i class="bi bi-award me-1"></i>{{ $p->skema->label() }}
                                     </small>
                                 @endif
 
@@ -436,7 +436,7 @@
                                 <small class="proposal-no">
                                     <i class="bi bi-person me-1"></i>Ketua: {{ $p->nama_ketua }}
                                     @if ($p->skema)
-                                        · {{ $p->skema->kategori }}
+                                        · {{ $p->skema->label() }}
                                     @endif
                                     @if ($p->no_pengajuan)
                                         · {{ $p->no_pengajuan }}

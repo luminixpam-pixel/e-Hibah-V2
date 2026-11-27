@@ -22,11 +22,11 @@ use Illuminate\Validation\Rule;
 class SkemaController extends Controller
 {
     /**
-     * Daftar semua skema, urut abjad kategori.
+     * Daftar semua skema, urut kategori lalu bidang.
      */
     public function index()
     {
-        $skemas = Skema::orderBy('kategori')->get();
+        $skemas = Skema::orderBy('kategori')->orderBy('bidang')->get();
 
         return view('admin.skema.index', compact('skemas'));
     }
@@ -40,12 +40,15 @@ class SkemaController extends Controller
     }
 
     /**
-     * Simpan skema baru. Kategori unik (satu baris per kategori).
+     * Simpan skema baru. Pasangan (kategori, bidang) unik — satu kategori
+     * boleh punya dua bidang (Kesehatan/Humaniora), tetapi pasangan yang
+     * sama tidak boleh duplikat. Khusus tidak punya bidang.
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'kategori' => ['required', 'in:Pembinaan,Kompetisi,Khusus', Rule::unique('skemas', 'kategori')],
+            'kategori' => ['required', 'in:Pembinaan,Kompetisi,Khusus', Rule::unique('skemas', 'kategori')->where(fn ($q) => $request->filled('bidang') ? $q->where('bidang', $request->bidang) : $q->whereNull('bidang'))],
+            'bidang' => ['nullable', 'in:Kesehatan,Humaniora', Rule::prohibitedIf($request->input('kategori') === 'Khusus')],
             'plafon' => 'required|numeric|min:0',
             'kuota' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
@@ -66,13 +69,15 @@ class SkemaController extends Controller
     }
 
     /**
-     * Simpan perubahan skema. Unique kategori mengabaikan diri sendiri,
-     * jadi menyimpan tanpa mengubah kategori tidak kena error duplikat.
+     * Simpan perubahan skema. Unique pasangan (kategori, bidang)
+     * mengabaikan diri sendiri, jadi menyimpan tanpa mengubah pasangan
+     * tidak kena error duplikat.
      */
     public function update(Request $request, Skema $skema)
     {
         $validated = $request->validate([
-            'kategori' => ['required', 'in:Pembinaan,Kompetisi,Khusus', Rule::unique('skemas', 'kategori')->ignore($skema->id)],
+            'kategori' => ['required', 'in:Pembinaan,Kompetisi,Khusus', Rule::unique('skemas', 'kategori')->where(fn ($q) => $request->filled('bidang') ? $q->where('bidang', $request->bidang) : $q->whereNull('bidang'))->ignore($skema->id)],
+            'bidang' => ['nullable', 'in:Kesehatan,Humaniora', Rule::prohibitedIf($request->input('kategori') === 'Khusus')],
             'plafon' => 'required|numeric|min:0',
             'kuota' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',

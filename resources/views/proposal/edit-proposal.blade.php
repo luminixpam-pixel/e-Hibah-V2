@@ -84,12 +84,13 @@
                                     <option value="">Pilih Skema...</option>
                                     @foreach($list_skema as $s)
                                         <option value="{{ $s->id }}" {{ old('skema_id', $proposal->skema_id) == $s->id ? 'selected' : '' }}>
-                                            {{ $s->kategori }} — Plafon Rp {{ number_format($s->plafon, 0, ',', '.') }}
+                                            {{ $s->label() }} — Plafon Rp {{ number_format($s->plafon, 0, ',', '.') }}
                                         </option>
                                     @endforeach
                                 </select>
                                 <div id="skemaInfo" class="mt-2 p-3 rounded-4 border bg-light-subtle small text-muted" style="display: none;">
                                     <div><strong>Plafon:</strong> <span id="skemaPlafon"></span></div>
+                                    <div id="skemaBatasTim"></div>
                                     <div id="skemaDeskripsi"></div>
                                     <div id="skemaSyarat"></div>
                                 </div>
@@ -255,7 +256,8 @@ document.addEventListener('DOMContentLoaded', function() {
         @foreach($list_skema as $s)
             {{ $s->id }}: {
                 plafon: {{ $s->plafon }},
-                kategori: @json($s->kategori),
+                kategori: @json($s->label()),
+                maksTim: {{ $s->maksUkuranTim() ?? 'null' }},
                 deskripsi: @json($s->deskripsi),
                 syarat: @json($s->syarat),
             },
@@ -279,6 +281,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         document.getElementById('skemaPlafon').textContent = formatRupiah(info.plafon);
+        document.getElementById('skemaBatasTim').textContent = info.maksTim
+            ? 'Batas tim: maks ' + info.maksTim + ' orang (ketua + anggota).'
+            : '';
         document.getElementById('skemaDeskripsi').textContent = info.deskripsi || '';
         document.getElementById('skemaSyarat').textContent = info.syarat ? 'Syarat: ' + info.syarat : '';
         box.style.display = 'block';

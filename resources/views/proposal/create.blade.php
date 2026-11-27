@@ -39,7 +39,9 @@
             <p>
                 Setiap dosen maksimal terlibat sesuai <strong>kuota skema</strong>
                 yang dipilih (sebagai ketua maupun anggota). Total RAB tidak
-                boleh melebihi <strong>plafon skema</strong>. Cek sisa kuota Anda
+                boleh melebihi <strong>plafon skema</strong>. Skema Kompetisi
+                maksimal 3 orang per tim (ketua + anggota); skema Khusus hanya
+                ketua saja (1 orang). Cek sisa kuota Anda
                 di <a href="{{ route('dosen.cek-kuota') }}">halaman Cek Kuota</a>.
                 Pastikan data dan dokumen yang diunggah telah sesuai.
             </p>
@@ -205,7 +207,7 @@
                             @foreach ($list_skema as $s)
                                 <option value="{{ $s->id }}"
                                     {{ old('skema_id') == $s->id ? 'selected' : '' }}>
-                                    {{ $s->kategori }} — Plafon Rp {{ number_format($s->plafon, 0, ',', '.') }}
+                                    {{ $s->label() }} — Plafon Rp {{ number_format($s->plafon, 0, ',', '.') }}
                                 </option>
                             @endforeach
                         </select>
@@ -213,6 +215,7 @@
 
                     <div id="skemaInfo" class="proposal-skema-info" style="display: none;">
                         <div><strong>Plafon:</strong> <span id="skemaPlafon"></span></div>
+                        <div id="skemaBatasTim"></div>
                         <div id="skemaDeskripsi"></div>
                         <div id="skemaSyarat"></div>
                     </div>
@@ -550,7 +553,8 @@ const SKEMA_INFO = {
     @foreach ($list_skema as $s)
         {{ $s->id }}: {
             plafon: {{ $s->plafon }},
-            kategori: @json($s->kategori),
+            kategori: @json($s->label()),
+            maksTim: {{ $s->maksUkuranTim() ?? 'null' }},
             deskripsi: @json($s->deskripsi),
             syarat: @json($s->syarat),
         },
@@ -576,6 +580,9 @@ function updateSkemaInfo() {
     }
 
     document.getElementById('skemaPlafon').textContent = formatRupiah(info.plafon);
+    document.getElementById('skemaBatasTim').textContent = info.maksTim
+        ? 'Batas tim: maks ' + info.maksTim + ' orang (ketua + anggota).'
+        : '';
     document.getElementById('skemaDeskripsi').textContent = info.deskripsi || '';
     document.getElementById('skemaSyarat').textContent = info.syarat ? 'Syarat: ' + info.syarat : '';
     box.style.display = 'block';

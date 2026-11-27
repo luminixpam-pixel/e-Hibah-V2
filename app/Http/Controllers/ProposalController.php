@@ -24,6 +24,17 @@ use Illuminate\Validation\Rule;
 class ProposalController extends Controller
 {
     /**
+     * Nama anggota yang dibuang resolveAnggota() karena ternyata ketua
+     * proposal (B8): ketua tidak boleh tercatat sebagai anggota tim
+     * proposalnya sendiri. Diisi ulang setiap kali resolveAnggota()
+     * dipanggil; dibaca store()/update() untuk memberi tahu pengguna
+     * lewat pesan flash, agar pembuangan itu tidak lagi diam-diam.
+     *
+     * @var array<int, string>
+     */
+    private array $anggotaKetuaDibuang = [];
+
+    /**
      * Helper internal untuk mencatat log aktivitas pengguna
      */
     private function logActivity($activity)
@@ -69,6 +80,9 @@ class ProposalController extends Controller
         $resolved = [];
         $seen = [];
 
+        // Catatan pembuangan ketua dihitung ulang per panggilan.
+        $this->anggotaKetuaDibuang = [];
+
         foreach ($names as $nama) {
             $nama = trim((string) $nama);
             if ($nama === '' || isset($seen[mb_strtolower($nama)])) {
@@ -78,8 +92,12 @@ class ProposalController extends Controller
 
             $user = User::whereIn('role', ['pengaju', 'reviewer'])->where('name', $nama)->first();
 
-            // Ketua tidak dicatat lagi sebagai anggota tim.
+            // Ketua tidak dicatat lagi sebagai anggota tim. Nama yang
+            // dibuang dicatat agar store()/update() bisa memberi tahu
+            // pengguna (B8) — sebelumnya pembuangan ini diam-diam.
             if ($user && $ketuaId && (int) $user->id === (int) $ketuaId) {
+                $this->anggotaKetuaDibuang[] = $nama;
+
                 continue;
             }
 
@@ -87,6 +105,22 @@ class ProposalController extends Controller
         }
 
         return $resolved;
+    }
+
+    /**
+     * Kalimat catatan untuk pesan flash bila ada anggota yang dibuang
+     * resolveAnggota() karena ia ketua proposal (B8). String kosong
+     * bila tidak ada yang dibuang.
+     */
+    private function catatanAnggotaKetua(): string
+    {
+        if ($this->anggotaKetuaDibuang === []) {
+            return '';
+        }
+
+        $nama = implode(', ', $this->anggotaKetuaDibuang);
+
+        return ' Catatan: '.$nama.' adalah ketua proposal ini sehingga tidak dicatat sebagai anggota tim.';
     }
 
     /**
@@ -184,7 +218,7 @@ class ProposalController extends Controller
         $cekKuota = (int) $skema->kuota > 0;
 
         if ($cekKuota && $this->countParticipation($user->id, $skema->id, $exceptProposalId) >= (int) $skema->kuota) {
-            return "Anda sudah mencapai kuota skema {$skema->kategori} ({$skema->kuota} keikutsertaan).";
+            return "Anda sudah mencapai kuota skema {$skema->label()} ({$skema->kuota} keikutsertaan).";
         }
 
         foreach ($memberUserIds as $memberId) {
@@ -199,11 +233,47 @@ class ProposalController extends Controller
                 return "Anggota {$member->name} masih memiliki tanggungan laporan (laporan akhir belum diunggah atau temuan Monev masih terbuka) sehingga tidak dapat diikutsertakan.";
             }
             if ($cekKuota && $this->countParticipation($member->id, $skema->id, $exceptProposalId) >= (int) $skema->kuota) {
-                return "Anggota {$member->name} sudah mencapai kuota skema {$skema->kategori} ({$skema->kuota} keikutsertaan).";
+                return "Anggota {$member->name} sudah mencapai kuota skema {$skema->label()} ({$skema->kuota} keikutsertaan).";
             }
         }
 
         return null;
+    }
+
+    /**
+     * Cek batas ukuran tim skema menurut angka resmi LPPM (27 Nov 2026).
+     *
+     * Sistem hanya memodelkan 1 ketua (proposals.user_id) + anggota,
+     * tanpa konsep ketua ganda — jadi yang dihitung adalah total ukuran
+     * tim = 1 ketua + jumlah anggota. Kompetisi maks 3 orang (2 ketua +
+     * 1 anggota atau sebaliknya, total 3); Khusus maks 1 orang (hanya
+     * ketua, tanpa anggota). Pembinaan belum ditetapkan LPPM sehingga
+     * tidak dibatasi (maksUkuranTim() null).
+     *
+     * Hanya dipanggil saat submit/kirim pengajuan, bukan saat simpan
+     * draft — selaras dengan validasi plafon.
+     *
+     * @param  int  $jumlahAnggota  jumlah nama anggota yang diselesaikan (resolveAnggota)
+     */
+    private function cekBatasTim(Skema $skema, int $jumlahAnggota): ?string
+    {
+        $maks = $skema->maksUkuranTim();
+
+        if ($maks === null) {
+            return null;
+        }
+
+        $ukuranTim = 1 + $jumlahAnggota;
+
+        if ($ukuranTim <= $maks) {
+            return null;
+        }
+
+        if ($skema->kategori === 'Khusus') {
+            return "Skema Khusus hanya boleh diajukan oleh 1 orang (ketua saja, tanpa anggota). Tim saat ini {$ukuranTim} orang.";
+        }
+
+        return "Skema {$skema->label()} maksimal {$maks} orang per tim (ketua + anggota). Tim saat ini {$ukuranTim} orang.";
     }
 
     /**
@@ -301,7 +371,7 @@ class ProposalController extends Controller
         }
 
         $list_fakultas = \App\Models\Fakultas::all();
-        $list_skema = \App\Models\Skema::orderBy('kategori')->get();
+        $list_skema = \App\Models\Skema::orderBy('kategori')->orderBy('bidang')->get();
         $all_dosen = \App\Models\User::whereIn('role', ['pengaju', 'reviewer'])
             ->orderBy('name')
             ->get();
@@ -336,7 +406,7 @@ class ProposalController extends Controller
     {
         $user = auth()->user();
 
-        $kuotaPerSkema = Skema::orderBy('kategori')->get()->map(function ($skema) use ($user) {
+        $kuotaPerSkema = Skema::orderBy('kategori')->orderBy('bidang')->get()->map(function ($skema) use ($user) {
             $sebagaiKetua = Proposal::where('user_id', $user->id)
                 ->where('skema_id', $skema->id)
                 ->where('status', '!=', 'Draft')
@@ -463,10 +533,14 @@ class ProposalController extends Controller
         $anggotaResolved = $this->resolveAnggota($anggotaInput, $user->id);
         $memberUserIds = array_values(array_filter(array_column($anggotaResolved, 'user_id')));
 
-        // 5. Cek kuota per skema + blacklist anggota (hanya saat submit).
+        // 5. Cek kuota per skema + blacklist anggota + batas ukuran tim
+        // (hanya saat submit).
         if (! $isDraft && $skema) {
             $error = $this->checkPengajuan($user, $skema, $memberUserIds);
             if ($error) {
+                return redirect()->back()->withInput()->with('error', $error);
+            }
+            if ($error = $this->cekBatasTim($skema, count($anggotaResolved))) {
                 return redirect()->back()->withInput()->with('error', $error);
             }
         }
@@ -478,7 +552,7 @@ class ProposalController extends Controller
         }
         if (! $isDraft && $skema && $skema->plafon > 0 && $rabTotal > (float) $skema->plafon) {
             return redirect()->back()->withInput()
-                ->with('error', 'Total RAB Rp '.number_format($rabTotal, 0, ',', '.').' melebihi plafon skema '.$skema->kategori.' (Rp '.number_format((float) $skema->plafon, 0, ',', '.').').');
+                ->with('error', 'Total RAB Rp '.number_format($rabTotal, 0, ',', '.').' melebihi plafon skema '.$skema->label().' (Rp '.number_format((float) $skema->plafon, 0, ',', '.').').');
         }
 
         try {
@@ -520,11 +594,11 @@ class ProposalController extends Controller
 
             if ($isDraft) {
                 return redirect()->route('proposal.index')
-                    ->with('success', 'Draft proposal berhasil disimpan. Anda dapat melengkapinya kembali sebelum dikirim.');
+                    ->with('success', 'Draft proposal berhasil disimpan. Anda dapat melengkapinya kembali sebelum dikirim.'.$this->catatanAnggotaKetua());
             }
 
             return redirect()->route('proposal.index')
-                ->with('success', 'Proposal berhasil diajukan! Nomor pengajuan: '.$proposal->no_pengajuan);
+                ->with('success', 'Proposal berhasil diajukan! Nomor pengajuan: '.$proposal->no_pengajuan.$this->catatanAnggotaKetua());
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan: '.$e->getMessage());
         }
@@ -550,7 +624,7 @@ class ProposalController extends Controller
         $users = \App\Models\User::whereIn('role', ['pengaju', 'reviewer'])
             ->orderBy('name')
             ->get();
-        $list_skema = Skema::orderBy('kategori')->get();
+        $list_skema = Skema::orderBy('kategori')->orderBy('bidang')->get();
         // Pilihan nama komponen RAB: bawaan + kustom dari settings
         // (key 'rab_komponen_kustom'); dipakai datalist di form.
         $daftarKomponenRab = Setting::daftarKomponenRab();
@@ -630,6 +704,9 @@ class ProposalController extends Controller
             if ($error) {
                 return redirect()->back()->withInput()->with('error', $error);
             }
+            if ($error = $this->cekBatasTim($skema, count($anggotaResolved))) {
+                return redirect()->back()->withInput()->with('error', $error);
+            }
         }
 
         // Total RAB dari input form (bila ada); bila tidak ada, biaya lama dipertahankan.
@@ -650,7 +727,7 @@ class ProposalController extends Controller
         }
         if ($hasRab && $skema && $skema->plafon > 0 && $rabTotal > (float) $skema->plafon) {
             return redirect()->back()->withInput()
-                ->with('error', 'Total RAB Rp '.number_format($rabTotal, 0, ',', '.').' melebihi plafon skema '.$skema->kategori.' (Rp '.number_format((float) $skema->plafon, 0, ',', '.').').');
+                ->with('error', 'Total RAB Rp '.number_format($rabTotal, 0, ',', '.').' melebihi plafon skema '.$skema->label().' (Rp '.number_format((float) $skema->plafon, 0, ',', '.').').');
         }
 
         DB::transaction(function () use ($request, $proposal, $user, $kirimPengajuan, $skema, $anggotaResolved, $rabInput, $rabTotal, $hasRab) {
@@ -697,10 +774,10 @@ class ProposalController extends Controller
 
         if ($kirimPengajuan) {
             return redirect()->route('monitoring.proposalDikirim')
-                ->with('success', 'Proposal berhasil diajukan! Nomor pengajuan: '.$proposal->fresh()->no_pengajuan);
+                ->with('success', 'Proposal berhasil diajukan! Nomor pengajuan: '.$proposal->fresh()->no_pengajuan.$this->catatanAnggotaKetua());
         }
 
-        return redirect()->route('monitoring.proposalDikirim')->with('success', 'Proposal diperbarui!');
+        return redirect()->route('monitoring.proposalDikirim')->with('success', 'Proposal diperbarui!'.$this->catatanAnggotaKetua());
     }
 
     /**
@@ -741,12 +818,23 @@ class ProposalController extends Controller
             return back()->with('error', $error);
         }
 
+        // Jumlah anggota = nama di kolom JSON `anggota` (sudah mencakup
+        // anggota tanpa akun); bila kosong, pakai baris proposal_members.
+        $jumlahAnggota = count((array) $proposal->anggota);
+        if ($jumlahAnggota === 0) {
+            $jumlahAnggota = $proposal->members()->count();
+        }
+
+        if ($error = $this->cekBatasTim($proposal->skema, $jumlahAnggota)) {
+            return back()->with('error', $error);
+        }
+
         if ((float) $proposal->biaya <= 0 && ! $proposal->rabItems()->exists()) {
             return back()->with('error', 'Isi minimal satu komponen RAB sebelum mengirim pengajuan.');
         }
 
         if ($proposal->skema->plafon > 0 && (float) $proposal->biaya > (float) $proposal->skema->plafon) {
-            return back()->with('error', 'Total RAB Rp '.number_format((float) $proposal->biaya, 0, ',', '.').' melebihi plafon skema '.$proposal->skema->kategori.' (Rp '.number_format((float) $proposal->skema->plafon, 0, ',', '.').').');
+            return back()->with('error', 'Total RAB Rp '.number_format((float) $proposal->biaya, 0, ',', '.').' melebihi plafon skema '.$proposal->skema->label().' (Rp '.number_format((float) $proposal->skema->plafon, 0, ',', '.').').');
         }
 
         DB::transaction(function () use ($proposal, $user) {
@@ -965,11 +1053,17 @@ class ProposalController extends Controller
     // Fungsi untuk Proposal Disetujui
     public function proposalDisetujui()
     {
-        // Mengambil proposal yang statusnya 'Disetujui' DAN dimiliki oleh user yang login
-        // auth()->id() = username, bukan users.id — pakai auth()->user()->id.
-        $proposals = Proposal::where('user_id', auth()->user()->id)
-            ->where('status', 'Disetujui')
-            ->with('reviewers') // Eager loading untuk menampilkan nama reviewer
+        // Halaman monitoring (menu Verifikasi, untuk verifikator + admin):
+        // menampilkan SEMUA proposal berstatus 'Disetujui', bukan hanya
+        // milik pengguna yang login. Sebelumnya query difilter
+        // user_id = pengguna login, sehingga verifikator — yang tidak
+        // pernah menjadi pemilik proposal — selalu melihat halaman kosong
+        // ("Belum ada proposal yang disetujui") meski ada proposal
+        // Disetujui. Pola ini sama dengan halaman monitoring lain
+        // (proposalDitolak, proposalSedangDireview, reviewSelesai) yang
+        // tidak memfilter pemilik.
+        $proposals = Proposal::where('status', 'Disetujui')
+            ->with(['reviewers', 'user']) // Eager loading untuk menampilkan nama reviewer + pengusul
             ->latest()
             ->get();
 

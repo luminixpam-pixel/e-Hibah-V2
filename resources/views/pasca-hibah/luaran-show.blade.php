@@ -167,7 +167,7 @@
                                         <a href="{{ route('luaran.edit', $luaran) }}" class="btn btn-sm btn-outline-warning fw-bold px-3" style="border-radius: 8px;">
                                             <i class="bi bi-pencil me-1"></i> Ubah
                                         </a>
-                                        <form action="{{ route('luaran.destroy', $luaran) }}" method="POST" onsubmit="return confirm('Hapus luaran ini beserta filenya?');">
+                                        <form action="{{ route('luaran.destroy', $luaran) }}" method="POST" data-ehibah-confirm="Hapus luaran ini beserta filenya?" data-ehibah-confirm-title="Hapus Luaran" data-ehibah-confirm-label="Hapus" data-ehibah-confirm-btn="btn-danger">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-outline-danger fw-bold px-3" style="border-radius: 8px;">

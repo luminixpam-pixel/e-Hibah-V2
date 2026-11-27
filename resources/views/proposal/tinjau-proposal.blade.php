@@ -9,8 +9,30 @@
         <div class="card-body">
             <p><strong>Judul:</strong> {{ $proposal->judul }}</p>
             <p><strong>Nama Ketua:</strong> {{ $proposal->nama_ketua }}</p>
-            <p><strong>Biaya:</strong> {{ $proposal->biaya !== null ? 'Rp '.number_format($proposal->biaya, 0, ',', '.') : '-' }}</p>
+            {{-- B4: label tegas "Total RAB" agar tidak tertukar dengan rekomendasi
+                 biaya reviewer (angka berbeda, sumber berbeda). $proposal->biaya
+                 adalah total komponen RAB yang diajukan pengusul. --}}
+            <p><strong>Total RAB (Biaya Diajukan):</strong> {{ $proposal->biaya !== null ? 'Rp '.number_format($proposal->biaya, 0, ',', '.') : '-' }}</p>
             <p><strong>Status:</strong> {{ $proposal->status ?? '-' }}</p>
+
+            {{-- Rekomendasi biaya dari reviewer ditampilkan terpisah dengan label
+                 yang jelas — ini BUKAN total RAB proposal, melainkan usulan
+                 biaya dari masing-masing reviewer. --}}
+            @if($proposal->reviews->isNotEmpty())
+                <p class="mb-1"><strong>Rekomendasi Biaya Reviewer:</strong></p>
+                <ul class="mb-0">
+                    @foreach($proposal->reviews as $review)
+                        <li>
+                            {{ $review->reviewer->name ?? 'Reviewer' }}:
+                            @if($review->rekomendasi_biaya)
+                                Rp {{ number_format($review->rekomendasi_biaya, 0, ',', '.') }}
+                            @else
+                                <span class="text-muted">tidak ada rekomendasi</span>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
 
             <p><strong>Anggota:</strong>
                 {{--

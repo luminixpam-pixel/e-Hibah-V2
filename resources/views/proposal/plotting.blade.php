@@ -46,7 +46,7 @@
                         · {{ $p->no_pengajuan }}
                     @endif
                     @if ($p->skema)
-                        · {{ $p->skema->kategori }}
+                        · {{ $p->skema->label() }}
                     @endif
                 </p>
 
@@ -70,35 +70,52 @@
                 <form action="{{ route('proposal.assignReviewer', $p->id) }}" method="POST">
                     @csrf
                     <div class="row g-2">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label small">Reviewer 1</label>
-                            <select name="reviewer_1" class="form-select form-select-sm" required>
+                            {{-- old() didahulukan agar isian tidak hilang bila penugasan
+                                 ditolak server (mis. reviewer 1 = reviewer 2); fallback
+                                 ke reviewer yang sudah ditugaskan. --}}
+                            @php $oldR1 = old('reviewer_1', $p->reviewers->get(0)?->id); @endphp
+                            <select name="reviewer_1" class="form-select form-select-sm @error('reviewer_1') is-invalid @enderror" required>
                                 <option value="">— Pilih reviewer —</option>
                                 @foreach (($kandidat[$p->id] ?? collect()) as $k)
-                                    <option value="{{ $k['user']->id }}" {{ $p->reviewers->get(0)?->id === $k['user']->id ? 'selected' : '' }}>
+                                    <option value="{{ $k['user']->id }}" {{ (string) $oldR1 === (string) $k['user']->id ? 'selected' : '' }}>
                                         {{ $k['user']->name }}@if ($k['skor'] > 0) — Skor {{ $k['skor'] }} ({{ implode(', ', $k['alasan']) }})@endif
                                     </option>
                                 @endforeach
                             </select>
+                            @error('reviewer_1')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label small">Reviewer 2</label>
-                            <select name="reviewer_2" class="form-select form-select-sm" required>
+                            @php $oldR2 = old('reviewer_2', $p->reviewers->get(1)?->id); @endphp
+                            <select name="reviewer_2" class="form-select form-select-sm @error('reviewer_2') is-invalid @enderror" required>
                                 <option value="">— Pilih reviewer —</option>
                                 @foreach (($kandidat[$p->id] ?? collect()) as $k)
-                                    <option value="{{ $k['user']->id }}" {{ $p->reviewers->get(1)?->id === $k['user']->id ? 'selected' : '' }}>
+                                    <option value="{{ $k['user']->id }}" {{ (string) $oldR2 === (string) $k['user']->id ? 'selected' : '' }}>
                                         {{ $k['user']->name }}@if ($k['skor'] > 0) — Skor {{ $k['skor'] }} ({{ implode(', ', $k['alasan']) }})@endif
                                     </option>
                                 @endforeach
                             </select>
+                            @error('reviewer_2')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
                         </div>
-                        <div class="col-md-2">
-                            <label class="form-label small">Tenggat Penilaian</label>
-                            <input type="datetime-local" name="review_deadline" class="form-control form-control-sm"
-                                   value="{{ $p->review_deadline?->format('Y-m-d\\TH:i') }}" required>
+                        {{-- L3: kolom tenggat dilebarkan (2 → 3) dan label tidak
+                             melipat, supaya input datetime-local tidak
+                             terpotong nilainya. --}}
+                        <div class="col-md-3">
+                            <label class="form-label small text-nowrap">Tenggat Penilaian</label>
+                            <input type="datetime-local" name="review_deadline" class="form-control form-control-sm @error('review_deadline') is-invalid @enderror"
+                                   value="{{ old('review_deadline', $p->review_deadline?->format('Y-m-d\\TH:i')) }}" required>
+                            @error('review_deadline')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
                         </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="submit" class="btn btn-success btn-sm w-100">Tugaskan Reviewer</button>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-success btn-sm w-100 text-nowrap">Tugaskan Reviewer</button>
                         </div>
                     </div>
                 </form>

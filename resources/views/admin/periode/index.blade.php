@@ -32,7 +32,7 @@
     <td>{{ $periode->end_date ? $periode->end_date->format('d M Y') : '-' }}</td>
     <td>
         <a href="{{ route('admin.periode.edit', $periode) }}" class="btn btn-sm btn-warning">Ubah</a>
-        <form action="{{ route('admin.periode.destroy', $periode) }}" method="POST" style="display:inline;" onsubmit="return confirm('Hapus periode {{ $periode->nama }}? Proposal yang memakai periode ini akan kehilangan periodenya.');">
+        <form action="{{ route('admin.periode.destroy', $periode) }}" method="POST" style="display:inline;" data-ehibah-confirm="Hapus periode {{ $periode->nama }}? Proposal yang memakai periode ini akan kehilangan periodenya." data-ehibah-confirm-title="Hapus Periode" data-ehibah-confirm-label="Hapus" data-ehibah-confirm-btn="btn-danger">
             @csrf
             @method('DELETE')
             <button type="submit" class="btn btn-sm btn-danger">Hapus</button>

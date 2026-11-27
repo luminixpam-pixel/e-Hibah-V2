@@ -21,6 +21,19 @@
 </div>
 
 <div class="mb-3">
+    <label>Bidang (kosongkan untuk Khusus)</label>
+    <select name="bidang" class="form-control @error('bidang') is-invalid @enderror">
+        <option value="">— Tanpa bidang —</option>
+        @foreach(['Kesehatan', 'Humaniora'] as $bidang)
+            <option value="{{ $bidang }}" {{ old('bidang') === $bidang ? 'selected' : '' }}>{{ $bidang }}</option>
+        @endforeach
+    </select>
+    @error('bidang')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+</div>
+
+<div class="mb-3">
     <label>Plafon (Rp)</label>
     <input type="number" name="plafon" class="form-control @error('plafon') is-invalid @enderror" value="{{ old('plafon', 0) }}" min="0" step="0.01" required>
     @error('plafon')

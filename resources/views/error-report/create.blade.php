@@ -9,8 +9,15 @@
         <p class="text-muted small mb-0">Menemukan gangguan atau kesalahan pada sistem? Laporkan di sini agar dapat ditindaklanjuti oleh admin.</p>
     </div>
 
+    {{-- B7: konfirmasi pengiriman harus langsung terlihat di halaman ini —
+         formulir yang terkirim sebelumnya tampak hanya dikosongkan tanpa
+         pesan. Alert dibuat dismissible dengan penanda "Berhasil!" agar
+         tidak terlewat. --}}
     @if (session('success'))
-        <div class="alert alert-success" role="alert">{{ session('success') }}</div>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i><strong>Berhasil!</strong> {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+        </div>
     @endif
 
     <form action="{{ route('error-report.store') }}" method="POST">

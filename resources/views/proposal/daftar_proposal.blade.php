@@ -31,6 +31,21 @@
         box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     }
 
+    /* L1: tabel muat dalam area konten — layout tetap (fixed) dengan
+       lebar kolom eksplisit; judul melipat rapi, tombol aksi melipat
+       ke baris berikut bila sempit, bukan terpotong. */
+    .table-responsive table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    .table-responsive table th:nth-child(2),
+    .table-responsive table td:nth-child(2) {
+        overflow-wrap: break-word;
+    }
+    .table-responsive table .d-flex.gap-2 {
+        flex-wrap: wrap;
+    }
+
     /* Styling tombol soft-UI */
     .btn-sm {
         padding: 0.4rem 0.6rem;
@@ -106,10 +121,10 @@ document.getElementById('table-search').addEventListener('keyup', function() {
             <thead class="table-light text-center">
                 <tr>
                     <th width="5%">No</th>
-                    <th>No. Pengajuan</th>
+                    <th width="13%">No. Pengajuan</th>
                     <th>Judul Proposal</th>
-                    <th>Pengusul</th>
-                    <th>Status Alur</th>
+                    <th width="12%">Pengusul</th>
+                    <th width="17%">Status Alur</th>
                     <th width="15%">Aksi</th>
                 </tr>
             </thead>
@@ -127,7 +142,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                         <td>
                             <div class="fw-bold text-dark">{{ $proposal->judul }}</div>
                             @if ($proposal->skema)
-                                <small class="text-muted d-block">{{ $proposal->skema->kategori }}</small>
+                                <small class="text-muted d-block">{{ $proposal->skema->label() }}</small>
                             @endif
                         </td>
                         <td class="text-center">{{ $proposal->nama_ketua }}</td>
@@ -145,7 +160,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                 $currentStatus = $statusMap[$proposal->status] ?? ['class' => 'bg-dark', 'icon' => 'bi-info-circle'];
                             @endphp
 
-                            <span class="badge {{ $currentStatus['class'] }} px-3 py-2 rounded-pill shadow-sm" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                            <span class="badge {{ $currentStatus['class'] }} px-3 py-2 rounded-pill shadow-sm text-nowrap" style="font-size: 0.75rem; letter-spacing: 0.5px;">
                                 <i class="{{ $currentStatus['icon'] }} me-1"></i>
                                 {{ $role === 'admin' && $proposal->status === 'Dikirim' ? 'PROPOSAL BARU' : strtoupper($proposal->status) }}
                             </span>
@@ -189,7 +204,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                     @else
                                         {{-- Tombol Terkunci --}}
                                         <button type="button"
-                                                onclick="Swal.fire('Terkunci', 'Anda tidak dapat mengedit proposal pada status ini atau masa hibah telah berakhir.', 'info')"
+                                                onclick="ehibahAlert('Terkunci', 'Anda tidak dapat mengedit proposal pada status ini atau masa hibah telah berakhir.')"
                                                 class="btn btn-md border-0 shadow-sm d-flex align-items-center justify-content-center"
                                                 style="background-color: #f5f5f5; color: #bdbdbd; width: 38px; height: 38px; border-radius: 10px;">
                                             <i class="bi bi-pencil-square fs-5"></i>
@@ -199,9 +214,14 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                     {{-- KIRIM PENGAJUAN langsung dari daftar (hanya untuk
                                          Draft / Revisi Administrasi milik sendiri dan
                                          masih dalam masa hibah — jalurnya sama dengan
-                                         Edit -> Kirim Pengajuan). --}}
+                                         Edit -> Kirim Pengajuan). Sengaja TANPA dialog
+                                         confirm() bawaan browser (B1): dialog sinkron
+                                         itu memblokir tab dan membuat tombol tampak
+                                         membeku; hasil kirim dikonfirmasi lewat pesan
+                                         flash sukses/error dari server, sama seperti
+                                         tombol Kirim di form edit. --}}
                                     @if($isMasaHibah && in_array($proposal->status, ['Draft', 'Revisi Administrasi'], true))
-                                        <form action="{{ route('proposal.kirim', $proposal->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Kirim proposal ini untuk diverifikasi?')">
+                                        <form action="{{ route('proposal.kirim', $proposal->id) }}" method="POST" class="d-inline">
                                             @csrf
                                             <button type="submit" class="btn btn-md border-0 shadow-sm d-flex align-items-center justify-content-center"
                                                     title="Kirim Pengajuan"
@@ -216,7 +236,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                         $allowedDelete = ['Draft', 'Dikirim', 'Ditolak', 'Direvisi', 'Sedang Direview', 'Hasil Revisi'];
                                     @endphp
                                     @if(in_array($proposal->status, $allowedDelete))
-                                        <form action="{{ route('proposal.destroy', $proposal->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus proposal Anda sendiri?')">
+                                        <form action="{{ route('proposal.destroy', $proposal->id) }}" method="POST" class="d-inline" data-ehibah-confirm="Yakin ingin menghapus proposal Anda sendiri?" data-ehibah-confirm-title="Hapus Proposal" data-ehibah-confirm-label="Hapus" data-ehibah-confirm-btn="btn-danger">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn border-0 shadow-sm d-flex align-items-center justify-content-center"

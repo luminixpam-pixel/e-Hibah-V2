@@ -152,7 +152,7 @@
 </div>
 {{-- Modal Edit - Logika Pemisahan Admin vs User --}}
 <div class="modal fade" id="adminEditModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="false">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 450px;">
         <div class="modal-content modal-content-popup">
             <div class="modal-header border-0 p-4 pb-0">
                 <h5 class="fw-bold m-0">

@@ -15,7 +15,7 @@
     <div class="klppm-welcome">
         <div class="klppm-welcome-content">
             <div class="klppm-label">LEMBAGA PENELITIAN DAN PENGABDIAN MASYARAKAT</div>
-            <h2>Selamat datang, {{ $user->name ?? 'Kepala LPPM' }} 👋</h2>
+            <h2>Selamat datang, <span class="text-nowrap">{{ $user->name ?? 'Kepala LPPM' }} 👋</span></h2>
             <p>
                 Kelola dan tetapkan keputusan pendanaan proposal berdasarkan
                 hasil penilaian reviewer.

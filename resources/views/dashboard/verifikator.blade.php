@@ -13,7 +13,7 @@
     <div class="verif-welcome">
         <div class="verif-welcome-content">
             <div class="verif-label">ADMINISTRATIVE VERIFICATION</div>
-            <h2>Selamat datang, {{ $user->name ?? 'Verifikator' }} 👋</h2>
+            <h2>Selamat datang, <span class="text-nowrap">{{ $user->name ?? 'Verifikator' }} 👋</span></h2>
             <p>
                 Periksa kelengkapan dokumen administrasi proposal
                 untuk memastikan proposal siap memasuki tahap penilaian.

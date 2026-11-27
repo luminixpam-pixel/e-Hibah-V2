@@ -148,7 +148,7 @@
                                         <a href="{{ route('logbook.edit', $logbook) }}" class="btn btn-sm btn-outline-warning fw-bold px-3" style="border-radius: 8px;">
                                             <i class="bi bi-pencil me-1"></i> Ubah
                                         </a>
-                                        <form action="{{ route('logbook.destroy', $logbook) }}" method="POST" onsubmit="return confirm('Hapus entri logbook ini beserta file buktinya?');">
+                                        <form action="{{ route('logbook.destroy', $logbook) }}" method="POST" data-ehibah-confirm="Hapus entri logbook ini beserta file buktinya?" data-ehibah-confirm-title="Hapus Entri Logbook" data-ehibah-confirm-label="Hapus" data-ehibah-confirm-btn="btn-danger">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-outline-danger fw-bold px-3" style="border-radius: 8px;">

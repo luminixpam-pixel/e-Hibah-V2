@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         events: @json($events), // ambil dari controller
         dateClick: function(info) {
-            alert('Tanggal diklik: ' + info.dateStr);
+            ehibahToast('Tanggal diklik: ' + info.dateStr, 'info');
         },
         eventClick: function(info) {
             // tampilkan modal

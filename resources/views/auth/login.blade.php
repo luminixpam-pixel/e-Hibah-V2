@@ -498,6 +498,9 @@ body {
 
 .login-heading h2 {
     font-size: 24px;
+    /* L4: "Selamat Datang di E-Hibah" satu baris — sebelumnya "Hibah"
+       jatuh sendirian ke baris kedua. */
+    white-space: nowrap;
     letter-spacing: -.5px;
     margin-bottom: 8px;
 }
@@ -747,6 +750,61 @@ body {
 @keyframes popIn {
     from { opacity: 0; transform: scale(.92) translateY(10px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* L4 — viewport pendek (mis. 1341x852): rapatkan vertikal supaya
+   tombol "Masuk" terlihat tanpa scroll, dan ilustrasi panel kiri
+   tidak terpotong panel-bottom. */
+@media(max-height: 880px) {
+    .form-panel {
+        padding: 28px 48px;
+    }
+    .eh-logo {
+        height: 84px;
+        margin-bottom: 16px;
+    }
+    .login-card {
+        padding: 28px 34px 24px;
+    }
+    .login-heading {
+        margin-bottom: 20px;
+    }
+    .form-group {
+        margin-bottom: 16px;
+    }
+    .input-wrapper input {
+        height: 48px;
+    }
+    .forgot-password {
+        margin: 0 0 18px;
+    }
+    .btn-login {
+        height: 50px;
+    }
+    .security-info {
+        margin-top: 16px;
+    }
+    .copyright {
+        margin-top: 16px;
+    }
+    .brand-panel {
+        padding-bottom: 56px;
+    }
+    .illustration {
+        margin-bottom: 0;
+    }
+    .login-cover-img {
+        max-height: 360px;
+    }
+    .panel-content h1 {
+        font-size: clamp(38px, 4vw, 52px);
+    }
+}
+
+@media(max-width: 420px) {
+    .login-heading h2 {
+        white-space: normal;
+    }
 }
 
     </style>

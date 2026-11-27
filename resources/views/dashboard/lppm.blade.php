@@ -14,7 +14,7 @@
     <div class="lppm-welcome">
         <div class="lppm-welcome-content">
             <div class="lppm-label">RESEARCH & REVIEW MANAGEMENT</div>
-            <h2>Selamat datang, {{ $user->name ?? 'Pengelola LPPM' }} 👋</h2>
+            <h2>Selamat datang, <span class="text-nowrap">{{ $user->name ?? 'Pengelola LPPM' }} 👋</span></h2>
             <p>
                 Kelola plotting reviewer dan pantau proses penilaian
                 proposal penelitian dan pengabdian.

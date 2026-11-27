@@ -42,7 +42,8 @@ class DatabaseSeeder extends Seeder
         // Akun tes 1 per role (admin, pengaju, reviewer, verifikator, lppm, dekan, kepala_lppm)
         $this->call(AkunRoleSeeder::class);
 
-        // Skema hibah (plafon & kuota masih 0 — lihat TODO di SkemaSeeder).
+        // Skema hibah (plafon resmi LPPM 27 Nov 2026; kuota masih 0
+        // "Belum ditetapkan" — lihat SkemaSeeder).
         $this->call(SkemaSeeder::class);
 
         // Jalankan Sinkronisasi LDAP

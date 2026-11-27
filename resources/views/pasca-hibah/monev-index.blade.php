@@ -72,6 +72,16 @@
         color: #1b5e20;
         transform: translateY(-2px);
     }
+
+    /* L1: layout tetap (fixed) dengan lebar kolom yang sudah
+       didefinisikan di <th> agar tabel muat dalam area konten. */
+    .table-responsive .table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    .btn-lihat {
+        white-space: nowrap;
+    }
 </style>
 
 <div class="container py-4">

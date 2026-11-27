@@ -3,7 +3,7 @@
 @section('title','Ubah Skema')
 
 @section('content')
-<h4>Ubah Skema — {{ $skema->kategori }}</h4>
+<h4>Ubah Skema — {{ $skema->label() }}</h4>
 
 <form action="{{ route('admin.skema.update', $skema) }}" method="POST">
 @csrf
@@ -16,6 +16,19 @@
         @endforeach
     </select>
     @error('kategori')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+</div>
+
+<div class="mb-3">
+    <label>Bidang (kosongkan untuk Khusus)</label>
+    <select name="bidang" class="form-control @error('bidang') is-invalid @enderror">
+        <option value="">— Tanpa bidang —</option>
+        @foreach(['Kesehatan', 'Humaniora'] as $bidang)
+            <option value="{{ $bidang }}" {{ old('bidang', $skema->bidang) === $bidang ? 'selected' : '' }}>{{ $bidang }}</option>
+        @endforeach
+    </select>
+    @error('bidang')
         <div class="invalid-feedback">{{ $message }}</div>
     @enderror
 </div>

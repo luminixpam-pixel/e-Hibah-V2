@@ -55,7 +55,7 @@
                                 <td>{{ ($users->firstItem() ?? 0) + $index }}</td>
                                 <td><strong>{{ $u->name }}</strong></td>
                                 <td>{{ $u->username }}</td>
-                                <td>{{ $u->email }}</td>
+                                <td class="text-break">{{ $u->email }}</td>
                                 <td><span class="badge bg-primary">{{ $u->role_label ?? ucfirst($u->role) }}</span></td>
                                 <td>
                                     <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editUserModal-{{ $u->id }}">Edit</button>
@@ -79,7 +79,7 @@
 {{-- Modal edit per pengguna --}}
 @foreach ($users as $u)
 <div class="modal fade" id="editUserModal-{{ $u->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold">Edit Pengguna — {{ $u->name }}</h5>
