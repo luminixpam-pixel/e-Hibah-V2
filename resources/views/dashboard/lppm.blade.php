@@ -380,7 +380,7 @@
 
 .lppm-stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 18px;
     margin-bottom: 30px;
 }
@@ -389,7 +389,8 @@
     background: #fff;
     border: 1px solid #e8eee9;
     border-radius: 18px;
-    padding: 22px;
+    padding: 18px;
+    min-width: 0;
     box-shadow: 0 4px 15px rgba(32, 86, 60, .04);
     transition: .25s ease;
 }
@@ -402,18 +403,19 @@
 .lppm-stat-top {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     margin-bottom: 17px;
 }
 
 .lppm-stat-icon {
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
     border-radius: 13px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 18px;
 }
 
 .lppm-stat-icon.admin {
@@ -437,9 +439,10 @@
 }
 
 .lppm-stat-label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: #718078;
+    min-width: 0;
 }
 
 .lppm-stat-card h3 {
@@ -718,12 +721,17 @@
 
 /* Responsive */
 
+/* L6: 4 kartu tetap sebaris di bawah 1200px — sebelumnya langsung
+   jadi 2 kolom (2x2) sehingga label dan angka berjauhan. Baru jadi
+   2 kolom di bawah 992px. */
 @media (max-width: 1200px) {
-    .lppm-stats {
+    .lppm-quick-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+}
 
-    .lppm-quick-grid {
+@media (max-width: 991px) {
+    .lppm-stats {
         grid-template-columns: repeat(2, 1fr);
     }
 }

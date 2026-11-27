@@ -178,6 +178,12 @@
                                     <p class="mt-2 small text-muted mb-0">
                                         <span class="badge bg-info-subtle text-info">File saat ini:</span>
                                         {{ basename($proposal->file_path) ?: 'Belum ada file' }}
+                                        {{-- Tautan unduh agar pengusul bisa memastikan berkas
+                                             tersimpan tetap ada setelah validasi gagal
+                                             (input file tidak bisa diisi ulang browser, bug #7). --}}
+                                        @if($proposal->file_path)
+                                            <a href="{{ route('proposal.download', $proposal->id) }}" class="ms-1">Unduh file saat ini</a>
+                                        @endif
                                     </p>
                                     <small class="text-danger mt-1 d-block font-italic">*Kosongkan jika tidak ingin mengganti file.</small>
                                 </div>

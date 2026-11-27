@@ -15,9 +15,32 @@
     }
 
     .btn-action {
-        padding: 6px 14px;
+        padding: 6px 10px;
         border-radius: 6px;
-        font-size: 14px;
+        font-size: 13px;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+    }
+
+    /* L1: layout tetap (fixed) + lebar kolom eksplisit agar tombol
+       Download/Preview tidak terpotong di tepi kanan; kedua tombol
+       ditumpuk vertikal memenuhi lebar kolom Aksi. */
+    .table-responsive .table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    .table-responsive .table td {
+        overflow-wrap: break-word;
+    }
+    .aksi-disetujui {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        align-items: stretch;
     }
 
     .page-subtitle {
@@ -110,13 +133,13 @@
         <table class="table table-striped table-hover align-middle shadow-sm">
             <thead>
                 <tr>
-                    <th>No</th>
-                    <th>Tanggal</th>
-                    <th>Pengusul</th>
-                    <th>Judul Proposal</th>
-                    <th>Reviewer</th>
-                    <th>Status</th>
-                    <th>Aksi</th>
+                    <th width="4%">No</th>
+                    <th width="11%">Tanggal</th>
+                    <th width="13%">Pengusul</th>
+                    <th width="26%">Judul Proposal</th>
+                    <th width="15%">Reviewer</th>
+                    <th width="9%">Status</th>
+                    <th width="22%">Aksi</th>
                 </tr>
             </thead>
 
@@ -168,6 +191,7 @@
 
                         {{-- Aksi --}}
                         <td>
+                            <div class="aksi-disetujui">
                             @if($proposal->file_path)
                                 <a href="{{ route('proposal.download', $proposal->id) }}"
                                    class="btn btn-primary btn-action">
@@ -184,6 +208,7 @@
                                     <i class="bi bi-x-circle"></i> Tidak ada file
                                 </button>
                             @endif
+                            </div>
                         </td>
                     </tr>
                 @empty

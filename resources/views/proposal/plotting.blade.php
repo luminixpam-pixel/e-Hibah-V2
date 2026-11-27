@@ -70,7 +70,7 @@
                 <form action="{{ route('proposal.assignReviewer', $p->id) }}" method="POST">
                     @csrf
                     <div class="row g-2">
-                        <div class="col-md-3">
+                        <div class="col-md-6 col-lg-3">
                             <label class="form-label small">Reviewer 1</label>
                             {{-- old() didahulukan agar isian tidak hilang bila penugasan
                                  ditolak server (mis. reviewer 1 = reviewer 2); fallback
@@ -88,7 +88,7 @@
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6 col-lg-3">
                             <label class="form-label small">Reviewer 2</label>
                             @php $oldR2 = old('reviewer_2', $p->reviewers->get(1)?->id); @endphp
                             <select name="reviewer_2" class="form-select form-select-sm @error('reviewer_2') is-invalid @enderror" required>
@@ -106,7 +106,7 @@
                         {{-- L3: kolom tenggat dilebarkan (2 → 3) dan label tidak
                              melipat, supaya input datetime-local tidak
                              terpotong nilainya. --}}
-                        <div class="col-md-3">
+                        <div class="col-md-6 col-lg-3">
                             <label class="form-label small text-nowrap">Tenggat Penilaian</label>
                             <input type="datetime-local" name="review_deadline" class="form-control form-control-sm @error('review_deadline') is-invalid @enderror"
                                    value="{{ old('review_deadline', $p->review_deadline?->format('Y-m-d\\TH:i')) }}" required>
@@ -114,7 +114,7 @@
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-md-3 d-flex align-items-end">
+                        <div class="col-md-6 col-lg-3 d-flex align-items-end">
                             <button type="submit" class="btn btn-success btn-sm w-100 text-nowrap">Tugaskan Reviewer</button>
                         </div>
                     </div>

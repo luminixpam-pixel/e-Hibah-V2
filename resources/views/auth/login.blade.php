@@ -16,6 +16,10 @@
             box-sizing: border-box;
         }
 
+        html {
+            overflow-x: hidden;
+        }
+
         body {
             min-height: 100vh;
             display: flex;
@@ -28,11 +32,14 @@
         }
 
         .login-container {
-            width: 100vw;
+            /* L4: width 100% (bukan 100vw) — 100vw ikut menghitung lebar
+               scrollbar vertikal sehingga halaman meluber ~15px ke kanan
+               dan kartu/input terpotong di tepi viewport. */
+            width: 100%;
             max-width: 100%;
             min-height: 100vh;
             display: grid;
-            grid-template-columns: 58% 42%;
+            grid-template-columns: minmax(0, 58%) minmax(0, 42%);
             background: #eff9f2;
             overflow: visible;
             box-shadow: none;
@@ -44,6 +51,7 @@
         .brand-panel {
             position: relative;
             overflow: hidden;
+            min-width: 0;
             padding: 40px 55px;
             color: white;
             background:
@@ -164,13 +172,17 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            min-width: 0;
             padding: 40px;
             background: #eff9f2;
         }
 
         .form-content {
             width: 100%;
-            max-width: 370px;
+            /* L4: 420px agar kartu punya jarak aman dari tepi viewport
+               di 1341px (blok refinement di bawah juga 420px). */
+            max-width: 420px;
+            min-width: 0;
         }
 
         .eh-logo {
@@ -414,10 +426,10 @@ body {
 }
 
 .login-container {
-    width: 100vw;
+    width: 100%;
     max-width: 100%;
     min-height: 100vh;
-    grid-template-columns: 58% 42%;
+    grid-template-columns: minmax(0, 58%) minmax(0, 42%);
     border-radius: 0;
     box-shadow: none;
 }
@@ -474,7 +486,7 @@ body {
 
 .form-content {
     width: 100%;
-    max-width: 445px;
+    max-width: 420px;
 }
 
 .eh-logo {
@@ -498,9 +510,13 @@ body {
 
 .login-heading h2 {
     font-size: 24px;
-    /* L4: "Selamat Datang di E-Hibah" satu baris — sebelumnya "Hibah"
-       jatuh sendirian ke baris kedua. */
-    white-space: nowrap;
+    /* L4: nowrap DIHAPUS — judul "Selamat Datang di E-Hibah" yang
+       dipaksa satu baris justru terpotong ("E-Hiba…") bila kartu
+       lebih sempit dari teks. Judul kini boleh melipat rapi dua baris
+       bila perlu; di lebar normal tetap muat satu baris. */
+    white-space: normal;
+    overflow-wrap: break-word;
+    line-height: 1.25;
     letter-spacing: -.5px;
     margin-bottom: 8px;
 }
@@ -757,29 +773,29 @@ body {
    tidak terpotong panel-bottom. */
 @media(max-height: 880px) {
     .form-panel {
-        padding: 28px 48px;
+        padding: 24px 40px;
     }
     .eh-logo {
-        height: 84px;
-        margin-bottom: 16px;
+        height: 72px;
+        margin-bottom: 12px;
     }
     .login-card {
-        padding: 28px 34px 24px;
+        padding: 24px 28px 20px;
     }
     .login-heading {
-        margin-bottom: 20px;
+        margin-bottom: 18px;
     }
     .form-group {
-        margin-bottom: 16px;
+        margin-bottom: 14px;
     }
     .input-wrapper input {
-        height: 48px;
+        height: 46px;
     }
     .forgot-password {
-        margin: 0 0 18px;
+        margin: 0 0 16px;
     }
     .btn-login {
-        height: 50px;
+        height: 48px;
     }
     .security-info {
         margin-top: 16px;

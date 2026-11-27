@@ -31,7 +31,7 @@
     {{-- STATISTIK --}}
     <div class="row g-4 mb-4">
 
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-6 col-lg-3">
             <div class="admin-stat-card stat-users">
                 <div class="stat-icon">
                     <i class="bi bi-people"></i>
@@ -44,7 +44,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-6 col-lg-3">
             <div class="admin-stat-card stat-proposals">
                 <div class="stat-icon">
                     <i class="bi bi-file-earmark-text"></i>
@@ -57,7 +57,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-6 col-lg-3">
             <div class="admin-stat-card stat-approved">
                 <div class="stat-icon">
                     <i class="bi bi-check-circle"></i>
@@ -70,7 +70,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-6 col-lg-3">
             <div class="admin-stat-card stat-revision">
                 <div class="stat-icon">
                     <i class="bi bi-arrow-repeat"></i>
@@ -347,12 +347,13 @@
     font-size: 34px;
 }
 
-/* STATISTICS */
+/* STATISTICS — L6: 4 kartu sebaris mulai lg (992px), bukan baru di xl
+   (1200px); padding/ikon/gap dikecilkan supaya label satu baris. */
 .admin-stat-card {
     display: flex;
     align-items: center;
-    gap: 18px;
-    padding: 24px;
+    gap: 14px;
+    padding: 20px;
     background: #fff;
     border: 1px solid #e8eee9;
     border-radius: 18px;
@@ -361,20 +362,26 @@
     height: 100%;
 }
 
+/* Teks boleh menyusut supaya label tidak mendorong kartu melebar. */
+.admin-stat-card > div:last-child {
+    min-width: 0;
+    flex: 1;
+}
+
 .admin-stat-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 10px 25px rgba(36, 107, 75, .10);
 }
 
 .stat-icon {
-    width: 56px;
-    height: 56px;
-    min-width: 56px;
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 16px;
-    font-size: 23px;
+    font-size: 21px;
 }
 
 .stat-users .stat-icon {
@@ -398,7 +405,7 @@
 }
 
 .stat-label {
-    font-size: 13px;
+    font-size: 12px;
     color: #718078;
     margin-bottom: 7px;
 }

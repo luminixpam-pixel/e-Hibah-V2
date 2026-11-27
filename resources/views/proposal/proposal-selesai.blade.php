@@ -76,12 +76,12 @@
         background: white;
         font-size: 11px;
         font-weight: 700;
-        padding: 6px 12px;
+        padding: 5px 9px;
         border-radius: 8px;
         margin-bottom: 5px;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         text-decoration: none;
         transition: 0.3s;
     }
@@ -102,14 +102,21 @@
     }
 
     /* L1: tabel muat dalam area konten — layout tetap (fixed) dengan
-       lebar kolom yang sudah didefinisikan di <th>; tautan PDF tidak
-       melipat. */
+       lebar kolom yang sudah didefinisikan di <th>. Kolom Hasil Review
+       dilebarkan (15% -> 22%) supaya tombol "Preview Rev …" tidak
+       terpotong di tepi kanan; di layar sempit tombol boleh melipat
+       dua baris — aturan layout memaksa nowrap untuk semua .btn di
+       tabel, sehingga tombol yang lebih lebar dari kolomnya terpotong. */
     .table-responsive .table {
         table-layout: fixed;
         width: 100%;
     }
-    .btn-pdf {
-        white-space: nowrap;
+    .table-responsive .table td {
+        overflow-wrap: break-word;
+    }
+    #mainContent .table .btn-pdf {
+        white-space: normal;
+        line-height: 1.35;
     }
 
     .nav-btn {
@@ -170,11 +177,11 @@
                 <thead>
                     <tr>
                         <th width="5%">No</th>
-                        <th class="text-start" width="30%">Judul Proposal & Pengusul</th>
-                        <th class="text-start" width="20%">Reviewer</th>
-                        <th>Skor Akhir</th>
-                        <th width="15%">Status Pendanaan</th>
-                        <th width="15%">Hasil Review</th>
+                        <th class="text-start" width="28%">Judul Proposal & Pengusul</th>
+                        <th class="text-start" width="19%">Reviewer</th>
+                        <th width="10%">Skor Akhir</th>
+                        <th width="16%">Status Pendanaan</th>
+                        <th width="22%">Hasil Review</th>
                     </tr>
                 </thead>
                 <tbody>

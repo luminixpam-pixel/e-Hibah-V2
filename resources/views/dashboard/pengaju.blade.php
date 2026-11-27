@@ -25,7 +25,7 @@
     {{-- STATISTIK --}}
     <div class="row g-4 mb-4">
 
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-6 col-lg-3">
             <div class="pengaju-stat-card stat-proposal">
                 <div class="stat-icon">
                     <i class="bi bi-file-earmark-text"></i>
@@ -38,7 +38,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-6 col-lg-3">
             <div class="pengaju-stat-card stat-draft">
                 <div class="stat-icon">
                     <i class="bi bi-pencil-square"></i>
@@ -51,7 +51,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-6 col-lg-3">
             <div class="pengaju-stat-card stat-sent">
                 <div class="stat-icon">
                     <i class="bi bi-send"></i>
@@ -64,7 +64,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-6 col-lg-3">
             <div class="pengaju-stat-card stat-result">
                 <div class="stat-icon">
                     <i class="bi bi-check-circle"></i>
@@ -532,12 +532,13 @@
     color: #688273;
 }
 
-/* STATISTICS */
+/* STATISTICS — L6: 4 kartu sebaris mulai lg (992px), bukan baru di xl
+   (1200px); padding/ikon/gap dikecilkan supaya label satu baris. */
 .pengaju-stat-card {
     display: flex;
     align-items: center;
-    gap: 18px;
-    padding: 24px;
+    gap: 14px;
+    padding: 20px;
     background: #fff;
     border: 1px solid #e8eee9;
     border-radius: 18px;
@@ -552,14 +553,14 @@
 }
 
 .stat-icon {
-    width: 56px;
-    height: 56px;
-    min-width: 56px;
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 16px;
-    font-size: 23px;
+    font-size: 21px;
 }
 
 .stat-proposal .stat-icon {
@@ -583,7 +584,7 @@
 }
 
 .stat-label {
-    font-size: 13px;
+    font-size: 12px;
     color: #718078;
     margin-bottom: 7px;
 }

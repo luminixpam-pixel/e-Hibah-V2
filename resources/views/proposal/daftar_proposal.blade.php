@@ -4,10 +4,15 @@
     $role = Auth::user()->role ?? null;
 @endphp
 
-{{-- CSS Tambahan untuk memperbaiki masalah layar redup & tampilan PDF --}}
+{{-- CSS Tambahan untuk memperbaiki masalah layar redup & tampilan PDF.
+     Catatan: JANGAN taruh aturan z-index modal/backdrop di sini —
+     satu-satunya sumber kebenaran adalah layouts/app.blade.php
+     (backdrop 3200, modal 3210, di atas sidebar 3100). Aturan lama
+     yang bertabrakan (.modal 1060 lalu 1050, .modal-backdrop 1050
+     lalu 1040) sudah dihapus; semuanya masih di bawah sidebar
+     sehingga modal tampak terpotong. Blok <style> bersarang yang
+     tidak valid sebelumnya juga sudah digabung menjadi satu blok. --}}
 <style>
-    .modal { z-index: 1060 !important; }
-    .modal-backdrop { z-index: 1050 !important; }
     .pdf-container {
         background-color: #525659;
         display: flex;
@@ -16,8 +21,6 @@
         min-height: 600px;
         border-radius: 0 0 12px 0;
     }
-
-    <style>
     /* Efek Hover pada Tabel */
     .table-hover tbody tr:hover {
         background-color: #f8f9fa;
@@ -33,7 +36,11 @@
 
     /* L1: tabel muat dalam area konten — layout tetap (fixed) dengan
        lebar kolom eksplisit; judul melipat rapi, tombol aksi melipat
-       ke baris berikut bila sempit, bukan terpotong. */
+       ke baris berikut bila sempit, bukan terpotong. Kolom Aksi 21%
+       (~214px di 1341px) menampung 4 tombol ikon 38px + gap per baris,
+       jadi 6 tombol terburuk (Detail, Download, Preview, Edit, Kirim,
+       Hapus) tersusun rapi 4+2; kolom Status 16% + badge px-2 cukup
+       untuk "SEDANG DIREVIEW" tanpa meluber. */
     .table-responsive table {
         table-layout: fixed;
         width: 100%;
@@ -51,19 +58,6 @@
         padding: 0.4rem 0.6rem;
         border-radius: 8px;
     }
-
-    /* Pastikan backdrop modal tidak menutupi seluruh layar secara salah */
-.modal-backdrop {
-    z-index: 1040 !important;
-}
-.modal {
-    z-index: 1050 !important;
-}
-/* Jika navbar Anda menggunakan z-index tinggi */
-nav.navbar {
-    z-index: 1030 !important;
-}
-</style>
 </style>
 
 @section('content')
@@ -120,12 +114,12 @@ document.getElementById('table-search').addEventListener('keyup', function() {
         <table class="table table-bordered table-hover align-middle bg-white mb-0">
             <thead class="table-light text-center">
                 <tr>
-                    <th width="5%">No</th>
-                    <th width="13%">No. Pengajuan</th>
+                    <th width="4%">No</th>
+                    <th width="12%">No. Pengajuan</th>
                     <th>Judul Proposal</th>
-                    <th width="12%">Pengusul</th>
-                    <th width="17%">Status Alur</th>
-                    <th width="15%">Aksi</th>
+                    <th width="11%">Pengusul</th>
+                    <th width="16%">Status Alur</th>
+                    <th width="21%">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -160,7 +154,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                 $currentStatus = $statusMap[$proposal->status] ?? ['class' => 'bg-dark', 'icon' => 'bi-info-circle'];
                             @endphp
 
-                            <span class="badge {{ $currentStatus['class'] }} px-3 py-2 rounded-pill shadow-sm text-nowrap" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                            <span class="badge {{ $currentStatus['class'] }} px-2 py-2 rounded-pill shadow-sm text-nowrap" style="font-size: 0.75rem; letter-spacing: 0.5px;">
                                 <i class="{{ $currentStatus['icon'] }} me-1"></i>
                                 {{ $role === 'admin' && $proposal->status === 'Dikirim' ? 'PROPOSAL BARU' : strtoupper($proposal->status) }}
                             </span>
@@ -273,7 +267,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
 
 {{-- --- MODAL SECTION (DI LUAR CONTAINER) --- --}}
 @foreach ($proposals as $proposal)
-<div class="modal fade" id="tinjauModal{{ $proposal->id }}" tabindex="-1" aria-labelledby="tinjauModalLabel{{ $proposal->id }}" aria-hidden="true" style="z-index: 1060;">
+<div class="modal fade" id="tinjauModal{{ $proposal->id }}" tabindex="-1" aria-labelledby="tinjauModalLabel{{ $proposal->id }}" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
 
@@ -372,14 +366,9 @@ document.getElementById('table-search').addEventListener('keyup', function() {
     </div>
 </div>
 @endforeach
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const modals = document.querySelectorAll('.modal');
-        modals.forEach(modal => {
-            // Memindahkan modal ke body agar tidak tertutup backdrop hitam
-            document.body.appendChild(modal);
-        });
-    });
-</script>
+
+{{-- Skrip pemindah modal ke <body> tidak lagi ditulis di sini: skrip
+     global yang sama sudah ada di layouts/app.blade.php (B3, B10)
+     dan berjalan untuk semua modal di semua halaman. --}}
 
 @endsection

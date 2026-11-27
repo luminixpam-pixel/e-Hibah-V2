@@ -265,6 +265,11 @@
                             @endif
                         </td>
                         <td class="text-center">
+                            {{-- Tombol Aksi hanya dirender bila berkas ada — sebelumnya
+                                 tombol Preview tampil tanpa syarat sehingga klik pada
+                                 baris tanpa berkas membuka tab baru "File tidak
+                                 ditemukan di server" (bug #6). --}}
+                            @if($p->file_laporan_akhir)
                             <div class="d-flex justify-content-center gap-2">
                                 <a href="{{ route('laporan.akhir.download', $p->id) }}"
                                    class="action-btn btn btn-light-success"
@@ -280,6 +285,9 @@
                                     <i class="bi bi-eye"></i>
                                 </button>
                             </div>
+                            @else
+                                <span class="text-muted small">-</span>
+                            @endif
                         </td>
                     </tr>
                 @empty

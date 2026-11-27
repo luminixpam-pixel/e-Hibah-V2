@@ -413,16 +413,53 @@
     padding: 8px;
 }
 
-/* Wadah toast flash (B9): posisinya fixed di pojok kanan atas, tepat di
-   atas menu pengguna. Bila wadah ini menerima klik, klik pada menu
-   pengguna di bawahnya tertelan — terutama saat ada toast yang tampil.
-   Wadahnya sendiri tembus klik; hanya kotak alert di dalamnya yang
-   bisa diklik (tombol tutup). */
+/* Wadah toast flash (B9 + Bug #2/#3/#5): posisinya fixed di pojok kanan
+   atas, tepat di atas menu pengguna.
+   - Bug #5: wadah dan kotak alert TEMBUS KLIK; hanya tombol tutup
+     (.btn-close) yang bisa diklik. Sebelumnya `#alertPlaceholder > div`
+     memakai pointer-events: auto sehingga kotak toast yang tampil
+     (5 detik untuk flash, 8 detik untuk pop-up tenggat saat login)
+     menutupi menu pengguna di header dan menelan klik — dropdown
+     pengguna (termasuk verifikator) kadang tidak terbuka dan tautan di
+     area atas tidak merespons.
+   - Bug #3: lebar wadah dibatasi min(420px, 100vw - 2rem) dan teks
+     alert membungkus penuh, supaya toast tidak lebih lebar dari
+     viewport dan kalimatnya tidak terpotong di tepi kanan layar. */
 #alertPlaceholder {
     pointer-events: none;
+    max-width: min(420px, calc(100vw - 2rem));
 }
-#alertPlaceholder > div {
+#alertPlaceholder > div,
+#alertPlaceholder .alert {
+    pointer-events: none;
+}
+#alertPlaceholder .alert .btn-close {
     pointer-events: auto;
+}
+#alertPlaceholder .alert {
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Bug #2 (KRITIS) — z-index modal/backdrop Bootstrap. Sidebar
+   #mainNavbar memakai z-index 3100 dan header #topHeader 2000,
+   sementara modal Bootstrap default 1055 (backdrop 1050): sidebar dan
+   header menutupi modal dari atas, dan karena sidebar selebar ~220px
+   di kiri, bagian kiri modal tampak terpotong ("bergeser ke kiri").
+   Modal dan backdrop dinaikkan DI ATAS sidebar/header, tapi tetap DI
+   BAWAH wadah toast #alertPlaceholder (z-index 9999) agar notifikasi
+   tetap terlihat di atas modal. Aturan z-index modal/backdrop yang
+   bertabrakan di halaman daftar proposal sudah dihapus (satu-satunya
+   sumber kebenaran adalah di sini). Skrip pemindah modal ke <body>
+   di akhir file TETAP diperlukan: backdrop-filter di #mainContent
+   membuat position:fixed modal relatif terhadap wadah itu bila modal
+   dirender di dalamnya. */
+.modal-backdrop {
+    z-index: 3200 !important;
+}
+.modal {
+    z-index: 3210 !important;
 }
 
 /* =========================================================
@@ -1959,7 +1996,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
         const wrapper = document.createElement('div');
         wrapper.innerHTML = `
-            <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert" style="min-width:320px;">
+            <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert" style="min-width:min(320px,100%);max-width:100%;">
                 <div class="fw-bold">${title}</div>
                 <div class="small">${message || ''}</div>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -2168,7 +2205,7 @@ document.addEventListener('DOMContentLoaded', function () {
      jalan keluar.
      ============================================================ --}}
 <div class="modal fade" id="ehibahPreviewModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content" style="border-radius: 16px;">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold" id="ehibahPreviewTitle">Pratinjau Dokumen</h5>
@@ -2203,6 +2240,29 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.show();
     };
 
+    // Bug #6b: tombol Preview pada baris yang berkasnya sudah tidak ada
+    // di disk (mis. arsip laporan akhir) tidak boleh membuka tab baru
+    // yang hanya menampilkan flash "File tidak ditemukan di server".
+    // Route download/preview mengembalikan redirect ke halaman
+    // sebelumnya bila berkas tidak ada, jadi periksa dulu dengan HEAD:
+    // bila yang kembali berupa berkas (Content-Disposition
+    // attachment/inline, atau tipe PDF/gambar), lanjutkan seperti
+    // biasa; bila yang kembali halaman HTML (redirect ke daftar),
+    // tampilkan toast error di dalam sistem dan jangan buka tab/modal
+    // baru. Bila pemeriksaan gagal (mis. jaringan), pakai perilaku
+    // lama agar unduhan/pratinjau yang sah tidak terblokir.
+    function ehibahFileExists(url) {
+        return fetch(url, { method: 'HEAD', credentials: 'same-origin' })
+            .then(function (resp) {
+                var disp = (resp.headers.get('content-disposition') || '').toLowerCase();
+                var type = (resp.headers.get('content-type') || '').toLowerCase();
+                if (disp.indexOf('attachment') !== -1 || disp.indexOf('inline') !== -1) return true;
+                if (type.indexOf('application/pdf') === 0 || type.indexOf('image/') === 0) return true;
+                return false;
+            })
+            .catch(function () { return true; });
+    }
+
     // Tombol preview di halaman mana pun: baca atribut data, tanpa
     // onclick inline. Delegated agar tombol di dalam tabel/modal
     // yang dirender belakangan tetap tertangkap. Bila file tidak
@@ -2217,15 +2277,27 @@ document.addEventListener('DOMContentLoaded', function () {
         var previewUrl = btn.getAttribute('data-preview-url');
         var downloadUrl = btn.getAttribute('data-download-url') || previewUrl;
         if (btn.getAttribute('data-previewable') === '0') {
-            window.ehibahToast('Preview tidak tersedia untuk tipe file ini. File diunduh sebagai gantinya.', 'info');
-            window.open(downloadUrl, '_blank');
+            ehibahFileExists(downloadUrl).then(function (exists) {
+                if (!exists) {
+                    window.ehibahToast('File tidak ditemukan di server.', 'danger');
+                    return;
+                }
+                window.ehibahToast('Preview tidak tersedia untuk tipe file ini. File diunduh sebagai gantinya.', 'info');
+                window.open(downloadUrl, '_blank');
+            });
             return;
         }
-        window.ehibahPreview(
-            previewUrl,
-            btn.getAttribute('data-preview-title'),
-            downloadUrl
-        );
+        ehibahFileExists(previewUrl).then(function (exists) {
+            if (!exists) {
+                window.ehibahToast('File tidak ditemukan di server.', 'danger');
+                return;
+            }
+            window.ehibahPreview(
+                previewUrl,
+                btn.getAttribute('data-preview-title'),
+                downloadUrl
+            );
+        });
     });
 
     // Kosongkan iframe saat modal ditutup supaya PDF berhenti dimuat.

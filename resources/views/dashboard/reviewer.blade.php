@@ -228,12 +228,13 @@
     color: #688273;
 }
 
-/* STATISTICS */
+/* STATISTICS — L6: padding/ikon/gap disamakan dengan aturan layout
+   supaya label ("Total Tugas Review") cukup satu baris di desktop. */
 .review-stat-card {
     display: flex;
     align-items: center;
-    gap: 20px;
-    padding: 25px;
+    gap: 14px;
+    padding: 20px;
     border-radius: 18px;
     background: #fff;
     border: 1px solid #e8eee9;
@@ -248,14 +249,14 @@
 }
 
 .stat-icon {
-    width: 58px;
-    height: 58px;
-    min-width: 58px;
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
     border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: 22px;
 }
 
 .stat-total .stat-icon {
@@ -274,7 +275,7 @@
 }
 
 .stat-label {
-    font-size: 13px;
+    font-size: 12px;
     color: #718078;
     margin-bottom: 7px;
 }

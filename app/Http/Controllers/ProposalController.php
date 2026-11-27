@@ -725,18 +725,25 @@ class ProposalController extends Controller
         if ($kirimPengajuan && ! $hasRab) {
             return redirect()->back()->withInput()->with('error', 'Isi minimal satu komponen RAB sebelum mengirim pengajuan.');
         }
-        if ($hasRab && $skema && $skema->plafon > 0 && $rabTotal > (float) $skema->plafon) {
+        // Plafon hanya dicek saat kirim pengajuan, bukan saat simpan draft —
+        // selaras dengan store() (bug #7: simpan draft di form edit dulu
+        // menolak RAB di atas plafon karena cek ini tidak dijaga $kirimPengajuan).
+        if ($kirimPengajuan && $hasRab && $skema && $skema->plafon > 0 && $rabTotal > (float) $skema->plafon) {
             return redirect()->back()->withInput()
                 ->with('error', 'Total RAB Rp '.number_format($rabTotal, 0, ',', '.').' melebihi plafon skema '.$skema->label().' (Rp '.number_format((float) $skema->plafon, 0, ',', '.').').');
         }
 
         DB::transaction(function () use ($request, $proposal, $user, $kirimPengajuan, $skema, $anggotaResolved, $rabInput, $rabTotal, $hasRab) {
-            // Handle File
+            // Handle File: simpan berkas baru dulu, baru hapus berkas lama —
+            // bila penyimpanan gagal, berkas lama tetap ada (bug #7).
+            // Validasi gagal tidak menyentuh berkas sama sekali karena
+            // validate() di atas sudah menghentikan alur lebih dulu.
             if ($request->hasFile('file')) {
+                $filePathBaru = $request->file('file')->store('proposal_files', 'public');
                 if ($proposal->file_path) {
                     \Storage::disk('public')->delete($proposal->file_path);
                 }
-                $proposal->file_path = $request->file('file')->store('proposal_files', 'public');
+                $proposal->file_path = $filePathBaru;
             }
 
             $data = [

@@ -40,10 +40,21 @@
     }
 
     /* L1: layout tetap (fixed) dengan lebar kolom yang sudah
-       didefinisikan di <th> agar tabel muat dalam area konten. */
+       didefinisikan di <th> agar tabel muat dalam area konten.
+       Kolom Aksi dilebarkan (20% -> 22%) dan tombol "Lihat …" boleh
+       melipat dua baris di layar sempit — aturan layout memaksa nowrap
+       untuk semua .btn di tabel, sehingga tombol yang lebih lebar dari
+       kolomnya terpotong di tepi kanan. */
     .table-responsive .table {
         table-layout: fixed;
         width: 100%;
+    }
+    .table-responsive .table td {
+        overflow-wrap: break-word;
+    }
+    #mainContent .table .btn-lihat {
+        white-space: normal;
+        line-height: 1.35;
     }
 </style>
 
@@ -80,10 +91,10 @@
                 <thead>
                     <tr>
                         <th width="5%" style="border-top-left-radius: 15px;">No</th>
-                        <th class="text-start" width="45%">Judul & Pengusul</th>
+                        <th class="text-start" width="43%">Judul & Pengusul</th>
                         <th width="15%">No. Pengajuan</th>
                         <th width="15%">Entri Logbook</th>
-                        <th width="20%" style="border-top-right-radius: 15px;">Aksi</th>
+                        <th width="22%" style="border-top-right-radius: 15px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -105,7 +116,7 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                <a href="{{ route('logbook.show', $proposal) }}" class="btn btn-sm btn-success fw-bold px-3" style="border-radius: 8px;">
+                                <a href="{{ route('logbook.show', $proposal) }}" class="btn btn-sm btn-success fw-bold px-3 btn-lihat" style="border-radius: 8px;">
                                     <i class="bi bi-journal-text me-1"></i> Lihat Logbook
                                 </a>
                             </td>
