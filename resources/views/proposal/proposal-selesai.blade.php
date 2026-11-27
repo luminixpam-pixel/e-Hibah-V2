@@ -250,6 +250,9 @@
                                 <a href="{{ route('review.pdf', $rev->id) }}" class="btn-pdf shadow-sm" target="_blank">
                                     <i class="bi bi-file-earmark-pdf-fill"></i> PDF Rev {{ $loop->iteration }}
                                 </a>
+                                <button type="button" class="btn-pdf shadow-sm" data-preview-url="{{ route('review.preview', $rev->id) }}" data-previewable="1" data-preview-title="Hasil Review {{ $loop->iteration }} - {{ $proposal->judul }}" data-download-url="{{ route('review.pdf', $rev->id) }}">
+                                    <i class="bi bi-eye"></i> Preview Rev {{ $loop->iteration }}
+                                </button>
                             @endforeach
                         </td>
                     </tr>

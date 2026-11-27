@@ -38,4 +38,26 @@ class DokumenResmiController extends Controller
 
         return Storage::disk('public')->download($doc->file_path, $doc->judul.'.'.$ext);
     }
+
+    /**
+     * Preview dokumen resmi (inline bila PDF/gambar, unduh bila bukan).
+     * Otorisasi sama seperti download(): semua user login boleh.
+     */
+    public function preview($id)
+    {
+        $doc = DokumenResmi::findOrFail($id);
+
+        if (! $doc->file_path || ! Storage::disk('public')->exists($doc->file_path)) {
+            return back()->with('error', 'Berkas fisik tidak ditemukan.');
+        }
+
+        $ext = pathinfo($doc->file_path, PATHINFO_EXTENSION);
+
+        return $this->previewStoredFile(
+            $doc->file_path,
+            $doc->judul.'.'.$ext,
+            'dokumen-resmi.download',
+            ['id' => $id]
+        );
+    }
 }

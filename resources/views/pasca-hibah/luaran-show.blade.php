@@ -157,6 +157,9 @@
                                     <a href="{{ route('luaran.download', $luaran) }}" class="btn btn-sm btn-outline-primary fw-bold px-3" style="border-radius: 8px;">
                                         <i class="bi bi-download me-1"></i> Unduh PDF
                                     </a>
+                                    <button type="button" class="btn btn-sm btn-outline-primary fw-bold px-3" style="border-radius: 8px;" data-preview-url="{{ route('luaran.preview', $luaran) }}" data-previewable="{{ in_array(strtolower(pathinfo($luaran->file ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}" data-preview-title="{{ $luaran->judul }}" data-download-url="{{ route('luaran.download', $luaran) }}">
+                                        <i class="bi bi-eye me-1"></i> Preview PDF
+                                    </button>
                                 @else
                                     <span class="badge-empty">Tanpa file</span>
                                 @endif

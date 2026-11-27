@@ -136,4 +136,28 @@ class LaporanKemajuanController extends Controller
 
         return Storage::disk('public')->download($proposal->file_laporan);
     }
+
+    /**
+     * ✅ PREVIEW LAPORAN KEMAJUAN (dipakai oleh route laporan.kemajuan.preview)
+     * Pesan error bila tidak ada file sama seperti downloadLaporan().
+     */
+    public function preview($id)
+    {
+        $proposal = Proposal::findOrFail($id);
+
+        if (! $proposal->file_laporan) {
+            return redirect()->back()->with('error', 'File laporan belum tersedia.');
+        }
+
+        if (! Storage::disk('public')->exists($proposal->file_laporan)) {
+            return redirect()->back()->with('error', 'File laporan tidak ditemukan di storage.');
+        }
+
+        return $this->previewStoredFile(
+            $proposal->file_laporan,
+            basename($proposal->file_laporan),
+            'laporan.kemajuan.download',
+            ['id' => $id]
+        );
+    }
 }

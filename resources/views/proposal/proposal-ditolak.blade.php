@@ -74,6 +74,12 @@
                                class="btn btn-primary btn-action">
                                 <i class="bi bi-download"></i> Download
                             </a>
+                            <button type="button" class="btn btn-primary btn-action"
+                                    data-preview-url="{{ route('proposal.preview', $proposal->id) }}" data-previewable="{{ in_array(strtolower(pathinfo($proposal->file_path ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}"
+                                    data-preview-title="{{ $judul }}"
+                                    data-download-url="{{ route('proposal.download', $proposal->id) }}">
+                                <i class="bi bi-eye"></i> Preview
+                            </button>
                         </td>
                     </tr>
                 @empty

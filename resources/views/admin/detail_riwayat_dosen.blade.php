@@ -151,6 +151,9 @@
                                 <a href="{{ route('proposal.download', $p->id) }}" class="btn btn-sm btn-outline-secondary">
                                     <i class="bi bi-download"></i> Unduh
                                 </a>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-preview-url="{{ route('proposal.preview', $p->id) }}" data-previewable="{{ in_array(strtolower(pathinfo($p->file_path ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}" data-preview-title="{{ $p->judul }}" data-download-url="{{ route('proposal.download', $p->id) }}">
+                                    <i class="bi bi-eye"></i> Preview
+                                </button>
                             </td>
                         </tr>
                     @empty

@@ -79,6 +79,7 @@
                             <div class="mt-2 small">
                                 File saat ini:
                                 <a href="{{ route('luaran.download', $luaran) }}" class="fw-bold">Unduh PDF</a>
+                                <button type="button" class="btn btn-link btn-sm fw-bold p-0" data-preview-url="{{ route('luaran.preview', $luaran) }}" data-previewable="{{ in_array(strtolower(pathinfo($luaran->file ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}" data-preview-title="{{ $luaran->judul }}" data-download-url="{{ route('luaran.download', $luaran) }}"><i class="bi bi-eye"></i> Preview PDF</button>
                             </div>
                         @endif
                     </div>

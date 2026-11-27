@@ -101,4 +101,32 @@ class AdminDocumentController extends Controller
 
         return Storage::disk('public')->download($doc->file_path, $doc->judul.'.'.$ext);
     }
+
+    /**
+     * Preview dokumen admin.
+     * Otorisasi sama seperti download(): non-admin dilarang bila
+     * dokumen tidak visible (403).
+     */
+    public function preview($id)
+    {
+        $doc = AdminDocument::findOrFail($id);
+
+        // Keamanan: Cegah user biasa melihat file yang sedang disembunyikan via URL
+        if (Auth::user()->role !== 'admin' && ! $doc->is_visible) {
+            abort(403);
+        }
+
+        if (! $doc->file_path || ! Storage::disk('public')->exists($doc->file_path)) {
+            return back()->with('error', 'Berkas fisik tidak ditemukan.');
+        }
+
+        $ext = pathinfo($doc->file_path, PATHINFO_EXTENSION);
+
+        return $this->previewStoredFile(
+            $doc->file_path,
+            $doc->judul.'.'.$ext,
+            'dokumen.download',
+            ['id' => $id]
+        );
+    }
 }

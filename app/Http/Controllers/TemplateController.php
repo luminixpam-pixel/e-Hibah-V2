@@ -65,4 +65,38 @@ class TemplateController extends Controller
 
         return back()->with('success', 'Template berhasil dihapus.');
     }
+
+    /**
+     * Mengunduh template (menggantikan link asset('storage/...')
+     * langsung di view — lewat controller agar file dicek dulu).
+     */
+    public function download($id)
+    {
+        $template = Template::findOrFail($id);
+
+        if (! $template->file_path || ! Storage::disk('public')->exists($template->file_path)) {
+            return back()->with('error', 'File tidak ditemukan di server.');
+        }
+
+        return Storage::disk('public')->download($template->file_path, $template->nama_template);
+    }
+
+    /**
+     * Preview template (inline bila PDF/gambar, unduh bila bukan).
+     */
+    public function preview($id)
+    {
+        $template = Template::findOrFail($id);
+
+        if (! $template->file_path || ! Storage::disk('public')->exists($template->file_path)) {
+            return back()->with('error', 'File tidak ditemukan di server.');
+        }
+
+        return $this->previewStoredFile(
+            $template->file_path,
+            $template->nama_template,
+            'template.download',
+            ['id' => $id]
+        );
+    }
 }

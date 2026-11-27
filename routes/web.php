@@ -139,6 +139,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/proposal/{id}/edit', 'edit')->name('proposal.edit');
         Route::put('/proposal/{id}', 'update')->name('proposal.update');
         Route::get('/proposal/download/{id}', 'download')->name('proposal.download');
+        Route::get('/proposal/preview/{id}', 'preview')->name('proposal.preview');
         Route::delete('/proposal/{id}', 'destroy')->name('proposal.destroy');
         Route::get('/proposal/{id}/tinjau', 'tinjau')->name('proposal.tinjau');
         Route::patch('/proposal/{id}/keputusan', 'keputusan')->middleware('role:admin')->name('proposal.keputusan');
@@ -150,16 +151,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/proposal-direvisi', 'proposalDirevisi')->name('monitoring.proposalDirevisi');
         Route::get('/hasil-review', 'hasilRevisi')->name('monitoring.hasilRevisi');
         Route::get('/review/{id}/pdf', 'downloadReviewPdf')->name('review.pdf');
+        Route::get('/review/{id}/preview', 'previewReviewPdf')->name('review.preview');
     });
 
     // Laporan (Kemajuan & Akhir)
     Route::get('/laporan-kemajuan', [LaporanKemajuanController::class, 'index'])->name('laporan.kemajuan.index');
     Route::post('/laporan-kemajuan', [LaporanKemajuanController::class, 'store'])->name('laporan.kemajuan.store');
     Route::get('/laporan-kemajuan/download/{id}', [LaporanKemajuanController::class, 'downloadLaporan'])->name('laporan.kemajuan.download');
+    Route::get('/laporan-kemajuan/preview/{id}', [LaporanKemajuanController::class, 'preview'])->name('laporan.kemajuan.preview');
 
     Route::get('/laporan-akhir', [LaporanAkhirController::class, 'index'])->name('laporan.akhir.index');
     Route::post('/laporan-akhir/store', [LaporanAkhirController::class, 'store'])->name('laporan.akhir.store');
     Route::get('/laporan-akhir/download/{id}', [LaporanAkhirController::class, 'download'])->name('laporan.akhir.download');
+    Route::get('/laporan-akhir/preview/{id}', [LaporanAkhirController::class, 'preview'])->name('laporan.akhir.preview');
 
     // Pasca-hibah (Fase 5, story 9 & 10) — hanya proposal Disetujui.
     // Otorisasi per role dicek di controller (pemilik / LPPM / dekan /
@@ -171,6 +175,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/logbook/{logbook}', [LogbookController::class, 'update'])->name('logbook.update');
     Route::delete('/logbook/{logbook}', [LogbookController::class, 'destroy'])->name('logbook.destroy');
     Route::get('/logbook/{logbook}/download', [LogbookController::class, 'download'])->name('logbook.download');
+    Route::get('/logbook/{logbook}/preview', [LogbookController::class, 'preview'])->name('logbook.preview');
 
     Route::get('/luaran', [LuaranController::class, 'index'])->name('luaran.index');
     Route::get('/luaran/{proposal}', [LuaranController::class, 'show'])->name('luaran.show');
@@ -179,6 +184,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/luaran/{luaran}', [LuaranController::class, 'update'])->name('luaran.update');
     Route::delete('/luaran/{luaran}', [LuaranController::class, 'destroy'])->name('luaran.destroy');
     Route::get('/luaran/{luaran}/download', [LuaranController::class, 'download'])->name('luaran.download');
+    Route::get('/luaran/{luaran}/preview', [LuaranController::class, 'preview'])->name('luaran.preview');
 
     Route::get('/monev', [MonevController::class, 'index'])->name('monev.index');
     Route::get('/monev/{proposal}', [MonevController::class, 'show'])->name('monev.show');
@@ -188,13 +194,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/monev/{finding}/verifikasi', [MonevController::class, 'verifikasi'])
         ->middleware('role:lppm')->name('monev.verifikasi');
     Route::get('/monev/{finding}/download/{jenis}', [MonevController::class, 'download'])->name('monev.download');
+    Route::get('/monev/{finding}/preview/{jenis}', [MonevController::class, 'preview'])->name('monev.preview');
 
     // Dokumen (lihat & unduh — semua role yang login)
     Route::get('/dokumen', [AdminDocumentController::class, 'index'])->name('dokumen.index');
     Route::get('/dokumen/download/{id}', [AdminDocumentController::class, 'download'])->name('dokumen.download');
+    Route::get('/dokumen/preview/{id}', [AdminDocumentController::class, 'preview'])->name('dokumen.preview');
 
     // Dokumen resmi — unduh (Fase 6, story 8)
     Route::get('/dokumen-resmi/{id}/download', [DokumenResmiController::class, 'download'])->name('dokumen-resmi.download');
+    Route::get('/dokumen-resmi/{id}/preview', [DokumenResmiController::class, 'preview'])->name('dokumen-resmi.preview');
 
     // Dokumentasi teknis (Fase 6, story 30)
     Route::view('/dokumentasi', 'dokumentasi')->name('dokumentasi');
@@ -288,6 +297,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/laporan-error/{id}', [ErrorReportController::class, 'show'])->name('admin.error-report.show');
         Route::patch('/admin/laporan-error/{id}', [ErrorReportController::class, 'update'])->name('admin.error-report.update');
     });
+
+    // Template — preview & unduh untuk semua user login (route download
+    // menggantikan link asset('storage/...') langsung di view).
+    // Ditaruh di ujung grup auth agar berdekatan dengan route
+    // admin.template (upload/hapus) di grup admin di bawah, tetapi
+    // TIDAK di dalam grup role:admin supaya non-admin bisa mengaksesnya.
+    Route::get('/template/{id}/preview', [TemplateController::class, 'preview'])->name('template.preview');
+    Route::get('/template/{id}/download', [TemplateController::class, 'download'])->name('template.download');
 });
 
 /* --- ROLE: ADMIN ONLY --- */

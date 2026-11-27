@@ -2124,7 +2124,6 @@ document.addEventListener('DOMContentLoaded', function () {
     modalEl.addEventListener('hidden.bs.modal', function () {
         if (resolveCurrent) { var r = resolveCurrent; resolveCurrent = null; r(false); }
     });
-
     // Semua form data-ehibah-confirm: tahan submit, tanya dulu lewat
     // modal bersama. form.submit() (bukan requestSubmit) melewati
     // listener ini sehingga tidak berputar.
@@ -2142,6 +2141,97 @@ document.addEventListener('DOMContentLoaded', function () {
             if (ok) { form.dataset.ehibahConfirmed = '1'; form.submit(); }
         });
     }, true);
+})();
+</script>
+
+{{-- ============================================================
+     MODAL PRATINJAU DOKUMEN BERSAMA: menampilkan isi dokumen
+     (PDF/gambar) langsung di dalam aplikasi lewat iframe, tanpa
+     membuka tab baru atau mengunduh dulu. Satu modal untuk semua
+     titik preview — tombol di halaman mana pun cukup memakai
+     atribut data, tanpa onclick inline (menghindari masalah
+     quoting pada judul dokumen):
+       <button type="button" data-preview-url="..."
+               data-preview-title="..." data-download-url="..."
+               data-previewable="1">
+     data-previewable dihitung di Blade dari ekstensi file (pdf /
+     jpg / jpeg / png / gif / webp -> "1", sisanya "0"): file yang
+     tidak bisa di-preview (doc/docx/xlsx) TIDAK membuka modal —
+     route preview-nya hanya me-redirect ke download sehingga
+     modal akan tampil kosong dan flash-nya tidak terlihat;
+     sebagai gantinya handler menampilkan toast lalu membuka URL
+     download di tab baru. Pakai: ehibahPreview(url, judul,
+     downloadUrl). Route preview mengembalikan file inline bila
+     tipenya bisa ditampilkan (pdf/jpg/png); untuk tipe lain
+     (docx/xlsx) route preview mengarahkan ke route download,
+     jadi tombol Download di footer selalu tersedia sebagai
+     jalan keluar.
+     ============================================================ --}}
+<div class="modal fade" id="ehibahPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="ehibahPreviewTitle">Pratinjau Dokumen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <iframe id="ehibahPreviewFrame" style="width: 100%; height: 70vh; border: 0;"></iframe>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <a href="#" id="ehibahPreviewDownload" class="btn btn-primary" target="_blank">
+                    <i class="bi bi-download me-1"></i> Download
+                </a>
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    var modalEl = document.getElementById('ehibahPreviewModal');
+    var frameEl = document.getElementById('ehibahPreviewFrame');
+    var titleEl = document.getElementById('ehibahPreviewTitle');
+    var downloadEl = document.getElementById('ehibahPreviewDownload');
+    var modal = new bootstrap.Modal(modalEl);
+
+    // Tampilkan pratinjau dokumen di modal bersama.
+    window.ehibahPreview = function (url, title, downloadUrl) {
+        // textContent (bukan innerHTML): judul berisi nama dari database.
+        titleEl.textContent = title || 'Pratinjau Dokumen';
+        downloadEl.href = downloadUrl || url;
+        frameEl.src = url;
+        modal.show();
+    };
+
+    // Tombol preview di halaman mana pun: baca atribut data, tanpa
+    // onclick inline. Delegated agar tombol di dalam tabel/modal
+    // yang dirender belakangan tetap tertangkap. Bila file tidak
+    // bisa di-preview (data-previewable="0", mis. docx/xlsx):
+    // JANGAN buka modal — redirect preview hanya mengunduh file
+    // sementara modal tampil kosong dan flash-nya tidak terlihat.
+    // Sebagai gantinya beri tahu lewat toast lalu unduh di tab baru.
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-preview-url]');
+        if (!btn) return;
+        e.preventDefault();
+        var previewUrl = btn.getAttribute('data-preview-url');
+        var downloadUrl = btn.getAttribute('data-download-url') || previewUrl;
+        if (btn.getAttribute('data-previewable') === '0') {
+            window.ehibahToast('Preview tidak tersedia untuk tipe file ini. File diunduh sebagai gantinya.', 'info');
+            window.open(downloadUrl, '_blank');
+            return;
+        }
+        window.ehibahPreview(
+            previewUrl,
+            btn.getAttribute('data-preview-title'),
+            downloadUrl
+        );
+    });
+
+    // Kosongkan iframe saat modal ditutup supaya PDF berhenti dimuat.
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        frameEl.src = '';
+    });
 })();
 </script>
 </body>

@@ -306,4 +306,43 @@ class MonevController extends Controller
 
         return Storage::disk('public')->download($path, $downloadName);
     }
+
+    /**
+     * GET /monev/{finding}/preview/{jenis} — preview file_rtl ('rtl')
+     * atau bukti_perbaikan ('bukti'). Otorisasi sama seperti download():
+     * cek canViewProposal dulu (403), jenis selain itu 404.
+     */
+    public function preview(MonevFinding $finding, $jenis)
+    {
+        $proposal = $finding->proposal;
+
+        if (! $proposal || ! $this->canViewProposal(auth()->user(), $proposal)) {
+            abort(403);
+        }
+
+        if ($jenis === 'rtl') {
+            $path = $finding->file_rtl;
+            $label = 'RTL';
+        } elseif ($jenis === 'bukti') {
+            $path = $finding->bukti_perbaikan;
+            $label = 'Bukti_Perbaikan';
+        } else {
+            abort(404);
+        }
+
+        if (! $path || ! Storage::disk('public')->exists($path)) {
+            return redirect()->back()->with('error', 'File tidak ditemukan di server.');
+        }
+
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        $cleanTitle = str_replace([' ', '/', '\\'], '_', $proposal->judul);
+        $displayName = $label.'_'.$cleanTitle.'.'.$extension;
+
+        return $this->previewStoredFile(
+            $path,
+            $displayName,
+            'monev.download',
+            ['finding' => $finding->id, 'jenis' => $jenis]
+        );
+    }
 }

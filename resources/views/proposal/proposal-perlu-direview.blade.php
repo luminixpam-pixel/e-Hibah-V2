@@ -179,6 +179,9 @@
                                 <a href="{{ route('proposal.download', $proposal->id) }}" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 11px;">
                                     <i class="bi bi-file-earmark-pdf-fill me-1"></i> Unduh Proposal
                                 </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 11px;" data-preview-url="{{ route('proposal.preview', $proposal->id) }}" data-previewable="{{ in_array(strtolower(pathinfo($proposal->file_path ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}" data-preview-title="{{ $proposal->judul }}" data-download-url="{{ route('proposal.download', $proposal->id) }}">
+                                    <i class="bi bi-eye me-1"></i> Preview Proposal
+                                </button>
                             </td>
 
                             {{-- COLUMN 4: DEADLINE --}}

@@ -871,6 +871,28 @@ class ProposalController extends Controller
     }
 
     /**
+     * Preview File Proposal (inline bila PDF/gambar, unduh bila bukan).
+     * Otorisasi sama seperti download(): hanya auth, tanpa cek tambahan.
+     */
+    public function preview($id)
+    {
+        $proposal = \App\Models\Proposal::findOrFail($id);
+
+        if (! $proposal->file_path) {
+            return back()->with('error', 'File tidak ditemukan di server.');
+        }
+
+        $this->logActivity('Melihat preview file proposal ID: '.$id);
+
+        return $this->previewStoredFile(
+            $proposal->file_path,
+            basename($proposal->file_path),
+            'proposal.download',
+            ['id' => $id]
+        );
+    }
+
+    /**
      * Assign Reviewer oleh Admin
      */
     public function assignReviewer(Request $request, $id)
@@ -986,6 +1008,15 @@ class ProposalController extends Controller
 
         // Gunakan stream() agar muncul di tab baru browser
         return $pdf->setPaper('a4', 'portrait')->stream('Hasil-Review-'.$id.'.pdf');
+    }
+
+    /**
+     * Preview PDF hasil review — stream() di downloadReviewPdf sudah
+     * inline, jadi preview cukup mendelegasikan ke method itu.
+     */
+    public function previewReviewPdf($id)
+    {
+        return $this->downloadReviewPdf($id);
     }
 
     // --- View Monitoring Methods ---

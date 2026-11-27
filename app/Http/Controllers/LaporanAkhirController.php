@@ -121,4 +121,29 @@ class LaporanAkhirController extends Controller
 
         return Storage::disk('public')->download($proposal->file_laporan_akhir, $downloadName);
     }
+
+    /**
+     * Preview Berkas Laporan Akhir (inline bila PDF/gambar, unduh bila bukan).
+     * Nama tampil sama seperti download().
+     */
+    public function preview($id)
+    {
+        $proposal = Proposal::findOrFail($id);
+
+        // Cek keberadaan file di kolom file_laporan_akhir
+        if (! $proposal->file_laporan_akhir || ! Storage::disk('public')->exists($proposal->file_laporan_akhir)) {
+            return back()->with('error', 'File tidak ditemukan di server.');
+        }
+
+        $extension = pathinfo($proposal->file_laporan_akhir, PATHINFO_EXTENSION);
+        $cleanTitle = str_replace([' ', '/', '\\'], '_', $proposal->judul);
+        $displayName = 'Laporan_Akhir_'.$cleanTitle.'.'.$extension;
+
+        return $this->previewStoredFile(
+            $proposal->file_laporan_akhir,
+            $displayName,
+            'laporan.akhir.download',
+            ['id' => $id]
+        );
+    }
 }

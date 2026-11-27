@@ -77,6 +77,7 @@
                     Status: {{ $p->status }}
                 </small><br>
                 <a href="{{ route('laporan.akhir.download', $p->id) }}" class="btn btn-sm btn-outline-primary mt-1">Unduh Laporan Akhir</a>
+                <button type="button" class="btn btn-sm btn-outline-primary mt-1" data-preview-url="{{ route('laporan.akhir.preview', $p->id) }}" data-previewable="{{ in_array(strtolower(pathinfo($p->file_laporan_akhir ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}" data-preview-title="Laporan Akhir - {{ $p->judul }}" data-download-url="{{ route('laporan.akhir.download', $p->id) }}"><i class="bi bi-eye"></i> Preview Laporan Akhir</button>
             </div>
         @empty
             <p class="text-muted mb-0">Belum ada laporan akhir di fakultas Anda.</p>

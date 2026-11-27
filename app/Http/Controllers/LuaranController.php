@@ -200,6 +200,28 @@ class LuaranController extends Controller
     }
 
     /**
+     * Preview file luaran.
+     * Otorisasi sama seperti download(): cek canView dulu (403).
+     */
+    public function preview(Luaran $luaran)
+    {
+        if (! $this->canView(auth()->user(), $luaran->proposal)) {
+            abort(403, 'Anda tidak berhak mengunduh file luaran ini.');
+        }
+
+        if (! $luaran->file || ! Storage::disk('public')->exists($luaran->file)) {
+            return redirect()->back()->with('error', 'File luaran tidak ditemukan di server.');
+        }
+
+        return $this->previewStoredFile(
+            $luaran->file,
+            basename($luaran->file),
+            'luaran.download',
+            ['luaran' => $luaran->id]
+        );
+    }
+
+    /**
      * Query proposal Disetujui yang boleh dilihat user login.
      * Reviewer / verifikator / role lain: 403.
      */

@@ -184,6 +184,17 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                     style="background-color: #e3f2fd; color: #1565c0; width: 38px; height: 38px; border-radius: 10px;">
                                         <i class="bi bi-cloud-arrow-down-fill fs-5"></i>
                                     </a>
+
+                                    {{-- Preview - Soft Blue --}}
+                                    <button type="button"
+                                    class="btn btn-md border-0 shadow-sm d-flex align-items-center justify-content-center"
+                                    title="Preview"
+                                    style="background-color: #e3f2fd; color: #1565c0; width: 38px; height: 38px; border-radius: 10px;"
+                                    data-preview-url="{{ route('proposal.preview', $proposal->id) }}" data-previewable="{{ in_array(strtolower(pathinfo($proposal->file_path ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}"
+                                    data-preview-title="{{ $proposal->judul }}"
+                                    data-download-url="{{ route('proposal.download', $proposal->id) }}">
+                                        <i class="bi bi-eye fs-5"></i>
+                                    </button>
                                 @endif
 
                                 {{-- FITUR EDIT --}}
@@ -320,6 +331,9 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                     <a href="{{ route('proposal.download', $proposal->id) }}" class="btn btn-primary border-0 py-2 shadow-sm" style="border-radius: 12px; background-color: #0d6efd;">
                                         <i class="bi bi-cloud-arrow-down-fill me-2"></i>Download File Asli
                                     </a>
+                                    <button type="button" class="btn btn-outline-primary py-2 shadow-sm" style="border-radius: 12px;" data-preview-url="{{ route('proposal.preview', $proposal->id) }}" data-previewable="{{ in_array(strtolower(pathinfo($proposal->file_path ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}" data-preview-title="{{ $proposal->judul }}" data-download-url="{{ route('proposal.download', $proposal->id) }}">
+                                        <i class="bi bi-eye me-2"></i>Preview File
+                                    </button>
                                 @endif
                                 <button type="button" class="btn btn-outline-secondary py-2" data-bs-dismiss="modal" style="border-radius: 12px;">Tutup</button>
                             </div>
@@ -331,7 +345,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                 @php $extension = pathinfo($proposal->file_path, PATHINFO_EXTENSION); @endphp
 
                                 @if(strtolower($extension) === 'pdf')
-                                    <iframe src="{{ asset('storage/' . $proposal->file_path) }}#toolbar=0" width="100%" height="700px" style="border: none;"></iframe>
+                                    <iframe src="{{ route('proposal.preview', $proposal->id) }}#toolbar=0" width="100%" height="700px" style="border: none;"></iframe>
                                 @else
                                     <div class="d-flex flex-column align-items-center justify-content-center h-100 p-5 text-center">
                                         <div class="bg-white p-4 rounded-circle shadow-sm mb-4">
@@ -339,7 +353,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                         </div>
                                         <h5 class="fw-bold text-dark">Pratinjau Tidak Tersedia</h5>
                                         <p class="text-muted px-md-5">File Word tidak dapat ditampilkan langsung di browser. Silakan unduh untuk meninjau dokumen secara lengkap.</p>
-                                        <a href="{{ asset('storage/' . $proposal->file_path) }}" class="btn btn-outline-primary rounded-pill px-4">
+                                        <a href="{{ route('proposal.download', $proposal->id) }}" class="btn btn-outline-primary rounded-pill px-4">
                                             <i class="bi bi-download me-2"></i>Unduh Sekarang
                                         </a>
                                     </div>

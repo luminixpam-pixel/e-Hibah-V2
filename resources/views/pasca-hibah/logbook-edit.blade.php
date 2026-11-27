@@ -64,6 +64,7 @@
                             <div class="mt-2 small">
                                 File saat ini:
                                 <a href="{{ route('logbook.download', $logbook) }}" class="fw-bold">Unduh PDF</a>
+                                <button type="button" class="btn btn-link btn-sm fw-bold p-0" data-preview-url="{{ route('logbook.preview', $logbook) }}" data-previewable="{{ in_array(strtolower(pathinfo($logbook->file_bukti ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}" data-preview-title="Bukti Logbook - {{ $logbook->uraian_kegiatan }}" data-download-url="{{ route('logbook.download', $logbook) }}"><i class="bi bi-eye"></i> Preview PDF</button>
                             </div>
                         @endif
                     </div>

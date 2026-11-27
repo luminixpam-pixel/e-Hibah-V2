@@ -151,13 +151,22 @@
 
                @if($template && $template->file_path)
                 {{-- Gunakan asset() jika file ada di folder public, atau Storage::url() jika di storage/app/public --}}
-                <a href="{{ asset('storage/' . $template->file_path) }}"
+                <a href="{{ route('template.download', $template->id) }}"
                 class="btn btn-sm btn-outline-success border-2 fw-bold px-3"
                 style="border-radius: 8px;"
                 download="{{ $template->nama_template }}">
                     <i class="bi bi-file-earmark-arrow-down-fill me-1"></i>
                     Unduh Template laporan kemajuan
                     </a>
+                <button type="button"
+                class="btn btn-sm btn-outline-success border-2 fw-bold px-3"
+                style="border-radius: 8px;"
+                data-preview-url="{{ route('template.preview', $template->id) }}" data-previewable="{{ in_array(strtolower(pathinfo($template->file_path ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}"
+                data-preview-title="{{ $template->nama_template }}"
+                data-download-url="{{ route('template.download', $template->id) }}">
+                    <i class="bi bi-eye me-1"></i>
+                    Preview Template
+                    </button>
             @else
                 <span class="text-muted small fst-italic">
                     <i class="bi bi-info-circle me-1"></i> Template belum tersedia.
@@ -246,6 +255,10 @@
                                         <i class="bi bi-file-earmark-check-fill fs-6"></i>
                                         <span>UNDUH LAPORAN</span>
                                     </a>
+                                    <button type="button" class="btn-laporan shadow-sm" data-preview-url="{{ route('laporan.kemajuan.preview', $proposal->id) }}" data-previewable="{{ in_array(strtolower(pathinfo($proposal->file_laporan ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}" data-preview-title="Laporan Kemajuan - {{ $proposal->judul }}" data-download-url="{{ route('laporan.kemajuan.download', $proposal->id) }}">
+                                        <i class="bi bi-eye fs-6"></i>
+                                        <span>PREVIEW LAPORAN</span>
+                                    </button>
                                     <div class="mt-1 text-muted" style="font-size: 10px;">
                                         Diperbarui: {{ \Carbon\Carbon::parse($proposal->updated_at)->format('d/m/Y') }}
                                     </div>
@@ -268,6 +281,14 @@
                                            style="background: #e3f2fd; color: #1565c0;" title="Download Laporan">
                                             <i class="bi bi-download"></i>
                                         </a>
+                                        <button type="button"
+                                           class="action-btn btn btn-light-primary"
+                                           style="background: #e3f2fd; color: #1565c0;" title="Preview Laporan"
+                                           data-preview-url="{{ route('laporan.kemajuan.preview', $proposal->id) }}" data-previewable="{{ in_array(strtolower(pathinfo($proposal->file_laporan ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}"
+                                           data-preview-title="Laporan Kemajuan - {{ $proposal->judul }}"
+                                           data-download-url="{{ route('laporan.kemajuan.download', $proposal->id) }}">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
                                     @endif
                                 </div>
                             </td>

@@ -147,6 +147,9 @@
                                     <a href="{{ route('dokumen.download', $doc->id) }}" class="btn-download-doc shadow-sm">
                                         <i class="bi bi-download"></i> UNDUH
                                     </a>
+                                    <button type="button" class="btn-download-doc shadow-sm" data-preview-url="{{ route('dokumen.preview', $doc->id) }}" data-previewable="{{ in_array(strtolower(pathinfo($doc->file_path ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}" data-preview-title="{{ $doc->judul }}" data-download-url="{{ route('dokumen.download', $doc->id) }}">
+                                        <i class="bi bi-eye"></i> PREVIEW
+                                    </button>
 
                                     @if(Auth::user()->role === 'admin')
                                         <form action="{{ route('admin.dokumen.toggle', $doc->id) }}" method="POST">

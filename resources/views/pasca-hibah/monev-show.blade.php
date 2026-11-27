@@ -180,6 +180,10 @@
                             <i class="bi bi-file-earmark-arrow-down-fill"></i>
                             <span>Unduh RTL</span>
                         </a>
+                        <button type="button" class="btn-unduh shadow-sm" data-preview-url="{{ route('monev.preview', [$finding, 'rtl']) }}" data-previewable="{{ in_array(strtolower(pathinfo($finding->file_rtl ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}" data-preview-title="RTL - {{ $proposal->judul }}" data-download-url="{{ route('monev.download', [$finding, 'rtl']) }}">
+                            <i class="bi bi-eye-fill"></i>
+                            <span>Preview RTL</span>
+                        </button>
                     @else
                         <span class="badge-empty"><i class="bi bi-info-circle me-1"></i> RTL belum dikirim</span>
                     @endif
@@ -189,6 +193,10 @@
                             <i class="bi bi-file-earmark-arrow-down-fill"></i>
                             <span>Unduh Bukti Perbaikan</span>
                         </a>
+                        <button type="button" class="btn-unduh shadow-sm" data-preview-url="{{ route('monev.preview', [$finding, 'bukti']) }}" data-previewable="{{ in_array(strtolower(pathinfo($finding->bukti_perbaikan ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}" data-preview-title="Bukti Perbaikan - {{ $proposal->judul }}" data-download-url="{{ route('monev.download', [$finding, 'bukti']) }}">
+                            <i class="bi bi-eye-fill"></i>
+                            <span>Preview Bukti Perbaikan</span>
+                        </button>
                     @else
                         <span class="badge-empty"><i class="bi bi-info-circle me-1"></i> Bukti perbaikan belum dikirim</span>
                     @endif

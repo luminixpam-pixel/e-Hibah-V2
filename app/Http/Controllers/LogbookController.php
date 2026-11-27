@@ -196,6 +196,28 @@ class LogbookController extends Controller
     }
 
     /**
+     * Preview file bukti entri logbook.
+     * Otorisasi sama seperti download(): cek canView dulu (403).
+     */
+    public function preview(Logbook $logbook)
+    {
+        if (! $this->canView(auth()->user(), $logbook->proposal)) {
+            abort(403, 'Anda tidak berhak mengunduh file bukti ini.');
+        }
+
+        if (! $logbook->file_bukti || ! Storage::disk('public')->exists($logbook->file_bukti)) {
+            return redirect()->back()->with('error', 'File bukti tidak ditemukan di server.');
+        }
+
+        return $this->previewStoredFile(
+            $logbook->file_bukti,
+            basename($logbook->file_bukti),
+            'logbook.download',
+            ['logbook' => $logbook->id]
+        );
+    }
+
+    /**
      * Query proposal Disetujui yang boleh dilihat user login.
      * Reviewer / verifikator / role lain: 403.
      */
