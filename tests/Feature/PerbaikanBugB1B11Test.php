@@ -87,9 +87,13 @@ test('bb2: penugasan reviewer yang sama menampilkan pesan error dan isian dipert
     $response->assertOk();
     $response->assertSee('Reviewer 1 dan 2 tidak boleh orang yang sama.');
 
-    // Isian dipertahankan (old()): kedua select tetap menunjuk reviewer
-    // yang dipilih dan tenggat tetap terisi.
-    $response->assertSee('value="'.$reviewer->id.'" selected', false);
+    // Isian dipertahankan (old()): kedua dropdown tetap menunjuk reviewer
+    // yang dipilih (input hidden + item aktif) dan tenggat tetap terisi.
+    // (Sejak commit cc3f7d58, <select> native diganti dropdown Bootstrap,
+    // jadi tidak ada lagi atribut `selected` di markup.)
+    $response->assertSee('name="reviewer_1" value="'.$reviewer->id.'"', false);
+    $response->assertSee('name="reviewer_2" value="'.$reviewer->id.'"', false);
+    $response->assertSee('plotting-reviewer-item active" data-value="'.$reviewer->id.'"', false);
     $response->assertSee('value="'.$deadline.'"', false);
 
     expect($proposal->fresh()->status)->toBe('Lolos Administrasi');
