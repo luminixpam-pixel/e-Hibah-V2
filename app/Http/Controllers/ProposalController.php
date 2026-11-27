@@ -69,6 +69,47 @@ class ProposalController extends Controller
     }
 
     /**
+     * Pesan validasi Bahasa Indonesia untuk alur pengajuan/edit proposal
+     * (store + update). Locale aplikasi masih 'en' dan tidak ada
+     * lang/id/validation.php, jadi pesan kustom ini yang dipakai —
+     * selaras dengan pesan kustom di assignReviewer().
+     * Aturan validasi tidak diubah, hanya bahasanya.
+     *
+     * @return array<string, string>
+     */
+    private function pesanValidasiPengajuan(): array
+    {
+        return [
+            'judul.required' => 'Judul proposal wajib diisi.',
+            'judul.string' => 'Judul proposal harus berupa teks.',
+            'judul.max' => 'Judul proposal maksimal 255 karakter.',
+            'nama_ketua.required' => 'Nama ketua wajib diisi.',
+            'nama_ketua.string' => 'Nama ketua harus berupa teks.',
+            'nama_ketua.max' => 'Nama ketua maksimal 255 karakter.',
+            'fakultas_prodi.required' => 'Fakultas/program studi wajib dipilih.',
+            'fakultas_prodi.exists' => 'Fakultas/program studi yang dipilih tidak valid.',
+            'skema_id.required' => 'Skema hibah wajib dipilih.',
+            'skema_id.exists' => 'Skema hibah yang dipilih tidak valid.',
+            'file.required' => 'File proposal wajib diunggah.',
+            'file.file' => 'File proposal harus berupa berkas.',
+            'file.mimes' => 'File proposal harus berformat PDF, DOC, atau DOCX.',
+            'file.max' => 'Ukuran file proposal maksimal 100 MB.',
+            'rab.required' => 'RAB wajib diisi minimal satu komponen.',
+            'rab.array' => 'RAB harus berupa daftar komponen.',
+            'rab.min' => 'Isi minimal satu komponen RAB.',
+            'rab.*.nama_komponen.required' => 'Nama komponen RAB wajib diisi.',
+            'rab.*.nama_komponen.string' => 'Nama komponen RAB harus berupa teks.',
+            'rab.*.nama_komponen.max' => 'Nama komponen RAB maksimal 255 karakter.',
+            'rab.*.nama_komponen.in' => 'Nama komponen RAB tidak ada dalam daftar yang diizinkan.',
+            'rab.*.jumlah.required' => 'Jumlah RAB wajib diisi.',
+            'rab.*.jumlah.numeric' => 'Jumlah RAB harus berupa angka.',
+            'rab.*.jumlah.min' => 'Jumlah RAB tidak boleh kurang dari 0.',
+            'rab.*.keterangan.string' => 'Keterangan RAB harus berupa teks.',
+            'rab.*.keterangan.max' => 'Keterangan RAB maksimal 500 karakter.',
+        ];
+    }
+
+    /**
      * Selesaikan nama anggota (teks bebas dari form) menjadi user terdaftar.
      * Nama yang tidak cocok dengan akun dosen tetap dicatat (user_id null)
      * dan hanya tersimpan di kolom JSON `anggota` proposal.
@@ -508,7 +549,7 @@ class ProposalController extends Controller
                 'rab.*.nama_komponen' => ['nullable', 'string', 'max:255', Rule::in($komponenRab)],
                 'rab.*.jumlah' => 'nullable|numeric|min:0',
                 'rab.*.keterangan' => 'nullable|string|max:500',
-            ]);
+            ], $this->pesanValidasiPengajuan());
         } else {
             $request->validate([
                 'judul' => 'required|string|max:255',
@@ -521,7 +562,7 @@ class ProposalController extends Controller
                 'rab.*.nama_komponen' => ['required', 'string', 'max:255', Rule::in($komponenRab)],
                 'rab.*.jumlah' => 'required|numeric|min:0',
                 'rab.*.keterangan' => 'nullable|string|max:500',
-            ]);
+            ], $this->pesanValidasiPengajuan());
         }
 
         $skema = $request->filled('skema_id') ? Skema::find($request->skema_id) : null;
@@ -677,7 +718,7 @@ class ProposalController extends Controller
             'rab.*.nama_komponen' => ['nullable', 'string', 'max:255', Rule::in(Setting::daftarKomponenRab())],
             'rab.*.jumlah' => 'nullable|numeric|min:0',
             'rab.*.keterangan' => 'nullable|string|max:500',
-        ]);
+        ], $this->pesanValidasiPengajuan());
 
         $skema = $request->filled('skema_id') ? Skema::find($request->skema_id) : $proposal->skema;
 

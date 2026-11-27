@@ -67,38 +67,72 @@
                     </div>
                 @endif
 
-                <form action="{{ route('proposal.assignReviewer', $p->id) }}" method="POST">
+                <form action="{{ route('proposal.assignReviewer', $p->id) }}" method="POST" class="plotting-assign-form">
                     @csrf
                     <div class="row g-2">
                         <div class="col-md-6 col-lg-3">
                             <label class="form-label small">Reviewer 1</label>
-                            {{-- old() didahulukan agar isian tidak hilang bila penugasan
-                                 ditolak server (mis. reviewer 1 = reviewer 2); fallback
-                                 ke reviewer yang sudah ditugaskan. --}}
-                            @php $oldR1 = old('reviewer_1', $p->reviewers->get(0)?->id); @endphp
-                            <select name="reviewer_1" class="form-select form-select-sm @error('reviewer_1') is-invalid @enderror" required>
-                                <option value="">— Pilih reviewer —</option>
-                                @foreach (($kandidat[$p->id] ?? collect()) as $k)
-                                    <option value="{{ $k['user']->id }}" {{ (string) $oldR1 === (string) $k['user']->id ? 'selected' : '' }}>
-                                        {{ $k['user']->name }}@if ($k['skor'] > 0) — Skor {{ $k['skor'] }} ({{ implode(', ', $k['alasan']) }})@endif
-                                    </option>
-                                @endforeach
-                            </select>
+                            {{-- Dropdown Bootstrap (bukan <select> native): opsi adalah
+                                 elemen DOM biasa sehingga klik mouse pada opsi selalu
+                                 bekerja — popup <select> native tidak bisa dipilih
+                                 lewat klik di lingkungan uji (klik opsi gagal, hanya
+                                 keyboard/type-ahead yang jalan), sementara tidak ada
+                                 overlay atau JS di halaman ini yang menghalangi
+                                 <select> tersebut. Nilai yang dikirim tetap ID
+                                 reviewer lewat input hidden bernama sama, jadi
+                                 validasi server tidak berubah. old() didahulukan agar
+                                 isian tidak hilang bila penugasan ditolak server
+                                 (mis. reviewer 1 = reviewer 2); fallback ke reviewer
+                                 yang sudah ditugaskan. --}}
+                            @php
+                                $oldR1 = old('reviewer_1', $p->reviewers->get(0)?->id);
+                                $labelR1 = '— Pilih reviewer —';
+                                foreach (($kandidat[$p->id] ?? collect()) as $k) {
+                                    if ((string) $oldR1 === (string) $k['user']->id) {
+                                        $labelR1 = $k['user']->name . ($k['skor'] > 0 ? ' — Skor ' . $k['skor'] . ' (' . implode(', ', $k['alasan']) . ')' : '');
+                                    }
+                                }
+                            @endphp
+                            <div class="dropdown plotting-reviewer-dropdown">
+                                <input type="hidden" name="reviewer_1" value="{{ $oldR1 }}">
+                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle w-100 d-flex align-items-center justify-content-between gap-2 @error('reviewer_1') border-danger @enderror" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="plotting-reviewer-label text-truncate" style="min-width: 0;">{{ $labelR1 }}</span>
+                                </button>
+                                <ul class="dropdown-menu w-100" style="max-height: 320px; overflow-y: auto;">
+                                    <li><button type="button" class="dropdown-item plotting-reviewer-item {{ empty($oldR1) ? 'active' : '' }}" data-value="">— Pilih reviewer —</button></li>
+                                    @foreach (($kandidat[$p->id] ?? collect()) as $k)
+                                        <li><button type="button" class="dropdown-item plotting-reviewer-item {{ (string) $oldR1 === (string) $k['user']->id ? 'active' : '' }}" data-value="{{ $k['user']->id }}">{{ $k['user']->name }}@if ($k['skor'] > 0) — Skor {{ $k['skor'] }} ({{ implode(', ', $k['alasan']) }})@endif</button></li>
+                                    @endforeach
+                                </ul>
+                            </div>
                             @error('reviewer_1')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-md-6 col-lg-3">
                             <label class="form-label small">Reviewer 2</label>
-                            @php $oldR2 = old('reviewer_2', $p->reviewers->get(1)?->id); @endphp
-                            <select name="reviewer_2" class="form-select form-select-sm @error('reviewer_2') is-invalid @enderror" required>
-                                <option value="">— Pilih reviewer —</option>
-                                @foreach (($kandidat[$p->id] ?? collect()) as $k)
-                                    <option value="{{ $k['user']->id }}" {{ (string) $oldR2 === (string) $k['user']->id ? 'selected' : '' }}>
-                                        {{ $k['user']->name }}@if ($k['skor'] > 0) — Skor {{ $k['skor'] }} ({{ implode(', ', $k['alasan']) }})@endif
-                                    </option>
-                                @endforeach
-                            </select>
+                            {{-- Dropdown Bootstrap, alasan sama seperti Reviewer 1. --}}
+                            @php
+                                $oldR2 = old('reviewer_2', $p->reviewers->get(1)?->id);
+                                $labelR2 = '— Pilih reviewer —';
+                                foreach (($kandidat[$p->id] ?? collect()) as $k) {
+                                    if ((string) $oldR2 === (string) $k['user']->id) {
+                                        $labelR2 = $k['user']->name . ($k['skor'] > 0 ? ' — Skor ' . $k['skor'] . ' (' . implode(', ', $k['alasan']) . ')' : '');
+                                    }
+                                }
+                            @endphp
+                            <div class="dropdown plotting-reviewer-dropdown">
+                                <input type="hidden" name="reviewer_2" value="{{ $oldR2 }}">
+                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle w-100 d-flex align-items-center justify-content-between gap-2 @error('reviewer_2') border-danger @enderror" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="plotting-reviewer-label text-truncate" style="min-width: 0;">{{ $labelR2 }}</span>
+                                </button>
+                                <ul class="dropdown-menu w-100" style="max-height: 320px; overflow-y: auto;">
+                                    <li><button type="button" class="dropdown-item plotting-reviewer-item {{ empty($oldR2) ? 'active' : '' }}" data-value="">— Pilih reviewer —</button></li>
+                                    @foreach (($kandidat[$p->id] ?? collect()) as $k)
+                                        <li><button type="button" class="dropdown-item plotting-reviewer-item {{ (string) $oldR2 === (string) $k['user']->id ? 'active' : '' }}" data-value="{{ $k['user']->id }}">{{ $k['user']->name }}@if ($k['skor'] > 0) — Skor {{ $k['skor'] }} ({{ implode(', ', $k['alasan']) }})@endif</button></li>
+                                    @endforeach
+                                </ul>
+                            </div>
                             @error('reviewer_2')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -131,4 +165,61 @@
     @endforelse
 
 </div>
+
+<style>
+/* Opsi reviewer yang panjang (nama + skor + alasan) boleh melipat di
+   dalam menu dropdown supaya tidak meluber melewati kartu. */
+.plotting-reviewer-dropdown .dropdown-item {
+    white-space: normal;
+}
+</style>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    // Pilihan reviewer di plotting: klik opsi dropdown mengisi input
+    // hidden + label tombol (delegasi: satu handler untuk semua kartu
+    // proposal di halaman ini).
+    document.addEventListener('click', function (e) {
+        var item = e.target.closest('.plotting-reviewer-item');
+        if (!item) return;
+        var wrap = item.closest('.plotting-reviewer-dropdown');
+        if (!wrap) return;
+        var input = wrap.querySelector('input[type="hidden"]');
+        var label = wrap.querySelector('.plotting-reviewer-label');
+        var btn = wrap.querySelector('[data-bs-toggle="dropdown"]');
+        input.value = item.getAttribute('data-value') || '';
+        label.textContent = item.textContent.trim();
+        wrap.querySelectorAll('.plotting-reviewer-item').forEach(function (el) {
+            el.classList.toggle('active', el === item);
+        });
+        if (btn) btn.classList.remove('border-danger');
+    });
+
+    // Pengganti atribut required pada <select> yang dihapus: cegah
+    // submit bila salah satu reviewer belum dipilih. Validasi server
+    // (required|exists:users,id di assignReviewer) tetap menjadi
+    // penahan terakhir.
+    document.querySelectorAll('form.plotting-assign-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            var missing = false;
+            form.querySelectorAll('.plotting-reviewer-dropdown').forEach(function (wrap) {
+                var input = wrap.querySelector('input[type="hidden"]');
+                var btn = wrap.querySelector('[data-bs-toggle="dropdown"]');
+                if (!input.value) {
+                    missing = true;
+                    if (btn) btn.classList.add('border-danger');
+                }
+            });
+            if (missing) {
+                e.preventDefault();
+                if (window.ehibahToast) {
+                    window.ehibahToast('Pilih Reviewer 1 dan Reviewer 2 terlebih dahulu.', 'warning');
+                }
+            }
+        });
+    });
+})();
+</script>
+@endpush

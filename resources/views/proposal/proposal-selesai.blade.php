@@ -98,21 +98,18 @@
         padding: 6px 8px;
         cursor: pointer;
         width: 100%;
-        min-width: 0;
+        min-width: 170px;
     }
 
-    /* L1: tabel muat dalam area konten — layout tetap (fixed) dengan
-       lebar kolom yang sudah didefinisikan di <th>. Kolom Hasil Review
-       dilebarkan (15% -> 22%) supaya tombol "Preview Rev …" tidak
-       terpotong di tepi kanan; di layar sempit tombol boleh melipat
-       dua baris — aturan layout memaksa nowrap untuk semua .btn di
-       tabel, sehingga tombol yang lebih lebar dari kolomnya terpotong. */
+    /* TABEL (revisi uji ke-3): TANPA table-layout: fixed — kolom
+       menyesuaikan isi (lebar minimum di <th>), bukan dipatok persen.
+       Lebar konten efektif ~930px (viewport 1341 - sidebar 220 -
+       padding konten & .main-card). Dropdown "Status Pendanaan"
+       diberi lebar minimum 170px supaya "Disetujui" tampil utuh,
+       bukan hanya "Di"; kolom Skor min. 100px supaya "453.00" tidak
+       terpecah ("45 3.0 0"); tombol Hasil Review boleh melipat. */
     .table-responsive .table {
-        table-layout: fixed;
         width: 100%;
-    }
-    .table-responsive .table td {
-        overflow-wrap: break-word;
     }
     #mainContent .table .btn-pdf {
         white-space: normal;
@@ -176,12 +173,12 @@
             <table class="table align-middle">
                 <thead>
                     <tr>
-                        <th width="5%">No</th>
-                        <th class="text-start" width="28%">Judul Proposal & Pengusul</th>
-                        <th class="text-start" width="19%">Reviewer</th>
-                        <th width="10%">Skor Akhir</th>
-                        <th width="16%">Status Pendanaan</th>
-                        <th width="22%">Hasil Review</th>
+                        <th style="width: 36px;">No</th>
+                        <th class="text-start" style="min-width: 220px;">Judul Proposal & Pengusul</th>
+                        <th class="text-start" style="min-width: 130px;">Reviewer</th>
+                        <th style="min-width: 100px;">Skor Akhir</th>
+                        <th style="min-width: 176px;">Status Pendanaan</th>
+                        <th style="min-width: 150px;">Hasil Review</th>
                     </tr>
                 </thead>
                 <tbody>

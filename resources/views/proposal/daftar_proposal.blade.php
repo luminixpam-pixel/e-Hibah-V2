@@ -34,20 +34,17 @@
         box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     }
 
-    /* L1: tabel muat dalam area konten — layout tetap (fixed) dengan
-       lebar kolom eksplisit; judul melipat rapi, tombol aksi melipat
-       ke baris berikut bila sempit, bukan terpotong. Kolom Aksi 21%
-       (~214px di 1341px) menampung 4 tombol ikon 38px + gap per baris,
-       jadi 6 tombol terburuk (Detail, Download, Preview, Edit, Kirim,
-       Hapus) tersusun rapi 4+2; kolom Status 16% + badge px-2 cukup
-       untuk "SEDANG DIREVIEW" tanpa meluber. */
+    /* TABEL (revisi uji ke-3): TANPA table-layout: fixed — kolom
+       menyesuaikan isi (lebar minimum di <th>), bukan dipatok persen
+       dari tabel yang ternyata lebih sempit dari perkiraan. Lebar
+       konten efektif ~990px (viewport 1341 - sidebar 220 - padding).
+       Kolom Aksi min. 124px menampung 3 tombol ikon 32px + gap per
+       baris, jadi 6 tombol terburuk (Detail, Download, Preview,
+       Edit, Kirim, Hapus) tersusun maks. 2 baris (3+3); kolom Status
+       min. 170px cukup untuk badge "SEDANG DIREVIEW" satu baris
+       tanpa meluber ke kolom Aksi. */
     .table-responsive table {
-        table-layout: fixed;
         width: 100%;
-    }
-    .table-responsive table th:nth-child(2),
-    .table-responsive table td:nth-child(2) {
-        overflow-wrap: break-word;
     }
     .table-responsive table .d-flex.gap-2 {
         flex-wrap: wrap;
@@ -114,12 +111,12 @@ document.getElementById('table-search').addEventListener('keyup', function() {
         <table class="table table-bordered table-hover align-middle bg-white mb-0">
             <thead class="table-light text-center">
                 <tr>
-                    <th width="4%">No</th>
-                    <th width="12%">No. Pengajuan</th>
+                    <th style="width: 36px;">No</th>
+                    <th style="min-width: 120px;">No. Pengajuan</th>
                     <th>Judul Proposal</th>
-                    <th width="11%">Pengusul</th>
-                    <th width="16%">Status Alur</th>
-                    <th width="21%">Aksi</th>
+                    <th style="min-width: 110px;">Pengusul</th>
+                    <th style="min-width: 170px;">Status Alur</th>
+                    <th style="min-width: 124px;">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -161,12 +158,12 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                         </td>
 
                       <td class="text-center">
-                            <div class="d-flex gap-2 justify-content-center">
+                            <div class="d-flex gap-1 justify-content-center">
                                 {{-- Detail Modal Trigger - Soft Green --}}
                                 <button type="button" class="btn btn-md border-0 shadow-sm d-flex align-items-center justify-content-center"
                                         data-bs-toggle="modal" data-bs-target="#tinjauModal{{ $proposal->id }}"
                                         title="Lihat Detail"
-                                        style="background-color: #e8f5e9; color: #2e7d32; width: 38px; height: 38px; border-radius: 10px;">
+                                        style="background-color: #e8f5e9; color: #2e7d32; width: 32px; height: 32px; border-radius: 10px;">
                                     <i class="bi bi-eye-fill fs-5"></i>
                                 </button>
 
@@ -175,7 +172,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                     <a href="{{ route('proposal.download', $proposal->id) }}"
                                     class="btn btn-md border-0 shadow-sm d-flex align-items-center justify-content-center"
                                     title="Download"
-                                    style="background-color: #e3f2fd; color: #1565c0; width: 38px; height: 38px; border-radius: 10px;">
+                                    style="background-color: #e3f2fd; color: #1565c0; width: 32px; height: 32px; border-radius: 10px;">
                                         <i class="bi bi-cloud-arrow-down-fill fs-5"></i>
                                     </a>
 
@@ -183,7 +180,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                     <button type="button"
                                     class="btn btn-md border-0 shadow-sm d-flex align-items-center justify-content-center"
                                     title="Preview"
-                                    style="background-color: #e3f2fd; color: #1565c0; width: 38px; height: 38px; border-radius: 10px;"
+                                    style="background-color: #e3f2fd; color: #1565c0; width: 32px; height: 32px; border-radius: 10px;"
                                     data-preview-url="{{ route('proposal.preview', $proposal->id) }}" data-previewable="{{ in_array(strtolower(pathinfo($proposal->file_path ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}"
                                     data-preview-title="{{ $proposal->judul }}"
                                     data-download-url="{{ route('proposal.download', $proposal->id) }}">
@@ -203,7 +200,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                         <a href="{{ route('proposal.edit', $proposal->id) }}"
                                         class="btn btn-md border-0 shadow-sm d-flex align-items-center justify-content-center"
                                         title="Edit Proposal"
-                                        style="background-color: #fff9c4; color: #fbc02d; width: 38px; height: 38px; border-radius: 10px;">
+                                        style="background-color: #fff9c4; color: #fbc02d; width: 32px; height: 32px; border-radius: 10px;">
                                             <i class="bi bi-pencil-square fs-5"></i>
                                         </a>
                                     @else
@@ -211,7 +208,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                         <button type="button"
                                                 onclick="ehibahAlert('Terkunci', 'Anda tidak dapat mengedit proposal pada status ini atau masa hibah telah berakhir.')"
                                                 class="btn btn-md border-0 shadow-sm d-flex align-items-center justify-content-center"
-                                                style="background-color: #f5f5f5; color: #bdbdbd; width: 38px; height: 38px; border-radius: 10px;">
+                                                style="background-color: #f5f5f5; color: #bdbdbd; width: 32px; height: 32px; border-radius: 10px;">
                                             <i class="bi bi-pencil-square fs-5"></i>
                                         </button>
                                     @endif
@@ -230,7 +227,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                             @csrf
                                             <button type="submit" class="btn btn-md border-0 shadow-sm d-flex align-items-center justify-content-center"
                                                     title="Kirim Pengajuan"
-                                                    style="background-color: #e8f5e9; color: #2e7d32; width: 38px; height: 38px; border-radius: 10px;">
+                                                    style="background-color: #e8f5e9; color: #2e7d32; width: 32px; height: 32px; border-radius: 10px;">
                                                 <i class="bi bi-send-fill fs-5"></i>
                                             </button>
                                         </form>
@@ -246,7 +243,7 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                             @method('DELETE')
                                             <button type="submit" class="btn border-0 shadow-sm d-flex align-items-center justify-content-center"
                                                     title="Hapus"
-                                                    style="background-color: #ffebee; color: #c62828; width: 38px; height: 38px; border-radius: 10px;">
+                                                    style="background-color: #ffebee; color: #c62828; width: 32px; height: 32px; border-radius: 10px;">
                                                 <i class="bi bi-trash3-fill fs-5"></i>
                                             </button>
                                         </form>

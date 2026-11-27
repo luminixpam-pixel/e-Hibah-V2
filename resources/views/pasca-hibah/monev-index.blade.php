@@ -73,14 +73,13 @@
         transform: translateY(-2px);
     }
 
-    /* L1: layout tetap (fixed) dengan lebar kolom yang sudah
-       didefinisikan di <th> agar tabel muat dalam area konten. */
+    /* TABEL (revisi uji ke-3): TANPA table-layout: fixed — kolom
+       menyesuaikan isi (lebar minimum di <th>). Pola yang sama
+       dengan logbook/luaran: kolom Aksi 8% terlalu sempit untuk
+       tombol "Lihat" sehingga meluber; tombol juga tidak lagi
+       dipaksa nowrap. */
     .table-responsive .table {
-        table-layout: fixed;
         width: 100%;
-    }
-    .btn-lihat {
-        white-space: nowrap;
     }
 </style>
 
@@ -117,12 +116,12 @@
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th width="5%" style="border-top-left-radius: 15px;">No</th>
-                        <th class="text-start" width="30%">Judul Proposal &amp; Pengusul</th>
-                        <th class="text-start" width="35%">Uraian Temuan</th>
-                        <th width="12%">Status Temuan</th>
-                        <th width="10%">Diperbarui</th>
-                        <th width="8%" style="border-top-right-radius: 15px;">Aksi</th>
+                        <th style="width: 36px; border-top-left-radius: 15px;">No</th>
+                        <th class="text-start" style="min-width: 220px;">Judul Proposal &amp; Pengusul</th>
+                        <th class="text-start" style="min-width: 200px;">Uraian Temuan</th>
+                        <th style="min-width: 100px;">Status Temuan</th>
+                        <th style="min-width: 96px;">Diperbarui</th>
+                        <th style="min-width: 110px; border-top-right-radius: 15px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>

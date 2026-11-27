@@ -24,15 +24,14 @@
         padding: 6px 12px;
         border-radius: 8px;
         font-size: 13px;
-        white-space: nowrap;
     }
-    /* L1: thead boleh melipat dan kolom Aksi tidak dipatok 220px —
-       sebelumnya keduanya memaksa tabel lebih lebar dari konten. */
+    /* TABEL (revisi uji ke-3): TANPA table-layout: fixed — kolom
+       menyesuaikan isi (lebar minimum di <th>). Lebar konten
+       efektif ~990px (viewport 1341 - sidebar 220 - padding). */
     .col-aksi {
-        width: 150px;
+        min-width: 150px;
     }
     .table-responsive .table {
-        table-layout: fixed;
         width: 100%;
     }
 </style>
@@ -56,13 +55,13 @@
         <table class="table table-striped table-hover align-middle shadow-sm">
             <thead>
                 <tr>
-                    <th width="4%">No</th>
-                    <th width="15%">Nama</th>
-                    <th width="19%">Email</th>
-                    <th width="11%">NIDN / NIP</th>
-                    <th width="13%">Fakultas</th>
-                    <th width="13%">Program Studi</th>
-                    <th width="8%">Role</th>
+                    <th style="width: 36px;">No</th>
+                    <th style="min-width: 130px;">Nama</th>
+                    <th style="min-width: 160px;">Email</th>
+                    <th style="min-width: 100px;">NIDN / NIP</th>
+                    <th style="min-width: 110px;">Fakultas</th>
+                    <th style="min-width: 120px;">Program Studi</th>
+                    <th style="min-width: 80px;">Role</th>
                     <th class="col-aksi">Aksi</th>
                 </tr>
             </thead>

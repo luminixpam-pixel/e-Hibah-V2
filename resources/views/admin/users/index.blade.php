@@ -9,22 +9,15 @@
 
 @section('content')
 <style>
-    /* L1: layout tetap (fixed) + lebar kolom eksplisit agar kolom Role
-       dan tombol Edit tidak terpotong di tepi kanan. */
+    /* TABEL (revisi uji ke-3): TANPA table-layout: fixed — kolom
+       menyesuaikan isi (lebar minimum di <th>). Aturan global yang
+       dulu memaksa nowrap untuk semua .badge di tabel sudah dihapus
+       dari layout, jadi badge role panjang ("Verifikator
+       Administrasi") boleh melipat antar kata dan tidak lagi
+       mendesak kolom Aksi keluar layar; email panjang tetap
+       dipecah lewat .text-break di selnya. */
     .table-responsive .table {
-        table-layout: fixed;
         width: 100%;
-    }
-    .table-responsive .table td {
-        overflow-wrap: break-word;
-        min-width: 0;
-    }
-    /* Badge role boleh melipat dua baris — aturan layout memaksa nowrap
-       untuk semua .badge di tabel, sehingga "Verifikator Administrasi"
-       mendesak kolom Edit keluar layar. */
-    #mainContent .table .role-badge {
-        white-space: normal;
-        line-height: 1.35;
     }
 </style>
 
@@ -61,12 +54,12 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
-                            <th width="5%">#</th>
-                            <th width="20%">Nama</th>
-                            <th width="15%">Username</th>
-                            <th width="28%">Email</th>
-                            <th width="18%">Role</th>
-                            <th width="14%">Aksi</th>
+                            <th style="width: 36px;">#</th>
+                            <th style="min-width: 140px;">Nama</th>
+                            <th style="min-width: 110px;">Username</th>
+                            <th style="min-width: 170px;">Email</th>
+                            <th style="min-width: 150px;">Role</th>
+                            <th style="min-width: 90px;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -76,7 +69,7 @@
                                 <td><strong>{{ $u->name }}</strong></td>
                                 <td>{{ $u->username }}</td>
                                 <td class="text-break">{{ $u->email }}</td>
-                                <td><span class="badge bg-primary role-badge">{{ $u->role_label ?? ucfirst($u->role) }}</span></td>
+                                <td><span class="badge bg-primary">{{ $u->role_label ?? ucfirst($u->role) }}</span></td>
                                 <td>
                                     <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editUserModal-{{ $u->id }}">Edit</button>
                                 </td>

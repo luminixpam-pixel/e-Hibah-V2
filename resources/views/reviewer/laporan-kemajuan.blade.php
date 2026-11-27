@@ -38,11 +38,27 @@
         text-align: center;
     }
 
-    /* L1: layout tetap (fixed) dengan lebar kolom yang sudah
-       didefinisikan di <th> agar tabel muat dalam area konten. */
+    /* TABEL (revisi uji ke-3): TANPA table-layout: fixed — kolom
+       menyesuaikan isi (lebar minimum di <th>). Lebar konten
+       efektif ~930px (viewport 1341 - sidebar 220 - padding
+       konten & .main-card). Tombol UNDUH & PREVIEW di kolom Berkas
+       ditumpuk vertikal memenuhi lebar kolom supaya tidak meluber
+       menumpuk tombol Aksi di sebelahnya. */
     .table-responsive .table {
-        table-layout: fixed;
         width: 100%;
+    }
+    .table td .berkas-laporan {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        align-items: stretch;
+    }
+    .table td .berkas-laporan .btn-laporan {
+        width: 100%;
+        justify-content: center;
+        white-space: normal;
+        text-align: center;
+        line-height: 1.35;
     }
 
     .table tbody td {
@@ -57,7 +73,7 @@
         font-weight: 700;
         font-size: 11px;
         border-radius: 8px;
-        padding: 8px 15px;
+        padding: 8px 10px;
         display: inline-flex;
         align-items: center;
         gap: 8px;
@@ -229,11 +245,11 @@
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th width="5%" style="border-top-left-radius: 15px;">No</th>
-                        <th class="text-start" width="30%">Judul & Pengusul</th>
-                        <th width="15%">Reviewer</th>
-                        <th width="20%">Berkas Laporan</th>
-                        <th width="15%" style="border-top-right-radius: 15px;">Aksi</th>
+                        <th style="width: 36px; border-top-left-radius: 15px;">No</th>
+                        <th class="text-start" style="min-width: 230px;">Judul & Pengusul</th>
+                        <th style="min-width: 120px;">Reviewer</th>
+                        <th style="min-width: 190px;">Berkas Laporan</th>
+                        <th style="min-width: 120px; border-top-right-radius: 15px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -251,14 +267,16 @@
                             </td>
                             <td class="text-center">
                                 @if($proposal->file_laporan)
-                                    <a href="{{ route('laporan.kemajuan.download', $proposal->id) }}" class="btn-laporan shadow-sm">
-                                        <i class="bi bi-file-earmark-check-fill fs-6"></i>
-                                        <span>UNDUH LAPORAN</span>
-                                    </a>
-                                    <button type="button" class="btn-laporan shadow-sm" data-preview-url="{{ route('laporan.kemajuan.preview', $proposal->id) }}" data-previewable="{{ in_array(strtolower(pathinfo($proposal->file_laporan ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}" data-preview-title="Laporan Kemajuan - {{ $proposal->judul }}" data-download-url="{{ route('laporan.kemajuan.download', $proposal->id) }}">
-                                        <i class="bi bi-eye fs-6"></i>
-                                        <span>PREVIEW LAPORAN</span>
-                                    </button>
+                                    <div class="berkas-laporan">
+                                        <a href="{{ route('laporan.kemajuan.download', $proposal->id) }}" class="btn-laporan shadow-sm">
+                                            <i class="bi bi-file-earmark-check-fill fs-6"></i>
+                                            <span>UNDUH LAPORAN</span>
+                                        </a>
+                                        <button type="button" class="btn-laporan shadow-sm" data-preview-url="{{ route('laporan.kemajuan.preview', $proposal->id) }}" data-previewable="{{ in_array(strtolower(pathinfo($proposal->file_laporan ?? '', PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? '1' : '0' }}" data-preview-title="Laporan Kemajuan - {{ $proposal->judul }}" data-download-url="{{ route('laporan.kemajuan.download', $proposal->id) }}">
+                                            <i class="bi bi-eye fs-6"></i>
+                                            <span>PREVIEW LAPORAN</span>
+                                        </button>
+                                    </div>
                                     <div class="mt-1 text-muted" style="font-size: 10px;">
                                         Diperbarui: {{ \Carbon\Carbon::parse($proposal->updated_at)->format('d/m/Y') }}
                                     </div>

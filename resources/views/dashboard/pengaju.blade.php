@@ -25,7 +25,7 @@
     {{-- STATISTIK --}}
     <div class="row g-4 mb-4">
 
-        <div class="col-md-6 col-lg-3">
+        <div class="col-md-3">
             <div class="pengaju-stat-card stat-proposal">
                 <div class="stat-icon">
                     <i class="bi bi-file-earmark-text"></i>
@@ -38,7 +38,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-3">
+        <div class="col-md-3">
             <div class="pengaju-stat-card stat-draft">
                 <div class="stat-icon">
                     <i class="bi bi-pencil-square"></i>
@@ -51,7 +51,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-3">
+        <div class="col-md-3">
             <div class="pengaju-stat-card stat-sent">
                 <div class="stat-icon">
                     <i class="bi bi-send"></i>
@@ -64,7 +64,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-3">
+        <div class="col-md-3">
             <div class="pengaju-stat-card stat-result">
                 <div class="stat-icon">
                     <i class="bi bi-check-circle"></i>
@@ -545,6 +545,40 @@
     box-shadow: 0 4px 18px rgba(36, 107, 75, .04);
     transition: .25s ease;
     height: 100%;
+}
+
+/* Kartu statistik kompak di bawah 1200px: kolom grid kini 4 sebaris
+   mulai md (768px), jadi pada lebar efektif ~768-1070px (jendela
+   1341px dengan zoom/skala tampilan) kartu horizontal hanya menyisakan
+   ~45px untuk teks dan label melipat 2-3 baris. Di bawah 1200px kartu
+   disusun vertikal (ikon di atas, label di bawah selebar kartu) supaya
+   label tetap satu baris; min-height label 2 baris menjaga angka
+   sejajar antar kartu bila satu label masih melipat. Selektor memakai
+   #mainContent agar mengalahkan aturan padding/ikon/gap di
+   layouts/app.blade.php. */
+@media (max-width: 1199px) {
+
+    #mainContent .pengaju-stat-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 16px;
+    }
+
+    #mainContent .pengaju-stat-card .stat-icon {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        font-size: 18px;
+    }
+
+    #mainContent .pengaju-stat-card > div:last-child {
+        width: 100%;
+    }
+
+    #mainContent .pengaju-stat-card .stat-label {
+        min-height: 2.7em;
+    }
 }
 
 .pengaju-stat-card:hover {

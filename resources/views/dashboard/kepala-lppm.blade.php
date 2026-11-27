@@ -803,14 +803,36 @@
 /* Responsive */
 
 /* L6: 4 kartu tetap sebaris di bawah 1200px — sebelumnya langsung
-   jadi 2 kolom (2x2). Baru jadi 2 kolom di bawah 992px. */
+   jadi 2 kolom (2x2). Uji web ke-3 tetap melihat 2x2 karena lebar
+   efektif halaman lebih sempit dari jendela 1341px (zoom/skala
+   tampilan): 4 kolom dipertahankan sampai 767px, baru 2 kolom di
+   bawah itu. Di bawah 1200px kartu memakai susunan kompak (ikon di
+   atas, label di bawah selebar kartu) supaya label tetap satu baris;
+   min-height label 2 baris menjaga angka sejajar antar kartu bila
+   satu label masih melipat. */
 @media (max-width: 1200px) {
     .klppm-quick-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
-@media (max-width: 991px) {
+@media (max-width: 1199px) {
+    .klppm-stat-card {
+        padding: 16px;
+    }
+
+    .klppm-stat-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .klppm-stat-label {
+        min-height: 2.7em;
+    }
+}
+
+@media (max-width: 767px) {
     .klppm-stats {
         grid-template-columns: repeat(2, 1fr);
     }

@@ -39,22 +39,12 @@
         font-size: 11px;
     }
 
-    /* L1: layout tetap (fixed) dengan lebar kolom yang sudah
-       didefinisikan di <th> agar tabel muat dalam area konten.
-       Kolom Aksi dilebarkan (20% -> 22%) dan tombol "Lihat …" boleh
-       melipat dua baris di layar sempit — aturan layout memaksa nowrap
-       untuk semua .btn di tabel, sehingga tombol yang lebih lebar dari
-       kolomnya terpotong di tepi kanan. */
+    /* TABEL (revisi uji ke-3): TANPA table-layout: fixed — kolom
+       menyesuaikan isi (lebar minimum di <th>). Lebar konten
+       efektif ~930px (viewport 1341 - sidebar 220 - padding
+       konten & .main-card). */
     .table-responsive .table {
-        table-layout: fixed;
         width: 100%;
-    }
-    .table-responsive .table td {
-        overflow-wrap: break-word;
-    }
-    #mainContent .table .btn-lihat {
-        white-space: normal;
-        line-height: 1.35;
     }
 </style>
 
@@ -90,11 +80,11 @@
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th width="5%" style="border-top-left-radius: 15px;">No</th>
-                        <th class="text-start" width="43%">Judul & Pengusul</th>
-                        <th width="15%">No. Pengajuan</th>
-                        <th width="15%">Jumlah Luaran</th>
-                        <th width="22%" style="border-top-right-radius: 15px;">Aksi</th>
+                        <th style="width: 36px; border-top-left-radius: 15px;">No</th>
+                        <th class="text-start" style="min-width: 240px;">Judul & Pengusul</th>
+                        <th style="min-width: 120px;">No. Pengajuan</th>
+                        <th style="min-width: 110px;">Jumlah Luaran</th>
+                        <th style="min-width: 140px; border-top-right-radius: 15px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -116,7 +106,7 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                <a href="{{ route('luaran.show', $proposal) }}" class="btn btn-sm btn-success fw-bold px-3 btn-lihat" style="border-radius: 8px;">
+                                <a href="{{ route('luaran.show', $proposal) }}" class="btn btn-sm btn-success fw-bold px-3" style="border-radius: 8px;">
                                     <i class="bi bi-award me-1"></i> Lihat Luaran
                                 </a>
                             </td>

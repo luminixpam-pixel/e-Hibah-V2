@@ -18,7 +18,6 @@
         padding: 6px 10px;
         border-radius: 6px;
         font-size: 13px;
-        white-space: nowrap;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -26,15 +25,12 @@
         width: 100%;
     }
 
-    /* L1: layout tetap (fixed) + lebar kolom eksplisit agar tombol
-       Download/Preview tidak terpotong di tepi kanan; kedua tombol
-       ditumpuk vertikal memenuhi lebar kolom Aksi. */
+    /* TABEL (revisi uji ke-3): TANPA table-layout: fixed — kolom
+       menyesuaikan isi (lebar minimum di <th>). Lebar konten
+       efektif ~990px (viewport 1341 - sidebar 220 - padding).
+       Kedua tombol Aksi ditumpuk vertikal memenuhi lebar kolom. */
     .table-responsive .table {
-        table-layout: fixed;
         width: 100%;
-    }
-    .table-responsive .table td {
-        overflow-wrap: break-word;
     }
     .aksi-disetujui {
         display: flex;
@@ -133,13 +129,14 @@
         <table class="table table-striped table-hover align-middle shadow-sm">
             <thead>
                 <tr>
-                    <th width="4%">No</th>
-                    <th width="11%">Tanggal</th>
-                    <th width="13%">Pengusul</th>
-                    <th width="26%">Judul Proposal</th>
-                    <th width="15%">Reviewer</th>
-                    <th width="9%">Status</th>
-                    <th width="22%">Aksi</th>
+                    <th style="width: 36px;">No</th>
+                    <th style="min-width: 118px;">No. Pengajuan</th>
+                    <th style="min-width: 96px;">Tanggal</th>
+                    <th style="min-width: 110px;">Pengusul</th>
+                    <th>Judul Proposal</th>
+                    <th style="min-width: 120px;">Reviewer</th>
+                    <th style="min-width: 96px;">Status</th>
+                    <th style="min-width: 128px;">Aksi</th>
                 </tr>
             </thead>
 
@@ -171,6 +168,11 @@
 
                     <tr>
                         <td>{{ $index + 1 }}</td>
+
+                        {{-- No. Pengajuan (ditambahkan revisi uji ke-3:
+                             sebelumnya kolom ini tidak ada sehingga nomor
+                             seperti EH-2026-0001 tidak terlihat di sini). --}}
+                        <td class="text-center"><span class="fw-semibold">{{ $proposal->no_pengajuan ?? '—' }}</span></td>
 
                         {{-- Tanggal --}}
                         <td>{{ $tanggal }}</td>
@@ -213,7 +215,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-3">
+                        <td colspan="8" class="text-center text-muted py-3">
                             Belum ada proposal yang disetujui.
                         </td>
                     </tr>

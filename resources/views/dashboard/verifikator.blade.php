@@ -533,6 +533,15 @@
     gap: 9px;
     white-space: nowrap;
     transition: .2s;
+    /* Defensif (bug tautan dashboard tidak merespons klik): tegaskan
+       tautan ini dapat diklik dan berada di atas elemen sebaris di
+       dalam panel. Ini TIDAK bisa mengalahkan overlay global
+       #notifPopup di layout (z-index 4000, menutupi seluruh viewport
+       saat popup notifikasi terbuka) — perbaikan overlay itu harus
+       dilakukan di layouts/app.blade.php, lihat laporan. */
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
 }
 
 .verif-action-btn:hover {

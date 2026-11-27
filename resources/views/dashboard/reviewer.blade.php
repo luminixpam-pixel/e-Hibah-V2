@@ -30,7 +30,7 @@
                     <i class="bi bi-clipboard-check"></i>
                 </div>
                 <div>
-                    <p class="stat-label">Total Tugas Review</p>
+                    <p class="stat-label">Total Tugas</p>
                     <h2>{{ $totalTugas ?? 0 }}</h2>
                     <span class="stat-caption">Proposal ditugaskan</span>
                 </div>
@@ -43,7 +43,7 @@
                     <i class="bi bi-hourglass-split"></i>
                 </div>
                 <div>
-                    <p class="stat-label">Menunggu Dinilai</p>
+                    <p class="stat-label">Menunggu</p>
                     <h2>{{ $menunggu ?? 0 }}</h2>
                     <span class="stat-caption">Review belum diselesaikan</span>
                 </div>
@@ -56,7 +56,7 @@
                     <i class="bi bi-check-circle"></i>
                 </div>
                 <div>
-                    <p class="stat-label">Selesai Dinilai</p>
+                    <p class="stat-label">Selesai</p>
                     <h2>{{ $selesai ?? 0 }}</h2>
                     <span class="stat-caption">Review telah diselesaikan</span>
                 </div>
@@ -458,6 +458,15 @@
     border-radius: 10px;
     transition: .2s ease;
     white-space: nowrap;
+    /* Defensif (bug tautan dashboard tidak merespons klik): tegaskan
+       tautan ini dapat diklik dan berada di atas elemen sebaris di
+       dalam kartu. Ini TIDAK bisa mengalahkan overlay global
+       #notifPopup di layout (z-index 4000, menutupi seluruh viewport
+       saat popup notifikasi terbuka) — perbaikan overlay itu harus
+       dilakukan di layouts/app.blade.php, lihat laporan. */
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
 }
 
 .btn-review:hover {
@@ -486,7 +495,34 @@
     font-size: 13px;
 }
 
-/* RESPONSIVE */
+/* RESPONSIVE — kartu statistik kompak di bawah 1200px: pada lebar
+   efektif ~992-1070px (jendela 1341px dengan zoom/skala tampilan),
+   kartu horizontal menyisakan ~45px untuk teks sehingga label melipat
+   2-3 baris. Di bawah 1200px kartu disusun vertikal (ikon di atas,
+   label di bawah selebar kartu) supaya label tetap satu baris dan
+   angka sejajar. Selektor memakai #mainContent agar mengalahkan
+   aturan padding/ikon/gap di layouts/app.blade.php. */
+@media (max-width: 1199px) {
+
+    #mainContent .review-stat-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 16px;
+    }
+
+    #mainContent .review-stat-card .stat-icon {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        font-size: 18px;
+    }
+
+    #mainContent .review-stat-card > div:last-child {
+        width: 100%;
+    }
+}
+
 @media (max-width: 768px) {
 
     .dashboard-welcome {

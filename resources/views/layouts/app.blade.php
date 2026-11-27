@@ -467,9 +467,18 @@
    Satu tempat agar semua halaman daftar/dashboard ikut rapi.
    ========================================================= */
 
-/* L1 — tabel muat dalam area konten tanpa scroll horizontal.
-   Penyebab: padding sel Bootstrap (.75rem) + kolom yang tidak boleh
-   melipat (nowrap) + .container di dalam #mainContent. */
+/* L1 (revisi uji ke-3, 27 Nov) — tabel muat dalam area konten.
+   Akar masalah: aturan lama memaksa `.table .btn/.badge` nowrap DI
+   DALAM kolom `table-layout: fixed` yang sempit — konten yang lebih
+   lebar dari kolomnya tidak bisa melipat, lalu meluber dan menumpuk
+   tombol/badge di sebelahnya; `overflow-wrap: break-word` di kolom
+   sempit itu memecah kata per huruf ("Peng/ajuan", "N/o").
+   Perbaikan: JANGAN paksa nowrap di dalam tabel (badge/tombol boleh
+   melipat antar kata, bukan per huruf — `word-break: normal`),
+   JANGAN pakai `table-layout: fixed` di halaman daftar (kolom
+   menyesuaikan isi lewat lebar minimum per halaman), dan biarkan
+   `.table-responsive` menggulir horizontal sebagai fallback DARIPADA
+   elemen saling menumpuk. */
 #mainContent {
     min-width: 0;
 }
@@ -477,22 +486,31 @@
 #mainContent .container-fluid {
     max-width: 100%;
 }
+#mainContent .table-responsive {
+    overflow-x: auto;
+}
 #mainContent .table-responsive .table > :not(caption) > * > * {
     padding: .55rem .5rem;
 }
 #mainContent .table td,
 #mainContent .table th {
     overflow-wrap: break-word;
+    word-break: normal;
+}
+#mainContent .table th {
+    white-space: normal;
 }
 #mainContent .table td .d-flex.gap-2 {
     flex-wrap: wrap;
 }
+/* Badge & tombol di dalam tabel BOLEH melipat antar kata. Dulu
+   `white-space: nowrap` di sini yang membuat badge panjang
+   ("SEDANG DIREVIEW", "LOLOS ADMINISTRASI") dan tombol menumpuk
+   kolom sebelahnya saat kolomnya lebih sempit dari isinya. */
 #mainContent .table .btn,
 #mainContent .table .badge {
-    white-space: nowrap;
-}
-#mainContent .table .btn-laporan {
-    white-space: nowrap;
+    white-space: normal;
+    line-height: 1.35;
 }
 
 /* L2 — modal detail proposal: jangan lebih lebar dari viewport. */
@@ -690,6 +708,16 @@
         background: transparent;
 
         z-index: 4000;
+
+        /* Perbaikan uji ulang ke-3 (tautan dashboard tidak merespons):
+           overlay transparan ini menutupi seluruh viewport dan menelan
+           klik pertama di mana pun setelah lonceng dibuka. Dibuat tembus
+           klik; hanya kotak notifikasi di dalamnya yang menerima klik. */
+        pointer-events: none;
+    }
+
+    .notif-popup-overlay .notif-popup {
+        pointer-events: auto;
     }
 
     .notif-popup {
@@ -1932,14 +1960,28 @@ document.addEventListener("DOMContentLoaded",()=>{
 
     if(notifBell) notifBell.addEventListener("click", async (e) => {
         e.preventDefault();
+        if (notifPopup.style.display === "block") {
+            notifPopup.style.display = "none";
+            return;
+        }
         notifPopup.style.display="block";
         positionNotifBox();
         await loadNotifications();
         requestAnimationFrame(() => positionNotifBox());
     });
 
-    if(notifPopup) notifPopup.addEventListener("click", e => {
-        if(e.target===notifPopup) notifPopup.style.display="none";
+    // Overlay dibuat tembus klik (pointer-events: none), jadi popup
+    // ditutup oleh klik di luar kotak notifikasi / lonceng, bukan oleh
+    // klik pada overlay itu sendiri (klik itu kini sampai ke halaman).
+    document.addEventListener("click", function (e) {
+        if (!notifPopup || notifPopup.style.display !== "block") return;
+        if (e.target.closest("#notifBox") || e.target.closest("#notifBell")) return;
+        notifPopup.style.display = "none";
+    });
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && notifPopup && notifPopup.style.display === "block") {
+            notifPopup.style.display = "none";
+        }
     });
 
     window.addEventListener('resize', () => {
