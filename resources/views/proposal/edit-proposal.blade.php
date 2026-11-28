@@ -37,7 +37,19 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('proposal.update', $proposal->id) }}" method="POST" enctype="multipart/form-data" id="editProposalForm">
+                    {{-- Peringatan dinamis bila pengaju diblokir tanggungan/blacklist
+                         (bug #6): tampil sebelum mengirim, bukan hanya spanduk statis. --}}
+                    @if (! empty($peringatanTanggungan ?? null))
+                        <div class="alert alert-danger border-0 shadow-sm" style="border-radius: 12px;">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>Pengajuan diblokir:</strong> {{ $peringatanTanggungan }}
+                        </div>
+                    @endif
+
+                    {{-- novalidate (bug #4): validasi native browser memblokir
+                         submit sebelum request sampai ke server, sehingga
+                         pesan validasi Indonesia dari server tidak pernah
+                         tampil. Validasi tetap berjalan di server. --}}
+                    <form action="{{ route('proposal.update', $proposal->id) }}" method="POST" enctype="multipart/form-data" novalidate id="editProposalForm">
                         @csrf
                     @method('PUT')
 
@@ -74,7 +86,7 @@
                             <div class="col-12">
                                 <label class="form-label fw-bold text-secondary">Judul Proposal</label>
                                 <textarea name="judul" class="form-control border-0 bg-light p-3" rows="2"
-                                          style="border-radius: 12px;" placeholder="Masukkan judul lengkap..." required>{{ old('judul', $proposal->judul) }}</textarea>
+                                          style="border-radius: 12px;" placeholder="Masukkan judul lengkap...">{{ old('judul', $proposal->judul) }}</textarea>
                             </div>
 
                             {{-- SKEMA --}}
@@ -174,7 +186,7 @@
                                     <div class="d-flex justify-content-center mb-2">
                                         <i class="bi bi-file-earmark-pdf-fill text-danger fs-1"></i>
                                     </div>
-                                    <input type="file" name="file" class="form-control shadow-sm mx-auto" style="max-width: 400px; border-radius: 10px;" accept=".pdf">
+                                    <input type="file" name="file" id="fileBaruInput" class="form-control shadow-sm mx-auto" style="max-width: 400px; border-radius: 10px;" accept=".pdf">
                                     <p class="mt-2 small text-muted mb-0">
                                         <span class="badge bg-info-subtle text-info">File saat ini:</span>
                                         {{ basename($proposal->file_path) ?: 'Belum ada file' }}
@@ -185,6 +197,18 @@
                                             <a href="{{ route('proposal.download', $proposal->id) }}" class="ms-1">Unduh file saat ini</a>
                                         @endif
                                     </p>
+                                    {{-- Berkas baru dari percobaan sebelumnya yang sudah
+                                         tersimpan di server (bug #5): ditampilkan dan
+                                         dibawa lewat hidden input agar tidak perlu
+                                         diunggah ulang. --}}
+                                    @php $fileTersimpan = old('file_tersimpan', session('file_tersimpan')); @endphp
+                                    @if ($fileTersimpan)
+                                        <p class="mt-2 small mb-0" id="fileTersimpanInfo" style="color: #2e7d32;">
+                                            <span class="badge bg-success-subtle text-success">File baru sudah diunggah:</span>
+                                            {{ basename($fileTersimpan) }} — akan menggantikan file saat ini bila disimpan.
+                                        </p>
+                                        <input type="hidden" name="file_tersimpan" value="{{ $fileTersimpan }}">
+                                    @endif
                                     <small class="text-danger mt-1 d-block font-italic">*Kosongkan jika tidak ingin mengganti file.</small>
                                 </div>
                             </div>
@@ -361,18 +385,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     rabContainer.addEventListener('input', hitungTotalRab);
 
-    // 4. Draft: lewati validasi browser (judul tetap wajib di server).
-    const draftBtn = document.getElementById('draftButton');
-    const form = document.getElementById('editProposalForm');
-    if (draftBtn) {
-        draftBtn.addEventListener('click', function() {
-            form.noValidate = true;
-        });
-    }
-    const submitBtn = document.getElementById('submitButton');
-    if (submitBtn) {
-        submitBtn.addEventListener('click', function() {
-            form.noValidate = false;
+    // 4. Form memakai atribut novalidate (bug #4): validasi browser
+    // tidak lagi dipakai — validasi dan pesannya dari server. Bila
+    // pengguna memilih berkas baru, sembunyikan info berkas tersimpan
+    // dari percobaan sebelumnya (berkas baru yang dipakai, bug #5).
+    var fileBaruInput = document.getElementById('fileBaruInput');
+    if (fileBaruInput) {
+        fileBaruInput.addEventListener('change', function() {
+            var info = document.getElementById('fileTersimpanInfo');
+            if (info) info.style.display = 'none';
         });
     }
 

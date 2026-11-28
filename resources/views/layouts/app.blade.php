@@ -467,18 +467,25 @@
    Satu tempat agar semua halaman daftar/dashboard ikut rapi.
    ========================================================= */
 
-/* L1 (revisi uji ke-3, 27 Nov) — tabel muat dalam area konten.
-   Akar masalah: aturan lama memaksa `.table .btn/.badge` nowrap DI
-   DALAM kolom `table-layout: fixed` yang sempit — konten yang lebih
-   lebar dari kolomnya tidak bisa melipat, lalu meluber dan menumpuk
-   tombol/badge di sebelahnya; `overflow-wrap: break-word` di kolom
-   sempit itu memecah kata per huruf ("Peng/ajuan", "N/o").
-   Perbaikan: JANGAN paksa nowrap di dalam tabel (badge/tombol boleh
-   melipat antar kata, bukan per huruf — `word-break: normal`),
-   JANGAN pakai `table-layout: fixed` di halaman daftar (kolom
-   menyesuaikan isi lewat lebar minimum per halaman), dan biarkan
-   `.table-responsive` menggulir horizontal sebagai fallback DARIPADA
-   elemen saling menumpuk. */
+/* L1 (revisi uji ke-3, 27 Nov; BUG #1 uji ke-4, 28 Nov) — tabel
+   muat dalam area konten (viewport 1341px, konten efektif
+   ~930-990px: sidebar 220px + padding konten/kartu).
+   Akar masalah uji ke-4: jumlah lebar minimum kolom + konten yang
+   tidak bisa melipat MELEBIHI lebar kartu. Dua penyebab utama:
+   (a) baris tombol Aksi di daftar proposal memakai `d-flex gap-1`
+   TANPA wrap, padahal aturan lama hanya membungkus `.d-flex.gap-2`
+   — 6 tombol ikon 32px memaksa kolom Aksi selebar ~212px+;
+   (b) lebar minimum per kolom dihitung terlalu longgar (badge
+   "SEDANG DIREVIEW" 170px, select pendanaan 170px, judul 220-240px)
+   sehingga totalnya mendekati/melebihi ~930px; selisih kecil saja
+   sudah membuat kolom kanan keluar layar. `table-layout: fixed`
+   tetap TIDAK dipakai (pernah memecah kata per huruf), dan
+   `.table-responsive` tetap hanya fallback terakhir, bukan solusi.
+   Perbaikan: SEMUA baris flex di dalam sel tabel boleh melipat
+   (bukan cuma `.gap-2`), halaman daftar memakai class
+   `.table-compact` (font/padding sel lebih kecil), dan tiap halaman
+   memakai anggaran lebar minimum yang jumlahnya ≤ ~830px supaya
+   ada sisa ~100px untuk variasi isi/font. */
 #mainContent {
     min-width: 0;
 }
@@ -500,7 +507,8 @@
 #mainContent .table th {
     white-space: normal;
 }
-#mainContent .table td .d-flex.gap-2 {
+#mainContent .table td .d-flex,
+#mainContent .table td .d-inline-flex {
     flex-wrap: wrap;
 }
 /* Badge & tombol di dalam tabel BOLEH melipat antar kata. Dulu
@@ -511,6 +519,22 @@
 #mainContent .table .badge {
     white-space: normal;
     line-height: 1.35;
+}
+
+/* BUG #1 uji ke-4 (28 Nov) — tabel ringkas (opt-in, class
+   .table-compact di halaman daftar): font dan padding sel
+   dikecilkan supaya jumlah lebar minimum kolom muat tanpa scroll
+   horizontal. Hanya dipakai halaman daftar; tabel Master Skema /
+   Pengumuman tidak disentuh (tanpa class ini aturannya tidak
+   berubah). */
+#mainContent .table-compact {
+    font-size: .85rem;
+}
+#mainContent .table-responsive .table-compact > :not(caption) > * > * {
+    padding: .4rem .45rem;
+}
+#mainContent .table-compact .badge {
+    font-size: .72rem;
 }
 
 /* L2 — modal detail proposal: jangan lebih lebar dari viewport. */
@@ -1836,6 +1860,82 @@ document.addEventListener("DOMContentLoaded",()=>{
         }
     });
 
+
+    // ==========================================
+    // ✅ NOTIF TENGGAT MUNCUL SAAT LOGIN (TETAP)
+    // ==========================================
+    const showDeadlinePopup = (title, message) => {
+        if (!alertPlaceholder) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `
+            <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert" style="min-width:min(320px,100%);max-width:100%;">
+                <div class="fw-bold">${title}</div>
+                <div class="small">${message || ''}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        alertPlaceholder.appendChild(wrapper);
+
+        setTimeout(() => {
+            try {
+                const alert = bootstrap.Alert.getOrCreateInstance(wrapper.querySelector('.alert'));
+                alert.close();
+            } catch(e) {}
+        }, 8000);
+    };
+
+    const runDeadlineCheckOnce = async () => {
+        try {
+            if (sessionStorage.getItem('deadline_check_done') === '1') return;
+            sessionStorage.setItem('deadline_check_done', '1');
+
+            const res = await fetch("{{ route('notifications.deadlineCheck') }}", {
+                cache: "no-store",
+                credentials: "include",
+                headers: { "Accept": "application/json" }
+            });
+
+            const data = await res.json();
+            const popups = data.popups || [];
+
+            if (popups.length > 0) {
+                popups.forEach(p => showDeadlinePopup(p.title, p.message));
+                if (window.ehibahUpdateNotifCount) window.ehibahUpdateNotifCount();
+            }
+        } catch(e) {}
+    };
+
+    runDeadlineCheckOnce();
+
+});
+</script>
+
+<script>
+(function () {
+    // Bug #9 — lonceng + badge notifikasi dipasang DI SINI (langsung saat
+    // skrip akhir body ini dieksekusi), BUKAN di dalam DOMContentLoaded.
+    // Akar masalah: handler lonceng baru terpasang setelah DOMContentLoaded,
+    // yang menunggu skrip sinkron FullCalendar dari CDN selesai diunduh;
+    // sementara itu lonceng di header sudah tampil dan bisa diklik, sehingga
+    // klik pertama tidak menampilkan popup (klik berikutnya baru jalan).
+    // Semua elemen yang dipakai (#notifBell, #notifPopup, #notifBox,
+    // #notifList, #notifCount, #markRead) sudah ada di DOM karena skrip ini
+    // berada di akhir body. Pengecekan tenggat saat login tetap di
+    // DOMContentLoaded dan memanggil updateNotifCount lewat
+    // window.ehibahUpdateNotifCount di bawah.
+
+    // Sama seperti showAlert di DOMContentLoaded di bawah (tidak bisa
+    // dipakai dari sini karena showAlert hidup di dalam closure itu).
+    const notifAlert = function (message, type) {
+        const holder = document.getElementById('alertPlaceholder');
+        if (!holder) return;
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `<div class="alert alert-${type || 'info'} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+        holder.appendChild(wrapper);
+        setTimeout(() => { const alert = bootstrap.Alert.getOrCreateInstance(wrapper.querySelector('.alert')); alert.close(); }, 5000);
+    };
+
     // =========================
     // NOTIFIKASI (BELL + COUNT)
     // =========================
@@ -2009,7 +2109,7 @@ document.addEventListener("DOMContentLoaded",()=>{
                 });
 
                 if (!res.ok) {
-                    showAlert(`Gagal menandai notifikasi dibaca (HTTP ${res.status}).`, 'danger');
+                    notifAlert(`Gagal menandai notifikasi dibaca (HTTP ${res.status}).`, 'danger');
                     return;
                 }
 
@@ -2025,59 +2125,14 @@ document.addEventListener("DOMContentLoaded",()=>{
 
                 requestAnimationFrame(() => positionNotifBox());
             } catch(e) {
-                showAlert('Gagal menandai notifikasi dibaca.', 'danger');
+                notifAlert('Gagal menandai notifikasi dibaca.', 'danger');
             }
         });
     }
 
-    // ==========================================
-    // ✅ NOTIF TENGGAT MUNCUL SAAT LOGIN (TETAP)
-    // ==========================================
-    const showDeadlinePopup = (title, message) => {
-        if (!alertPlaceholder) return;
-
-        const wrapper = document.createElement('div');
-        wrapper.innerHTML = `
-            <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert" style="min-width:min(320px,100%);max-width:100%;">
-                <div class="fw-bold">${title}</div>
-                <div class="small">${message || ''}</div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        alertPlaceholder.appendChild(wrapper);
-
-        setTimeout(() => {
-            try {
-                const alert = bootstrap.Alert.getOrCreateInstance(wrapper.querySelector('.alert'));
-                alert.close();
-            } catch(e) {}
-        }, 8000);
-    };
-
-    const runDeadlineCheckOnce = async () => {
-        try {
-            if (sessionStorage.getItem('deadline_check_done') === '1') return;
-            sessionStorage.setItem('deadline_check_done', '1');
-
-            const res = await fetch("{{ route('notifications.deadlineCheck') }}", {
-                cache: "no-store",
-                credentials: "include",
-                headers: { "Accept": "application/json" }
-            });
-
-            const data = await res.json();
-            const popups = data.popups || [];
-
-            if (popups.length > 0) {
-                popups.forEach(p => showDeadlinePopup(p.title, p.message));
-                updateNotifCount();
-            }
-        } catch(e) {}
-    };
-
-    runDeadlineCheckOnce();
-
-});
+    // Dipakai pengecekan tenggat saat login (tetap di DOMContentLoaded).
+    window.ehibahUpdateNotifCount = updateNotifCount;
+})();
 </script>
 
 @stack('scripts')
@@ -2319,13 +2374,27 @@ document.addEventListener('DOMContentLoaded', function () {
         var previewUrl = btn.getAttribute('data-preview-url');
         var downloadUrl = btn.getAttribute('data-download-url') || previewUrl;
         if (btn.getAttribute('data-previewable') === '0') {
+            // Bug #8: window.open() di dalam .then() (setelah HEAD async)
+            // sudah berada di luar gestur klik sehingga pemblokir popup
+            // menutup tab unduhan. Buka tab SECARA SINKRON di sini
+            // (masih dalam handler klik), lalu isi URL-nya setelah
+            // pemeriksaan HEAD selesai.
+            var dlWin = window.open('', '_blank');
             ehibahFileExists(downloadUrl).then(function (exists) {
                 if (!exists) {
+                    if (dlWin) dlWin.close();
                     window.ehibahToast('File tidak ditemukan di server.', 'danger');
                     return;
                 }
                 window.ehibahToast('Preview tidak tersedia untuk tipe file ini. File diunduh sebagai gantinya.', 'info');
-                window.open(downloadUrl, '_blank');
+                if (dlWin) {
+                    dlWin.location.href = downloadUrl;
+                } else {
+                    // Pemblokir popup menutup tab kosong: navigasi langsung
+                    // ke URL unduhan (respons attachment tetap mengunduh
+                    // tanpa meninggalkan halaman).
+                    window.location.href = downloadUrl;
+                }
             });
             return;
         }

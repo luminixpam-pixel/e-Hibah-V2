@@ -34,20 +34,19 @@
         box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     }
 
-    /* TABEL (revisi uji ke-3): TANPA table-layout: fixed — kolom
-       menyesuaikan isi (lebar minimum di <th>), bukan dipatok persen
-       dari tabel yang ternyata lebih sempit dari perkiraan. Lebar
-       konten efektif ~990px (viewport 1341 - sidebar 220 - padding).
-       Kolom Aksi min. 124px menampung 3 tombol ikon 32px + gap per
-       baris, jadi 6 tombol terburuk (Detail, Download, Preview,
-       Edit, Kirim, Hapus) tersusun maks. 2 baris (3+3); kolom Status
-       min. 170px cukup untuk badge "SEDANG DIREVIEW" satu baris
-       tanpa meluber ke kolom Aksi. */
+    /* TABEL (BUG #1 uji ke-4, 28 Nov): TANPA table-layout: fixed —
+       kolom menyesuaikan isi (lebar minimum di <th>). Anggaran lebar
+       minimum total ~690px di konten efektif ~990px (viewport 1341
+       - sidebar 220 - padding), jadi ada sisa ~300px untuk judul.
+       Kunci perbaikan: baris tombol Aksi SEKARANG benar-benar
+       melipat (aturan global lama hanya membungkus `.d-flex.gap-2`,
+       sedangkan baris ini memakai `gap-1`, jadi 6 tombol ikon 32px
+       memaksa kolom Aksi ~212px+); kolom Aksi min. 116px menampung
+       3 tombol per baris (3+3). Badge Status dikecilkan (font
+       0.7rem, letter-spacing 0.2px) supaya "SEDANG DIREVIEW" muat
+       satu baris di 148px. */
     .table-responsive table {
         width: 100%;
-    }
-    .table-responsive table .d-flex.gap-2 {
-        flex-wrap: wrap;
     }
 
     /* Styling tombol soft-UI */
@@ -108,22 +107,22 @@ document.getElementById('table-search').addEventListener('keyup', function() {
 
     {{-- TABEL --}}
     <div class="table-responsive shadow-sm" style="border-radius: 12px;">
-        <table class="table table-bordered table-hover align-middle bg-white mb-0">
+        <table class="table table-bordered table-hover align-middle bg-white mb-0 table-compact">
             <thead class="table-light text-center">
                 <tr>
                     <th style="width: 36px;">No</th>
-                    <th style="min-width: 120px;">No. Pengajuan</th>
+                    <th style="min-width: 104px;">No. Pengajuan</th>
                     <th>Judul Proposal</th>
-                    <th style="min-width: 110px;">Pengusul</th>
-                    <th style="min-width: 170px;">Status Alur</th>
-                    <th style="min-width: 124px;">Aksi</th>
+                    <th style="min-width: 96px;">Pengusul</th>
+                    <th style="min-width: 148px;">Status Alur</th>
+                    <th style="min-width: 116px;">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($proposals as $index => $proposal)
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
-                        <td class="text-center">
+                        <td class="text-center text-nowrap">
                             @if ($proposal->no_pengajuan)
                                 <span class="fw-semibold">{{ $proposal->no_pengajuan }}</span>
                             @else
@@ -151,14 +150,14 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                 $currentStatus = $statusMap[$proposal->status] ?? ['class' => 'bg-dark', 'icon' => 'bi-info-circle'];
                             @endphp
 
-                            <span class="badge {{ $currentStatus['class'] }} px-2 py-2 rounded-pill shadow-sm text-nowrap" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                            <span class="badge {{ $currentStatus['class'] }} px-2 py-2 rounded-pill shadow-sm text-nowrap" style="font-size: 0.7rem; letter-spacing: 0.2px;">
                                 <i class="{{ $currentStatus['icon'] }} me-1"></i>
                                 {{ $role === 'admin' && $proposal->status === 'Dikirim' ? 'PROPOSAL BARU' : strtoupper($proposal->status) }}
                             </span>
                         </td>
 
                       <td class="text-center">
-                            <div class="d-flex gap-1 justify-content-center">
+                            <div class="d-flex flex-wrap gap-1 justify-content-center">
                                 {{-- Detail Modal Trigger - Soft Green --}}
                                 <button type="button" class="btn btn-md border-0 shadow-sm d-flex align-items-center justify-content-center"
                                         data-bs-toggle="modal" data-bs-target="#tinjauModal{{ $proposal->id }}"

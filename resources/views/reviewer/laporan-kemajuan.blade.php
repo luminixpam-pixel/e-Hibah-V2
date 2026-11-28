@@ -198,8 +198,9 @@
                     <select name="proposal_id" class="form-select @error('proposal_id') is-invalid @enderror" required style="border-radius: 10px; padding: 10px;">
                         <option value="">-- Pilih Proposal --</option>
 
-                        {{-- Hanya proposal yang sudah Disetujui (dari $myProposals);
-                             sebelumnya memakai $proposals sehingga Draft dan Lolos
+                        {{-- Hanya proposal yang sudah Disetujui pendanaannya
+                             (status_pendanaan, dari $myProposals); sebelumnya
+                             memakai $proposals sehingga Draft dan Lolos
                              Administrasi ikut tercantum. --}}
                         @foreach (($myProposals ?? collect()) as $proposal)
                             <option value="{{ $proposal->id }}" {{ old('proposal_id') == $proposal->id ? 'selected' : '' }}>
@@ -246,10 +247,11 @@
                 <thead>
                     <tr>
                         <th style="width: 36px; border-top-left-radius: 15px;">No</th>
-                        <th class="text-start" style="min-width: 230px;">Judul & Pengusul</th>
-                        <th style="min-width: 120px;">Reviewer</th>
-                        <th style="min-width: 190px;">Berkas Laporan</th>
-                        <th style="min-width: 120px; border-top-right-radius: 15px;">Aksi</th>
+                        <th class="text-start" style="min-width: 180px;">Judul & Pengusul</th>
+                        <th style="min-width: 100px;">Reviewer</th>
+                        <th style="min-width: 110px;">Status Pendanaan</th>
+                        <th style="min-width: 170px;">Berkas Laporan</th>
+                        <th style="min-width: 100px; border-top-right-radius: 15px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -263,7 +265,21 @@
                                 </div>
                             </td>
                             <td class="text-center small">
-                                {{ $proposal->reviewer->name ?? 'Belum Ditentukan' }}
+                                {{-- Relasi di model adalah reviewers() (many-to-many);
+                                     $proposal->reviewer (tunggal) tidak ada sehingga
+                                     kolom ini selalu "Belum Ditentukan" (bug #10),
+                                     padahal reviewer sudah di-plotting. --}}
+                                {{ $proposal->reviewers->isNotEmpty() ? $proposal->reviewers->pluck('name')->join(', ') : 'Belum Ditentukan' }}
+                            </td>
+                            <td class="text-center small">
+                                {{-- Status keputusan pendanaan (bukan status alur):
+                                     supaya terlihat di tabel proposal mana yang
+                                     sudah Disetujui pendanaannya — dan kenapa form
+                                     unggah di atas kosong bila belum ada (bug #10).
+                                     Proposal yang baru lolos review masih 'Proses'
+                                     sampai ada keputusan pendanaan. --}}
+                                @php($sp = $proposal->status_pendanaan ?? 'Proses')
+                                <span class="badge {{ $sp === 'Disetujui' ? 'bg-success' : ($sp === 'Ditolak' ? 'bg-danger' : ($sp === 'Direvisi' ? 'bg-warning text-dark' : 'bg-light text-dark border')) }}">{{ $sp }}</span>
                             </td>
                             <td class="text-center">
                                 @if($proposal->file_laporan)
@@ -313,7 +329,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">
+                            <td colspan="6" class="text-center py-5 text-muted">
                                 Tidak ada data laporan kemajuan yang ditemukan.
                             </td>
                         </tr>

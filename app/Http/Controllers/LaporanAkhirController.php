@@ -34,9 +34,12 @@ class LaporanAkhirController extends Controller
 
         if ($user->role === 'admin') {
             $proposals = $query->with(['user', 'reviewers'])->latest()->get();
-            // Dropdown admin: semua proposal yang sudah Disetujui (sebelumnya
-            // kosong, sehingga form unggah tidak bisa dipakai admin).
-            $myProposals = Proposal::where('status', 'Disetujui')->latest()->get(['id', 'judul']);
+            // Dropdown admin: semua proposal yang sudah Disetujui
+            // pendanaannya (sebelumnya kosong, sehingga form unggah
+            // tidak bisa dipakai admin). Definisi "disetujui" adalah
+            // status_pendanaan (keputusan pendanaan), selaras dengan
+            // laporan kemajuan — bukan status alur.
+            $myProposals = Proposal::where('status_pendanaan', 'Disetujui')->latest()->get(['id', 'judul']);
         } else {
             $proposals = $query->where('user_id', $user->id)
                 ->with(['reviewers'])
@@ -44,9 +47,10 @@ class LaporanAkhirController extends Controller
                 ->get();
 
             // Mengambil proposal milik user untuk dropdown select — hanya
-            // yang sudah Disetujui, selaras dengan laporan kemajuan.
+            // yang sudah Disetujui pendanaannya (status_pendanaan),
+            // selaras dengan laporan kemajuan.
             $myProposals = Proposal::where('user_id', $user->id)
-                ->where('status', 'Disetujui')
+                ->where('status_pendanaan', 'Disetujui')
                 ->latest()
                 ->get(['id', 'judul']);
         }
@@ -73,6 +77,13 @@ class LaporanAkhirController extends Controller
 
             if (! $proposal) {
                 return back()->with('error', 'ID Proposal tidak ditemukan di database.');
+            }
+
+            // Laporan akhir hanya untuk proposal yang sudah disetujui
+            // pendanaannya (status_pendanaan), selaras dengan dropdown
+            // di halaman ini dan dengan laporan kemajuan.
+            if ($proposal->status_pendanaan !== 'Disetujui') {
+                return back()->with('error', 'Laporan akhir hanya dapat diunggah untuk proposal yang sudah disetujui pendanaannya.');
             }
 
             if ($request->hasFile('file')) {

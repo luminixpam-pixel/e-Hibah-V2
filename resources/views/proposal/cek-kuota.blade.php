@@ -11,19 +11,33 @@
 
     <div class="card">
         <div class="table-responsive">
-            {{-- L1: layout tetap (fixed) dengan lebar kolom eksplisit agar
-                 tabel muat dalam area konten; sel plafon/kuota/sisa tidak
-                 melipat. --}}
-            <table class="table table-hover align-middle mb-0" style="table-layout: fixed; width: 100%;">
+            {{-- BUG #3 uji ke-4 (28 Nov): layout tetap (fixed) + lebar
+                 persen DIHAPUS. Akar masalah: di `table-layout: fixed`
+                 kolom dipatok persen dari tabel, tapi isi sel (angka
+                 "Rp 15.000.000", badge "Belum ditetapkan") TIDAK
+                 mengecil mengikuti kolomnya — begitu lebar efektif
+                 menyusut, header "Sebagai Ketua" terpotong per suku
+                 kata, angka terbelah di tengah ("Rp 15.000.00/0"),
+                 dan badge Sisa terpotong di tepi kanan. Sekarang
+                 layout otomatis + lebar minimum per kolom (total
+                 anggaran ~735px di konten efektif ~990px): header
+                 dipersingkat "Ketua"/"Anggota" (arti lengkapnya sudah
+                 dijelaskan di paragraf pengantar di atas), sel Plafon
+                 116px supaya "Rp 50.000.000" utuh satu baris, kolom
+                 Sisa 132px supaya badge "Belum ditetapkan" muat satu
+                 baris, Kuota 92px supaya "ditetapkan" tidak terbelah
+                 per suku kata. Teks "Belum ditetapkan" dipertahankan
+                 apa adanya (diuji test: kuota 0 bukan "Penuh"). --}}
+            <table class="table table-hover align-middle mb-0 table-compact">
                 <thead class="table-light">
                     <tr>
-                        <th width="24%">Skema</th>
-                        <th class="text-center text-nowrap" width="16%">Plafon</th>
-                        <th class="text-center" width="11%">Sebagai Ketua</th>
-                        <th class="text-center" width="12%">Sebagai Anggota</th>
-                        <th class="text-center" width="9%">Total</th>
-                        <th class="text-center text-nowrap" width="14%">Kuota</th>
-                        <th class="text-center text-nowrap" width="14%">Sisa</th>
+                        <th style="min-width: 120px;">Skema</th>
+                        <th class="text-center text-nowrap" style="min-width: 116px;">Plafon</th>
+                        <th class="text-center" style="min-width: 56px;">Ketua</th>
+                        <th class="text-center" style="min-width: 64px;">Anggota</th>
+                        <th class="text-center" style="min-width: 56px;">Total</th>
+                        <th class="text-center" style="min-width: 92px;">Kuota</th>
+                        <th class="text-center" style="min-width: 132px;">Sisa</th>
                     </tr>
                 </thead>
                 <tbody>

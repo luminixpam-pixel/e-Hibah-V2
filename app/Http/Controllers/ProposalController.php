@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProposalController extends Controller
 {
@@ -107,6 +108,129 @@ class ProposalController extends Controller
             'rab.*.keterangan.string' => 'Keterangan RAB harus berupa teks.',
             'rab.*.keterangan.max' => 'Keterangan RAB maksimal 500 karakter.',
         ];
+    }
+
+    /**
+     * Buang baris RAB yang sepenuhnya kosong (nama, jumlah, dan
+     * keterangan semuanya kosong) sebelum validasi (bug #7). Baris
+     * seperti itu muncul dari klik "Tambah Komponen" yang belum diisi;
+     * sebelumnya baris itu ikut divalidasi sehingga submit gagal
+     * dengan "Nama komponen RAB wajib diisi." / "Jumlah RAB wajib
+     * diisi.". Baris yang terisi sebagian tetap dipertahankan agar
+     * divalidasi normal.
+     */
+    private function saringBarisRabKosong(Request $request): void
+    {
+        $rab = (array) $request->input('rab', []);
+
+        $bersih = array_values(array_filter($rab, function ($item) {
+            $item = is_array($item) ? $item : [];
+
+            return trim((string) ($item['nama_komponen'] ?? '')) !== ''
+                || trim((string) ($item['jumlah'] ?? '')) !== ''
+                || trim((string) ($item['keterangan'] ?? '')) !== '';
+        }));
+
+        $request->merge(['rab' => $bersih]);
+    }
+
+    /**
+     * Simpan berkas proposal yang baru diunggah ke disk LEBIH AWAL,
+     * sebelum validasi dan cek pengajuan (bug #5). Sebelumnya berkas
+     * baru disimpan di dalam transaksi di akhir store()/update(),
+     * sehingga setiap redirect-back karena validasi / tanggungan /
+     * plafon membuang berkas — browser tidak bisa mengisi ulang
+     * input file — dan pengguna harus mengunggah ulang. Path hasil
+     * penyimpanan awal dibawa lewat flash `file_tersimpan` (lihat
+     * sertakanFileTersimpan()) dan dipakai ulang saat kirim ulang.
+     *
+     * Hanya berkas yang lolos aturan dasar (format PDF/DOC/DOCX,
+     * maks 100 MB) yang disimpan; berkas yang tidak valid dibiarkan
+     * gagal di $request->validate() dengan pesan Indonesianya.
+     * Bila ada berkas tersimpan dari percobaan sebelumnya
+     * (`file_tersimpan`) dan kini ada unggahan baru, berkas lama yang
+     * tergantikan dihapus agar tidak menjadi orphan.
+     *
+     * @return string|null path berkas di disk 'public', atau null bila tidak ada unggahan baru yang valid
+     */
+    private function simpanFileUnggahanAwal(Request $request): ?string
+    {
+        if (! $request->hasFile('file') || ! $request->file('file')->isValid()) {
+            return null;
+        }
+
+        $file = $request->file('file');
+        $ekstensi = strtolower($file->getClientOriginalExtension());
+
+        if (! in_array($ekstensi, ['pdf', 'doc', 'docx'], true) || $file->getSize() > 102400 * 1024) {
+            return null;
+        }
+
+        $cleanName = preg_replace('/[^A-Za-z0-9\-]/', '', (string) $request->input('judul', ''));
+        $finalName = substr($cleanName, 0, 50).'_'.time().'_'.bin2hex(random_bytes(3)).'.'.$ekstensi;
+        $path = $file->storeAs('proposal_files', $finalName, 'public');
+
+        $lama = $this->fileTersimpanSebelumnya($request);
+        if ($lama && $lama !== $path) {
+            Storage::disk('public')->delete($lama);
+        }
+
+        return $path;
+    }
+
+    /**
+     * Path berkas dari percobaan submit sebelumnya (hidden input
+     * `file_tersimpan`), bila berkasnya masih ada di disk. Path
+     * dibatasi ke folder proposal_files agar nilai dari client tidak
+     * bisa menunjuk berkas lain (bug #5).
+     */
+    private function fileTersimpanSebelumnya(Request $request): ?string
+    {
+        $path = trim((string) $request->input('file_tersimpan', ''));
+
+        if ($path === '' || ! str_starts_with($path, 'proposal_files/') || str_contains($path, '..')) {
+            return null;
+        }
+
+        if (! in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), ['pdf', 'doc', 'docx'], true)) {
+            return null;
+        }
+
+        return Storage::disk('public')->exists($path) ? $path : null;
+    }
+
+    /**
+     * Lampirkan path berkas yang sudah tersimpan ke redirect-back
+     * (flash `file_tersimpan`) agar form menampilkannya dan kirim
+     * ulang bisa memakai berkas itu tanpa unggah ulang (bug #5/#6).
+     */
+    private function sertakanFileTersimpan(\Illuminate\Http\RedirectResponse $redirect, ?string $filePathAwal): \Illuminate\Http\RedirectResponse
+    {
+        if ($filePathAwal) {
+            $redirect->with('file_tersimpan', $filePathAwal);
+        }
+
+        return $redirect;
+    }
+
+    /**
+     * Peringatan dinamis bila pengaju saat ini diblokir mengajukan
+     * proposal baru (blacklist / tanggungan laporan) — ditampilkan di
+     * form buat/edit sebagai pengganti spanduk statis saja (bug #6).
+     * Kalimatnya sama dengan yang dikembalikan checkPengajuan(),
+     * yang dikunci TanggunganTest / KuotaNolTanggunganTest.
+     */
+    private function peringatanTanggungan(User $user, ?int $exceptProposalId = null): ?string
+    {
+        if ($user->is_blacklisted) {
+            return 'Akun Anda ditandai memiliki tanggungan laporan (blacklist) sehingga tidak dapat mengajukan proposal baru. Silakan hubungi LPPM.';
+        }
+
+        if ($this->hasTanggunganLaporan($user->id, $exceptProposalId)) {
+            return 'Anda masih memiliki tanggungan laporan (laporan akhir belum diunggah atau temuan Monev masih terbuka) sehingga tidak dapat mengajukan proposal baru. Silakan selesaikan kewajiban pelaporan Anda atau hubungi LPPM.';
+        }
+
+        return null;
     }
 
     /**
@@ -419,8 +543,11 @@ class ProposalController extends Controller
         // Pilihan nama komponen RAB: bawaan + kustom dari settings
         // (key 'rab_komponen_kustom'); dipakai datalist di form.
         $daftarKomponenRab = Setting::daftarKomponenRab();
+        // Peringatan dinamis bila pengaju diblokir tanggungan/blacklist
+        // (bug #6): tampil di form, bukan hanya spanduk statis.
+        $peringatanTanggungan = $this->peringatanTanggungan(auth()->user());
 
-        return view('proposal.create', compact('list_fakultas', 'list_skema', 'all_dosen', 'daftarKomponenRab'));
+        return view('proposal.create', compact('list_fakultas', 'list_skema', 'all_dosen', 'daftarKomponenRab', 'peringatanTanggungan'));
     }
 
     /**
@@ -527,42 +654,69 @@ class ProposalController extends Controller
         $aksi = $request->input('aksi', 'submit');
         $isDraft = $aksi === 'draft';
 
+        // Berkas yang baru diunggah disimpan ke disk LEBIH AWAL (bug #5),
+        // sebelum validasi dan cek pengajuan, agar tidak hilang bila
+        // request kemudian gagal dan form di-reload.
+        $filePathAwal = $this->simpanFileUnggahanAwal($request);
+
         // 2. Akun yang ditandai memiliki tanggungan tidak boleh mengajukan baru.
         if ($user->is_blacklisted) {
-            return redirect()->back()->withInput()
-                ->with('error', 'Akun Anda ditandai memiliki tanggungan laporan (blacklist) sehingga tidak dapat mengajukan proposal baru. Silakan hubungi LPPM.');
+            return $this->sertakanFileTersimpan(
+                redirect()->back()->withInput()
+                    ->with('error', 'Akun Anda ditandai memiliki tanggungan laporan (blacklist) sehingga tidak dapat mengajukan proposal baru. Silakan hubungi LPPM.'),
+                $filePathAwal
+            );
         }
+
+        // Baris RAB yang sepenuhnya kosong diabaikan sebelum validasi (bug #7).
+        $this->saringBarisRabKosong($request);
 
         // 3. Validasi form (draft boleh dilengkapi bertahap, submit harus lengkap).
         // Nama komponen RAB harus ada di daftar bawaan + kustom (settings
         // key 'rab_komponen_kustom'); bila key belum ada, daftar kustom kosong.
+        // Bila berkas sudah tersimpan dari percobaan sebelumnya
+        // (`file_tersimpan`), unggahan baru tidak wajib diulang (bug #5).
         $komponenRab = Setting::daftarKomponenRab();
-        if ($isDraft) {
-            $request->validate([
-                'judul' => 'required|string|max:255',
-                'nama_ketua' => 'nullable|string|max:255',
-                'fakultas_prodi' => 'nullable|exists:fakultas,id',
-                'skema_id' => 'nullable|exists:skemas,id',
-                'file' => 'nullable|file|mimes:pdf,doc,docx|max:102400',
-                'anggota' => 'nullable|array',
-                'rab' => 'nullable|array',
-                'rab.*.nama_komponen' => ['nullable', 'string', 'max:255', Rule::in($komponenRab)],
-                'rab.*.jumlah' => 'nullable|numeric|min:0',
-                'rab.*.keterangan' => 'nullable|string|max:500',
-            ], $this->pesanValidasiPengajuan());
-        } else {
-            $request->validate([
-                'judul' => 'required|string|max:255',
-                'nama_ketua' => 'required|string|max:255',
-                'fakultas_prodi' => 'required|exists:fakultas,id',
-                'skema_id' => 'required|exists:skemas,id',
-                'file' => 'required|file|mimes:pdf,doc,docx|max:102400', // Maks 100 MB
-                'anggota' => 'nullable|array',
-                'rab' => 'required|array|min:1',
-                'rab.*.nama_komponen' => ['required', 'string', 'max:255', Rule::in($komponenRab)],
-                'rab.*.jumlah' => 'required|numeric|min:0',
-                'rab.*.keterangan' => 'nullable|string|max:500',
-            ], $this->pesanValidasiPengajuan());
+        $fileSudahTersimpan = $this->fileTersimpanSebelumnya($request);
+        try {
+            if ($isDraft) {
+                $request->validate([
+                    'judul' => 'required|string|max:255',
+                    'nama_ketua' => 'nullable|string|max:255',
+                    'fakultas_prodi' => 'nullable|exists:fakultas,id',
+                    'skema_id' => 'nullable|exists:skemas,id',
+                    'file' => 'nullable|file|mimes:pdf,doc,docx|max:102400',
+                    'anggota' => 'nullable|array',
+                    'rab' => 'nullable|array',
+                    'rab.*.nama_komponen' => ['nullable', 'string', 'max:255', Rule::in($komponenRab)],
+                    'rab.*.jumlah' => 'nullable|numeric|min:0',
+                    'rab.*.keterangan' => 'nullable|string|max:500',
+                ], $this->pesanValidasiPengajuan());
+            } else {
+                $request->validate([
+                    'judul' => 'required|string|max:255',
+                    'nama_ketua' => 'required|string|max:255',
+                    'fakultas_prodi' => 'required|exists:fakultas,id',
+                    'skema_id' => 'required|exists:skemas,id',
+                    'file' => ($fileSudahTersimpan ? 'nullable' : 'required').'|file|mimes:pdf,doc,docx|max:102400', // Maks 100 MB
+                    'anggota' => 'nullable|array',
+                    'rab' => 'required|array|min:1',
+                    'rab.*.nama_komponen' => ['required', 'string', 'max:255', Rule::in($komponenRab)],
+                    'rab.*.jumlah' => 'required|numeric|min:0',
+                    'rab.*.keterangan' => 'nullable|string|max:500',
+                ], $this->pesanValidasiPengajuan());
+            }
+        } catch (ValidationException $e) {
+            // Validasi gagal: bawa berkas yang sudah tersimpan agar form
+            // menampilkannya dan kirim ulang tidak perlu unggah ulang
+            // (bug #5). Berkas yang gagal validasi format/ukuran tidak
+            // ikut dibawa — pengguna harus memilih berkas yang valid.
+            $redirect = redirect()->back()->withInput()->withErrors($e->errors());
+            if ($filePathAwal && ! isset($e->errors()['file'])) {
+                $redirect->with('file_tersimpan', $filePathAwal);
+            }
+
+            return $redirect;
         }
 
         $skema = $request->filled('skema_id') ? Skema::find($request->skema_id) : null;
@@ -575,14 +729,15 @@ class ProposalController extends Controller
         $memberUserIds = array_values(array_filter(array_column($anggotaResolved, 'user_id')));
 
         // 5. Cek kuota per skema + blacklist anggota + batas ukuran tim
-        // (hanya saat submit).
+        // (hanya saat submit). Gagal di sini tetap membawa berkas yang
+        // sudah tersimpan (bug #5/#6).
         if (! $isDraft && $skema) {
             $error = $this->checkPengajuan($user, $skema, $memberUserIds);
             if ($error) {
-                return redirect()->back()->withInput()->with('error', $error);
+                return $this->sertakanFileTersimpan(redirect()->back()->withInput()->with('error', $error), $filePathAwal);
             }
             if ($error = $this->cekBatasTim($skema, count($anggotaResolved))) {
-                return redirect()->back()->withInput()->with('error', $error);
+                return $this->sertakanFileTersimpan(redirect()->back()->withInput()->with('error', $error), $filePathAwal);
             }
         }
 
@@ -592,20 +747,20 @@ class ProposalController extends Controller
             $rabTotal += (float) preg_replace('/[^0-9.]/', '', (string) ($item['jumlah'] ?? 0));
         }
         if (! $isDraft && $skema && $skema->plafon > 0 && $rabTotal > (float) $skema->plafon) {
-            return redirect()->back()->withInput()
-                ->with('error', 'Total RAB Rp '.number_format($rabTotal, 0, ',', '.').' melebihi plafon skema '.$skema->label().' (Rp '.number_format((float) $skema->plafon, 0, ',', '.').').');
+            return $this->sertakanFileTersimpan(
+                redirect()->back()->withInput()
+                    ->with('error', 'Total RAB Rp '.number_format($rabTotal, 0, ',', '.').' melebihi plafon skema '.$skema->label().' (Rp '.number_format((float) $skema->plafon, 0, ',', '.').').'),
+                $filePathAwal
+            );
         }
 
         try {
-            $proposal = DB::transaction(function () use ($request, $user, $isDraft, $skema, $anggotaResolved, $rabTotal) {
+            $proposal = DB::transaction(function () use ($request, $user, $isDraft, $skema, $anggotaResolved, $rabTotal, $filePathAwal) {
+                // Berkas sudah disimpan di awal request (bug #5); bila
+                // tidak ada unggahan baru, pakai berkas dari percobaan
+                // submit sebelumnya (hidden input `file_tersimpan`).
                 // Upload File (wajib saat submit, opsional saat draft).
-                $filePath = null;
-                if ($request->hasFile('file')) {
-                    $extension = $request->file('file')->getClientOriginalExtension();
-                    $cleanName = preg_replace('/[^A-Za-z0-9\-]/', '', $request->judul);
-                    $finalName = substr($cleanName, 0, 50).'_'.time().'.'.$extension;
-                    $filePath = $request->file('file')->storeAs('proposal_files', $finalName, 'public');
-                }
+                $filePath = $filePathAwal ?? $this->fileTersimpanSebelumnya($request);
 
                 $proposal = Proposal::create([
                     'judul' => $request->judul,
@@ -681,8 +836,15 @@ class ProposalController extends Controller
             return redirect()->back()->with('error', 'Masa pengeditan proposal telah berakhir.');
         }
 
+        // Peringatan dinamis bila pengaju diblokir tanggungan/blacklist
+        // (bug #6) — hanya relevan bila proposal masih bisa dikirim.
+        $user = auth()->user();
+        $peringatanTanggungan = in_array($proposal->status, ['Draft', 'Revisi Administrasi'], true)
+            ? $this->peringatanTanggungan($user, (int) $proposal->id)
+            : null;
+
         // 4. Kirim semua variabel ke view
-        return view('proposal.edit-proposal', compact('proposal', 'users', 'list_skema', 'daftarKomponenRab'));
+        return view('proposal.edit-proposal', compact('proposal', 'users', 'list_skema', 'daftarKomponenRab', 'peringatanTanggungan'));
     }
 
     /**
@@ -704,21 +866,43 @@ class ProposalController extends Controller
         // supaya proposal kembali ke antrean verifikasi (status Dikirim).
         $kirimPengajuan = $aksi === 'submit' && in_array($proposal->status, ['Draft', 'Revisi Administrasi']);
 
+        // Berkas baru disimpan ke disk LEBIH AWAL (bug #5), sebelum
+        // validasi dan cek pengajuan, agar tidak hilang bila request
+        // kemudian gagal dan form di-reload.
+        $filePathBaru = $this->simpanFileUnggahanAwal($request);
+
+        // Baris RAB yang sepenuhnya kosong diabaikan sebelum validasi (bug #7).
+        $this->saringBarisRabKosong($request);
+
         // Validasi: draft boleh dilengkapi bertahap; pengiriman dan revisi harus lengkap.
         // Nama komponen RAB harus ada di daftar bawaan + kustom (settings
         // key 'rab_komponen_kustom'); bila key belum ada, daftar kustom kosong.
-        $request->validate([
-            'judul' => 'required|string',
-            'nama_ketua' => 'required|string',
-            'fakultas_prodi' => 'required',
-            'skema_id' => 'nullable|exists:skemas,id',
-            'file' => 'nullable|file|mimes:pdf,doc,docx|max:102400',
-            'anggota' => 'nullable|array',
-            'rab' => 'nullable|array',
-            'rab.*.nama_komponen' => ['nullable', 'string', 'max:255', Rule::in(Setting::daftarKomponenRab())],
-            'rab.*.jumlah' => 'nullable|numeric|min:0',
-            'rab.*.keterangan' => 'nullable|string|max:500',
-        ], $this->pesanValidasiPengajuan());
+        try {
+            $request->validate([
+                'judul' => 'required|string',
+                'nama_ketua' => 'required|string',
+                'fakultas_prodi' => 'required',
+                'skema_id' => 'nullable|exists:skemas,id',
+                'file' => 'nullable|file|mimes:pdf,doc,docx|max:102400',
+                'anggota' => 'nullable|array',
+                'rab' => 'nullable|array',
+                'rab.*.nama_komponen' => ['nullable', 'string', 'max:255', Rule::in(Setting::daftarKomponenRab())],
+                'rab.*.jumlah' => 'nullable|numeric|min:0',
+                'rab.*.keterangan' => 'nullable|string|max:500',
+            ], $this->pesanValidasiPengajuan());
+        } catch (ValidationException $e) {
+            // Validasi gagal: berkas lama tetap tertaut di proposal
+            // (tidak disentuh), dan berkas baru yang sudah tersimpan
+            // dibawa lewat flash agar tidak perlu diunggah ulang
+            // (bug #5). Berkas yang gagal validasi format/ukuran
+            // tidak ikut dibawa.
+            $redirect = redirect()->back()->withInput()->withErrors($e->errors());
+            if ($filePathBaru && ! isset($e->errors()['file'])) {
+                $redirect->with('file_tersimpan', $filePathBaru);
+            }
+
+            return $redirect;
+        }
 
         $skema = $request->filled('skema_id') ? Skema::find($request->skema_id) : $proposal->skema;
 
@@ -729,24 +913,32 @@ class ProposalController extends Controller
         $memberUserIds = array_values(array_filter(array_column($anggotaResolved, 'user_id')));
 
         // Saat draft dikirim: berlaku semua aturan pengajuan.
+        // Gagal di sini tetap membawa berkas yang sudah tersimpan (bug #5/#6).
         if ($kirimPengajuan) {
             if ($user->is_blacklisted) {
-                return redirect()->back()->withInput()
-                    ->with('error', 'Akun Anda ditandai memiliki tanggungan laporan (blacklist) sehingga tidak dapat mengajukan proposal baru. Silakan hubungi LPPM.');
+                return $this->sertakanFileTersimpan(
+                    redirect()->back()->withInput()
+                        ->with('error', 'Akun Anda ditandai memiliki tanggungan laporan (blacklist) sehingga tidak dapat mengajukan proposal baru. Silakan hubungi LPPM.'),
+                    $filePathBaru
+                );
             }
             if (! $skema) {
-                return redirect()->back()->withInput()->with('error', 'Pilih skema hibah terlebih dahulu sebelum mengirim pengajuan.');
+                return $this->sertakanFileTersimpan(redirect()->back()->withInput()->with('error', 'Pilih skema hibah terlebih dahulu sebelum mengirim pengajuan.'), $filePathBaru);
             }
-            if (! $proposal->file_path && ! $request->hasFile('file')) {
-                return redirect()->back()->withInput()->with('error', 'Unggah file proposal terlebih dahulu sebelum mengirim pengajuan.');
+            // Pesan disamakan dengan pesan validasi server
+            // 'File proposal wajib diunggah.' (bug #4d); berkas bisa
+            // berasal dari proposal, unggahan baru, atau percobaan
+            // sebelumnya (`file_tersimpan`).
+            if (! $proposal->file_path && ! $filePathBaru && ! $this->fileTersimpanSebelumnya($request)) {
+                return $this->sertakanFileTersimpan(redirect()->back()->withInput()->with('error', 'File proposal wajib diunggah.'), $filePathBaru);
             }
             // Proposal yang dikirim ulang tidak dihitung sebagai keikutsertaan baru.
             $error = $this->checkPengajuan($user, $skema, $memberUserIds, (int) $proposal->id);
             if ($error) {
-                return redirect()->back()->withInput()->with('error', $error);
+                return $this->sertakanFileTersimpan(redirect()->back()->withInput()->with('error', $error), $filePathBaru);
             }
             if ($error = $this->cekBatasTim($skema, count($anggotaResolved))) {
-                return redirect()->back()->withInput()->with('error', $error);
+                return $this->sertakanFileTersimpan(redirect()->back()->withInput()->with('error', $error), $filePathBaru);
             }
         }
 
@@ -764,27 +956,31 @@ class ProposalController extends Controller
         }
 
         if ($kirimPengajuan && ! $hasRab) {
-            return redirect()->back()->withInput()->with('error', 'Isi minimal satu komponen RAB sebelum mengirim pengajuan.');
+            return $this->sertakanFileTersimpan(redirect()->back()->withInput()->with('error', 'Isi minimal satu komponen RAB sebelum mengirim pengajuan.'), $filePathBaru);
         }
         // Plafon hanya dicek saat kirim pengajuan, bukan saat simpan draft —
         // selaras dengan store() (bug #7: simpan draft di form edit dulu
         // menolak RAB di atas plafon karena cek ini tidak dijaga $kirimPengajuan).
         if ($kirimPengajuan && $hasRab && $skema && $skema->plafon > 0 && $rabTotal > (float) $skema->plafon) {
-            return redirect()->back()->withInput()
-                ->with('error', 'Total RAB Rp '.number_format($rabTotal, 0, ',', '.').' melebihi plafon skema '.$skema->label().' (Rp '.number_format((float) $skema->plafon, 0, ',', '.').').');
+            return $this->sertakanFileTersimpan(
+                redirect()->back()->withInput()
+                    ->with('error', 'Total RAB Rp '.number_format($rabTotal, 0, ',', '.').' melebihi plafon skema '.$skema->label().' (Rp '.number_format((float) $skema->plafon, 0, ',', '.').').'),
+                $filePathBaru
+            );
         }
 
-        DB::transaction(function () use ($request, $proposal, $user, $kirimPengajuan, $skema, $anggotaResolved, $rabInput, $rabTotal, $hasRab) {
-            // Handle File: simpan berkas baru dulu, baru hapus berkas lama —
-            // bila penyimpanan gagal, berkas lama tetap ada (bug #7).
-            // Validasi gagal tidak menyentuh berkas sama sekali karena
-            // validate() di atas sudah menghentikan alur lebih dulu.
-            if ($request->hasFile('file')) {
-                $filePathBaru = $request->file('file')->store('proposal_files', 'public');
-                if ($proposal->file_path) {
-                    \Storage::disk('public')->delete($proposal->file_path);
+        DB::transaction(function () use ($request, $proposal, $user, $kirimPengajuan, $skema, $anggotaResolved, $rabInput, $rabTotal, $hasRab, $filePathBaru) {
+            // Handle File: berkas baru sudah disimpan di awal request
+            // (bug #5); bila tidak ada unggahan baru, pakai berkas dari
+            // percobaan sebelumnya (`file_tersimpan`). Berkas lama
+            // dihapus hanya setelah berkas pengganti pasti ada, dan
+            // bila tidak ada pengganti, berkas lama tetap dipertahankan.
+            $filePathDipakai = $filePathBaru ?? $this->fileTersimpanSebelumnya($request);
+            if ($filePathDipakai) {
+                if ($proposal->file_path && $proposal->file_path !== $filePathDipakai) {
+                    Storage::disk('public')->delete($proposal->file_path);
                 }
-                $proposal->file_path = $filePathBaru;
+                $proposal->file_path = $filePathDipakai;
             }
 
             $data = [
@@ -857,7 +1053,9 @@ class ProposalController extends Controller
         }
 
         if (! $proposal->file_path) {
-            return back()->with('error', 'Unggah file proposal terlebih dahulu sebelum mengirim pengajuan.');
+            // Disamakan dengan pesan file di pesanValidasiPengajuan() (bug #4):
+            // "File proposal wajib diunggah." — tidak dikunci test lama.
+            return back()->with('error', 'File proposal wajib diunggah.');
         }
 
         $memberUserIds = $proposal->members()->whereNotNull('user_id')->pluck('user_id')->all();

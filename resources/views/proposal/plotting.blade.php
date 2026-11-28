@@ -197,6 +197,46 @@
         if (btn) btn.classList.remove('border-danger');
     });
 
+    // Bug #9 (defensif): bila JS Bootstrap gagal dimuat (CDN tidak
+    // terjangkau), data-API dropdown tidak aktif dan klik pada tombol
+    // Reviewer tidak membuka menu sama sekali. Fallback ini HANYA
+    // jalan bila window.bootstrap tidak ada, jadi tidak pernah
+    // bentrok/double-toggle dengan data-API Bootstrap yang normalnya
+    // menangani buka-tutup menu (bundle dimuat sinkron di <head>).
+    // Penyebab pasti klik-pertama-gagal di uji manual ke-4 tidak bisa
+    // dibuktikan dari kode statis (bundle hanya dimuat sekali, tidak
+    // ada overlay yang menutupi tombol) — kemungkinan besar klik
+    // pertama termakan fokus jendela/tab atau balapan saat muat —
+    // jadi pembuktian akhir tetap lewat uji web.
+    if (!window.bootstrap || !window.bootstrap.Dropdown) {
+        document.addEventListener('click', function (e) {
+            var toggleBtn = e.target.closest('.plotting-reviewer-dropdown [data-bs-toggle="dropdown"]');
+            document.querySelectorAll('.plotting-reviewer-dropdown .dropdown-menu.show').forEach(function (menu) {
+                var wrap = menu.closest('.plotting-reviewer-dropdown');
+                if (!toggleBtn || !wrap.contains(toggleBtn)) {
+                    menu.classList.remove('show');
+                    var otherBtn = wrap.querySelector('[data-bs-toggle="dropdown"]');
+                    if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+                }
+            });
+            if (toggleBtn) {
+                var wrap = toggleBtn.closest('.plotting-reviewer-dropdown');
+                var menu = wrap.querySelector('.dropdown-menu');
+                var willShow = !menu.classList.contains('show');
+                menu.classList.toggle('show', willShow);
+                toggleBtn.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+            }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            document.querySelectorAll('.plotting-reviewer-dropdown .dropdown-menu.show').forEach(function (menu) {
+                menu.classList.remove('show');
+                var btn = menu.closest('.plotting-reviewer-dropdown').querySelector('[data-bs-toggle="dropdown"]');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            });
+        });
+    }
+
     // Pengganti atribut required pada <select> yang dihapus: cegah
     // submit bila salah satu reviewer belum dipilih. Validasi server
     // (required|exists:users,id di assignReviewer) tetap menjadi

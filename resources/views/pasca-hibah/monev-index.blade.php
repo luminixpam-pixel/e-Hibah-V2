@@ -9,7 +9,7 @@
     .main-card {
         background: white;
         border-radius: 20px;
-        padding: 30px;
+        padding: 20px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.05);
         border: none;
     }
@@ -73,11 +73,16 @@
         transform: translateY(-2px);
     }
 
-    /* TABEL (revisi uji ke-3): TANPA table-layout: fixed — kolom
-       menyesuaikan isi (lebar minimum di <th>). Pola yang sama
-       dengan logbook/luaran: kolom Aksi 8% terlalu sempit untuk
-       tombol "Lihat" sehingga meluber; tombol juga tidak lagi
-       dipaksa nowrap. */
+    /* TABEL (BUG #1 + BUG #2 uji ke-4, 28 Nov): TANPA
+       table-layout: fixed — kolom menyesuaikan isi (lebar minimum
+       di <th>). Anggaran lebar minimum total ~700px di konten
+       efektif ~950px (viewport 1341 - sidebar 220 - padding konten
+       & .main-card 20px), jadi header "Status Temuan" tidak lagi
+       terpotong di tepi kanan — bahkan saat tabel masih kosong
+       ("Belum ada temuan monev."), karena lebar tabel saat kosong
+       hanya ditentukan header: Judul 220→150px, Uraian 200→150px,
+       Status 100px (badge "In Review" muat), Diperbarui 96→80px
+       (tanggal nowrap), Aksi 110→100px (tombol "Lihat"). */
     .table-responsive .table {
         width: 100%;
     }
@@ -113,15 +118,15 @@
 
         {{-- TABEL TEMUAN --}}
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover align-middle table-compact">
                 <thead>
                     <tr>
                         <th style="width: 36px; border-top-left-radius: 15px;">No</th>
-                        <th class="text-start" style="min-width: 220px;">Judul Proposal &amp; Pengusul</th>
-                        <th class="text-start" style="min-width: 200px;">Uraian Temuan</th>
+                        <th class="text-start" style="min-width: 150px;">Judul Proposal &amp; Pengusul</th>
+                        <th class="text-start" style="min-width: 150px;">Uraian Temuan</th>
                         <th style="min-width: 100px;">Status Temuan</th>
-                        <th style="min-width: 96px;">Diperbarui</th>
-                        <th style="min-width: 110px; border-top-right-radius: 15px;">Aksi</th>
+                        <th style="min-width: 80px;">Diperbarui</th>
+                        <th style="min-width: 100px; border-top-right-radius: 15px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -144,7 +149,7 @@
                                     <span class="badge-status badge-closed">Closed</span>
                                 @endif
                             </td>
-                            <td class="text-center small text-muted">{{ $finding->updated_at->format('d/m/Y') }}</td>
+                            <td class="text-center small text-muted text-nowrap">{{ $finding->updated_at->format('d/m/Y') }}</td>
                             <td class="text-center">
                                 <a href="{{ route('monev.show', $finding->proposal_id) }}" class="btn-lihat shadow-sm">
                                     <i class="bi bi-eye-fill"></i>

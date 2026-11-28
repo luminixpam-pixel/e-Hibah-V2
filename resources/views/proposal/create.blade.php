@@ -48,6 +48,16 @@
         </div>
     </div>
 
+    {{-- Peringatan dinamis bila pengaju diblokir tanggungan/blacklist
+         (bug #6): tampil sebelum mengisi form, bukan hanya spanduk
+         statis di atas. --}}
+    @if (! empty($peringatanTanggungan ?? null))
+        <div class="proposal-alert-error">
+            <i class="bi bi-exclamation-triangle"></i>
+            <div><strong>Pengajuan diblokir:</strong> {{ $peringatanTanggungan }}</div>
+        </div>
+    @endif
+
     {{-- Error --}}
     @if (session('error'))
         <div class="proposal-alert-error">
@@ -71,9 +81,14 @@
         </div>
     @endif
 
+    {{-- novalidate (bug #4): validasi native browser (atribut required)
+         memblokir submit sebelum request sampai ke server, sehingga
+         pesan validasi Indonesia dari server tidak pernah tampil.
+         Validasi tetap berjalan di server. --}}
     <form action="{{ route('proposal.store') }}"
           method="POST"
           enctype="multipart/form-data"
+          novalidate
           id="proposalForm">
 
         @csrf
@@ -104,7 +119,6 @@
                         id="judul"
                         class="proposal-input"
                         rows="3"
-                        required
                         placeholder="Tuliskan judul lengkap proposal Anda..."
                     >{{ old('judul') }}</textarea>
 
@@ -128,7 +142,6 @@
                             name="nama_ketua"
                             id="nama_ketua"
                             class="proposal-input"
-                            required
                             value="{{ old('nama_ketua', auth()->user()->name) }}"
                             placeholder="Nama ketua pengusul"
                         >
@@ -149,7 +162,6 @@
                             name="fakultas_prodi"
                             id="fakultas_prodi"
                             class="proposal-input"
-                            required
                         >
                             <option value="" disabled
                                 {{ old('fakultas_prodi') ? '' : 'selected' }}>
@@ -197,7 +209,6 @@
                             name="skema_id"
                             id="skema_id"
                             class="proposal-input"
-                            required
                         >
                             <option value="" disabled
                                 {{ old('skema_id') ? '' : 'selected' }}>
@@ -400,12 +411,14 @@
                         Pilih file proposal dari perangkat Anda.
                     </p>
 
+                    {{-- required dihapus (bug #4b): input ini display:none
+                         sehingga validasi native browser memblokir submit
+                         tanpa pesan apa pun bila belum ada file dipilih. --}}
                     <input
                         type="file"
                         name="file"
                         id="proposalFile"
                         accept=".pdf,.doc,.docx"
-                        required
                     >
 
                     <label for="proposalFile" class="proposal-upload-button">
@@ -417,6 +430,19 @@
                         <i class="bi bi-file-earmark"></i>
                         <span>Belum ada file dipilih</span>
                     </div>
+
+                    {{-- Berkas dari percobaan submit sebelumnya yang sudah
+                         tersimpan di server (bug #5): ditampilkan dan
+                         dibawa lewat hidden input agar kirim ulang tidak
+                         perlu unggah ulang. --}}
+                    @php $fileTersimpan = old('file_tersimpan', session('file_tersimpan')); @endphp
+                    @if ($fileTersimpan)
+                        <div id="fileTersimpanInfo" class="proposal-file-name selected">
+                            <i class="bi bi-file-earmark-check"></i>
+                            <span>File sudah diunggah: {{ basename($fileTersimpan) }} — akan dipakai bila Anda tidak memilih file baru.</span>
+                        </div>
+                        <input type="hidden" name="file_tersimpan" value="{{ $fileTersimpan }}">
+                    @endif
 
                     <div class="proposal-upload-requirements">
                         <div>
@@ -541,6 +567,10 @@ document.getElementById('proposalFile').addEventListener('change', function() {
     if (this.files.length > 0) {
         span.textContent = this.files[0].name;
         display.classList.add('selected');
+        /* Berkas baru dipilih: info berkas tersimpan dari percobaan
+           sebelumnya tidak lagi relevan (berkas baru yang dipakai). */
+        var tersimpan = document.getElementById('fileTersimpanInfo');
+        if (tersimpan) tersimpan.style.display = 'none';
     } else {
         span.textContent = 'Belum ada file dipilih';
         display.classList.remove('selected');
@@ -662,13 +692,8 @@ function updateRabButtons() {
 document.getElementById('skema_id').addEventListener('change', updateSkemaInfo);
 document.getElementById('rab-wrap').addEventListener('input', hitungTotalRab);
 
-/* Draft: lewati validasi browser (judul tetap wajib di server). */
-document.getElementById('draftButton').addEventListener('click', function() {
-    document.getElementById('proposalForm').noValidate = true;
-});
-document.getElementById('submitButton').addEventListener('click', function() {
-    document.getElementById('proposalForm').noValidate = false;
-});
+/* Form memakai atribut novalidate (bug #4): validasi browser tidak
+   lagi dipakai — validasi dan pesannya berasal dari server. */
 
 /* Inisialisasi tampilan skema & total saat halaman dimuat (termasuk old input). */
 updateSkemaInfo();

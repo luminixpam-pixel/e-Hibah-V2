@@ -25,10 +25,14 @@
         width: 100%;
     }
 
-    /* TABEL (revisi uji ke-3): TANPA table-layout: fixed — kolom
-       menyesuaikan isi (lebar minimum di <th>). Lebar konten
-       efektif ~990px (viewport 1341 - sidebar 220 - padding).
-       Kedua tombol Aksi ditumpuk vertikal memenuhi lebar kolom. */
+    /* TABEL (BUG #1 uji ke-4, 28 Nov): TANPA table-layout: fixed —
+       kolom menyesuaikan isi (lebar minimum di <th>). Anggaran lebar
+       minimum total ~830px di konten efektif ~990px (viewport 1341
+       - sidebar 220 - padding). Kolom dipangkas: No. Pengajuan
+       118→104px, Tanggal 96→92px (nowrap), Pengusul 110→96px,
+       Reviewer 120→100px, Status 96→88px, Aksi 128→112px (dua
+       tombol tetap ditumpuk vertikal memenuhi lebar kolom); kolom
+       Judul fleksibel mengisi sisa. */
     .table-responsive .table {
         width: 100%;
     }
@@ -126,17 +130,17 @@
 
     {{-- TABLE --}}
     <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle shadow-sm">
+        <table class="table table-striped table-hover align-middle shadow-sm table-compact">
             <thead>
                 <tr>
                     <th style="width: 36px;">No</th>
-                    <th style="min-width: 118px;">No. Pengajuan</th>
-                    <th style="min-width: 96px;">Tanggal</th>
-                    <th style="min-width: 110px;">Pengusul</th>
+                    <th style="min-width: 104px;">No. Pengajuan</th>
+                    <th style="min-width: 92px;">Tanggal</th>
+                    <th style="min-width: 96px;">Pengusul</th>
                     <th>Judul Proposal</th>
-                    <th style="min-width: 120px;">Reviewer</th>
-                    <th style="min-width: 96px;">Status</th>
-                    <th style="min-width: 128px;">Aksi</th>
+                    <th style="min-width: 100px;">Reviewer</th>
+                    <th style="min-width: 88px;">Status</th>
+                    <th style="min-width: 112px;">Aksi</th>
                 </tr>
             </thead>
 
@@ -175,7 +179,7 @@
                         <td class="text-center"><span class="fw-semibold">{{ $proposal->no_pengajuan ?? '—' }}</span></td>
 
                         {{-- Tanggal --}}
-                        <td>{{ $tanggal }}</td>
+                        <td class="text-nowrap">{{ $tanggal }}</td>
 
                         {{-- Pengusul --}}
                         <td>{{ $pengusul }}</td>

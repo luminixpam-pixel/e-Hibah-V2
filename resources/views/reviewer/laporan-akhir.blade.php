@@ -236,10 +236,10 @@
                 <thead>
                     <tr>
                         <th style="width: 36px; border-top-left-radius: 15px;">No</th>
-                        <th class="text-start" style="min-width: 230px;">Judul & Pengusul</th>
-                        <th style="min-width: 120px;">Reviewer</th>
-                        <th style="min-width: 190px;">Berkas Akhir</th>
-                        <th style="min-width: 120px; border-top-right-radius: 15px;">Aksi</th>
+                        <th class="text-start" style="min-width: 200px;">Judul & Pengusul</th>
+                        <th style="min-width: 110px;">Reviewer</th>
+                        <th style="min-width: 170px;">Berkas Akhir</th>
+                        <th style="min-width: 110px; border-top-right-radius: 15px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -253,10 +253,11 @@
                             </div>
                         </td>
                         <td class="text-center small">
+                            {{-- Nama reviewer dipisah koma (bug #11): badge tanpa
+                                 pemisah membuat dua nama menempel
+                                 ("Reviewer Proposal Reviewer Proposal 2"). --}}
                             @if($p->reviewers->isNotEmpty())
-                                @foreach($p->reviewers as $rev)
-                                    <span class="badge bg-light text-dark border">{{ $rev->name }}</span>
-                                @endforeach
+                                {{ $p->reviewers->pluck('name')->join(', ') }}
                             @else
                                 <span class="text-muted small">-</span>
                             @endif

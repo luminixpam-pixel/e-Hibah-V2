@@ -9,7 +9,7 @@
     .main-card {
         background: white;
         border-radius: 20px;
-        padding: 30px;
+        padding: 20px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.05);
         border: none;
     }
@@ -39,10 +39,14 @@
         font-size: 11px;
     }
 
-    /* TABEL (revisi uji ke-3): TANPA table-layout: fixed — kolom
-       menyesuaikan isi (lebar minimum di <th>). Lebar konten
-       efektif ~930px (viewport 1341 - sidebar 220 - padding
-       konten & .main-card). */
+    /* TABEL (BUG #1 uji ke-4, 28 Nov): TANPA table-layout: fixed —
+       kolom menyesuaikan isi (lebar minimum di <th>). Anggaran lebar
+       minimum total ~605px di konten efektif ~950px (viewport 1341
+       - sidebar 220 - padding konten & .main-card 20px): Judul
+       240→170px, No. Pengajuan 120→104px, Entri 110→96px (badge
+       "Belum ada entri" yang nowrap tetap muat karena kolom
+       mengembang mengikuti badge), Aksi 140→96px (tombol dipersingkat
+       "Lihat Logbook" → "Lihat"). */
     .table-responsive .table {
         width: 100%;
     }
@@ -77,14 +81,14 @@
 
         {{-- TABEL PROPOSAL --}}
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover align-middle table-compact">
                 <thead>
                     <tr>
                         <th style="width: 36px; border-top-left-radius: 15px;">No</th>
-                        <th class="text-start" style="min-width: 240px;">Judul & Pengusul</th>
-                        <th style="min-width: 120px;">No. Pengajuan</th>
-                        <th style="min-width: 110px;">Entri Logbook</th>
-                        <th style="min-width: 140px; border-top-right-radius: 15px;">Aksi</th>
+                        <th class="text-start" style="min-width: 170px;">Judul & Pengusul</th>
+                        <th style="min-width: 104px;">No. Pengajuan</th>
+                        <th style="min-width: 96px;">Entri Logbook</th>
+                        <th style="min-width: 96px; border-top-right-radius: 15px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -106,8 +110,8 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                <a href="{{ route('logbook.show', $proposal) }}" class="btn btn-sm btn-success fw-bold px-3" style="border-radius: 8px;">
-                                    <i class="bi bi-journal-text me-1"></i> Lihat Logbook
+                                <a href="{{ route('logbook.show', $proposal) }}" class="btn btn-sm btn-success fw-bold px-2" style="border-radius: 8px;">
+                                    <i class="bi bi-journal-text me-1"></i> Lihat
                                 </a>
                             </td>
                         </tr>

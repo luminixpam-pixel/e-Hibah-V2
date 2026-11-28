@@ -54,14 +54,20 @@ class LaporanKemajuanController extends Controller
         $proposals = $query->latest()->paginate(10);
 
         // 4. Data untuk Dropdown Pilih Proposal (Khusus Pengaju).
-        // Hanya proposal yang sudah Disetujui (pasca-hibah) yang boleh
-        // diunggah laporan kemajuannya — query lama memakai where('status')
-        // tanpa nilai (tidak valid) dan view memakai $proposals, sehingga
-        // dropdown menampilkan Draft dan Lolos Administrasi juga.
+        // Hanya proposal yang sudah Disetujui pendanaannya (pasca-hibah)
+        // yang boleh diunggah laporan kemajuannya. Definisi "disetujui"
+        // di sini adalah kolom status_pendanaan (keputusan pendanaan),
+        // BUKAN kolom status (status alur: 'Review Selesai' hanya
+        // berarti review selesai, belum tentu didanai). Query lama
+        // memakai status sehingga proposal yang baru lolos review tapi
+        // belum diputuskan pendanaannya tidak bisa dibedakan — dan
+        // sebaliknya tabel (tanpa filter status) menampilkan proposal
+        // itu sehingga form terlihat kosong padahal tabel menampilkan
+        // proposal yang "sudah Disetujui" (uji manual ke-4, bug #10).
         $myProposals = collect();
         if (in_array($user->role, ['pengaju', 'reviewer'], true)) {
             $myProposals = Proposal::where('user_id', $user->id)
-                ->where('status', 'Disetujui')
+                ->where('status_pendanaan', 'Disetujui')
                 ->latest()
                 ->get(['id', 'judul']);
         }
@@ -94,8 +100,9 @@ class LaporanKemajuanController extends Controller
             }
 
             // Laporan kemajuan hanya untuk proposal yang sudah disetujui
-            // pendanaannya (sama seperti dropdown di halaman ini).
-            if ($proposal->status !== 'Disetujui') {
+            // pendanaannya (sama seperti dropdown di halaman ini):
+            // cek status_pendanaan, bukan status alur.
+            if ($proposal->status_pendanaan !== 'Disetujui') {
                 return redirect()->back()->with('error', 'Laporan kemajuan hanya dapat diunggah untuk proposal yang sudah disetujui pendanaannya.');
             }
 

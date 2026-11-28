@@ -7,7 +7,7 @@
     .main-card {
         background: white;
         border-radius: 20px;
-        padding: 30px;
+        padding: 20px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.05);
         margin-top: 20px;
         border: none;
@@ -58,7 +58,7 @@
     .skor-akhir {
         color: #007bff;
         font-weight: 800;
-        font-size: 20px;
+        font-size: 17px;
         margin-bottom: 0;
         line-height: 1;
     }
@@ -98,16 +98,20 @@
         padding: 6px 8px;
         cursor: pointer;
         width: 100%;
-        min-width: 170px;
+        min-width: 0;
     }
 
-    /* TABEL (revisi uji ke-3): TANPA table-layout: fixed — kolom
-       menyesuaikan isi (lebar minimum di <th>), bukan dipatok persen.
-       Lebar konten efektif ~930px (viewport 1341 - sidebar 220 -
-       padding konten & .main-card). Dropdown "Status Pendanaan"
-       diberi lebar minimum 170px supaya "Disetujui" tampil utuh,
-       bukan hanya "Di"; kolom Skor min. 100px supaya "453.00" tidak
-       terpecah ("45 3.0 0"); tombol Hasil Review boleh melipat. */
+    /* TABEL (BUG #1 uji ke-4, 28 Nov): TANPA table-layout: fixed —
+       kolom menyesuaikan isi (lebar minimum di <th>). Anggaran lebar
+       minimum total ~735px di konten efektif ~950px (viewport 1341
+       - sidebar 220 - padding konten & .main-card 20px).
+       Perbaikan utama: placeholder select "Status Pendanaan"
+       dipersingkat "-- Pilih Keputusan --" → "-- Pilih --" karena
+       teks placeholder itulah yang menentukan lebar minimum select
+       (~180px, paling lebar di tabel); "Disetujui"/"Ditolak"/
+       "Direvisi" tetap tampil utuh. Skor akhir 20px→17px supaya
+       "453.00" muat di 76px; Judul 220→170px, Reviewer 130→104px,
+       Hasil Review 150→132px; tombol Hasil Review boleh melipat. */
     .table-responsive .table {
         width: 100%;
     }
@@ -170,15 +174,15 @@
 
         {{-- TABLE --}}
         <div class="table-responsive mt-3">
-            <table class="table align-middle">
+            <table class="table table-compact align-middle">
                 <thead>
                     <tr>
                         <th style="width: 36px;">No</th>
-                        <th class="text-start" style="min-width: 220px;">Judul Proposal & Pengusul</th>
-                        <th class="text-start" style="min-width: 130px;">Reviewer</th>
-                        <th style="min-width: 100px;">Skor Akhir</th>
-                        <th style="min-width: 176px;">Status Pendanaan</th>
-                        <th style="min-width: 150px;">Hasil Review</th>
+                        <th class="text-start" style="min-width: 170px;">Judul Proposal & Pengusul</th>
+                        <th class="text-start" style="min-width: 104px;">Reviewer</th>
+                        <th style="min-width: 76px;">Skor Akhir</th>
+                        <th style="min-width: 132px;">Status Pendanaan</th>
+                        <th style="min-width: 132px;">Hasil Review</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -232,7 +236,7 @@
                                     <select name="status_pendanaan"
                                             class="form-select keputusan-select shadow-sm border-{{ $proposal->status == 'Disetujui' ? 'success' : ($proposal->status == 'Ditolak' ? 'danger' : 'primary') }}">
 
-                                        <option value="" disabled {{ !$isDone ? 'selected' : '' }}>-- Pilih Keputusan --</option>
+                                        <option value="" disabled {{ !$isDone ? 'selected' : '' }}>-- Pilih --</option>
                                         <option value="Disetujui" {{ $proposal->status == 'Disetujui' ? 'selected' : '' }}>Disetujui</option>
                                         <option value="Ditolak" {{ $proposal->status == 'Ditolak' ? 'selected' : '' }}>Ditolak</option>
                                         <option value="Direvisi" {{ $proposal->status == 'Direvisi' ? 'selected' : '' }}>Direvisi</option>
