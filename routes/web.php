@@ -383,8 +383,11 @@ Route::middleware(['auth', 'role:reviewer'])->group(function () {
     Route::post('/reviewer/isi-review/{id}', [ReviewerController::class, 'submitReview'])->name('review.simpan');
 });
 
-/* --- ROLE: ADMIN & REVIEWER (SHARED MONITORING) --- */
-Route::middleware(['auth', 'role:admin,reviewer'])->group(function () {
+/* --- ROLE: STAF MONITORING (ADMIN, REVIEWER, VERIFIKATOR, LPPM, DEKAN, KEPALA LPPM) --- */
+/* Pengaju sengaja tidak masuk grup ini (403 di route); pembatasan per-role
+   yang lebih halus (reviewer hanya yang ditugaskan, staf melihat semua)
+   ada di batasiDaftarMonitoring() di ProposalController. */
+Route::middleware(['auth', 'role:admin,reviewer,verifikator,lppm,dekan,kepala_lppm'])->group(function () {
     Route::get('/proposal-perlu-direview', [ProposalController::class, 'perluDireview'])->name('monitoring.proposalPerluDireview');
     Route::get('/proposal-sedang-direview', [ProposalController::class, 'proposalSedangDireview'])->name('monitoring.proposalSedangDireview');
     Route::get('/daftar-review', [ProposalController::class, 'daftarReview'])->name('monitoring.daftarReview');
