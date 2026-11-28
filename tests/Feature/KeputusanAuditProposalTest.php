@@ -17,12 +17,12 @@ use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
-function kaUser(string $role, array $attrs = []): User
+function kapUser(string $role, array $attrs = []): User
 {
     return User::factory()->create(array_merge(['role' => $role], $attrs));
 }
 
-function kaSkema(array $attrs = []): Skema
+function kapSkema(array $attrs = []): Skema
 {
     return Skema::create(array_merge([
         'kategori' => 'Pembinaan',
@@ -33,12 +33,12 @@ function kaSkema(array $attrs = []): Skema
     ], $attrs));
 }
 
-function kaFakultas(): Fakultas
+function kapFakultas(): Fakultas
 {
     return Fakultas::first() ?? Fakultas::create(['nama_fakultas' => 'Fakultas Teknologi Informasi']);
 }
 
-function kaPeriodeAktif(): HibahPeriod
+function kapPeriodeAktif(): HibahPeriod
 {
     return HibahPeriod::create([
         'nama' => 'Periode 2026',
@@ -47,7 +47,7 @@ function kaPeriodeAktif(): HibahPeriod
     ]);
 }
 
-function kaPeriodeKedaluarsa(): HibahPeriod
+function kapPeriodeKedaluarsa(): HibahPeriod
 {
     return HibahPeriod::create([
         'nama' => 'Periode 2025',
@@ -56,13 +56,13 @@ function kaPeriodeKedaluarsa(): HibahPeriod
     ]);
 }
 
-function kaProposal(User $user, Skema $skema, array $attrs = []): Proposal
+function kapProposal(User $user, Skema $skema, array $attrs = []): Proposal
 {
     return Proposal::create(array_merge([
         'user_id' => $user->id,
         'judul' => 'Proposal uji keputusan audit',
         'nama_ketua' => $user->name,
-        'fakultas_prodi' => kaFakultas()->id,
+        'fakultas_prodi' => kapFakultas()->id,
         'skema_id' => $skema->id,
         'status' => 'Draft',
         'biaya' => 1000000,
@@ -70,13 +70,13 @@ function kaProposal(User $user, Skema $skema, array $attrs = []): Proposal
     ], $attrs));
 }
 
-function kaPayloadSubmit(Skema $skema, array $override = []): array
+function kapPayloadSubmit(Skema $skema, array $override = []): array
 {
     return array_merge([
         'aksi' => 'submit',
         'judul' => 'Proposal RAB uji',
         'nama_ketua' => 'Dr. Andi',
-        'fakultas_prodi' => kaFakultas()->id,
+        'fakultas_prodi' => kapFakultas()->id,
         'skema_id' => $skema->id,
         'file' => UploadedFile::fake()->create('proposal.pdf', 100, 'application/pdf'),
         'rab' => [
@@ -86,7 +86,7 @@ function kaPayloadSubmit(Skema $skema, array $override = []): array
     ], $override);
 }
 
-function kaPayloadUpdate(Proposal $proposal, Skema $skema, array $override = []): array
+function kapPayloadUpdate(Proposal $proposal, Skema $skema, array $override = []): array
 {
     return array_merge([
         'aksi' => 'draft',
@@ -104,7 +104,7 @@ function kaPayloadUpdate(Proposal $proposal, Skema $skema, array $override = [])
 // --- Butir 10: halaman daftar monitoring dibatasi per role ---
 
 test('ka10: pengaju ditolak 403 di halaman antrean staf (perlu direview, sedang direview, daftar review)', function () {
-    $pengaju = kaUser('pengaju');
+    $pengaju = kapUser('pengaju');
 
     $this->actingAs($pengaju)->get(route('monitoring.proposalPerluDireview'))->assertForbidden();
     $this->actingAs($pengaju)->get(route('monitoring.proposalSedangDireview'))->assertForbidden();
@@ -113,11 +113,11 @@ test('ka10: pengaju ditolak 403 di halaman antrean staf (perlu direview, sedang 
 
 test('ka10: staf lolos di semua halaman daftar monitoring', function () {
     $staf = [
-        kaUser('admin'),
-        kaUser('verifikator'),
-        kaUser('lppm'),
-        kaUser('dekan'),
-        kaUser('kepala_lppm'),
+        kapUser('admin'),
+        kapUser('verifikator'),
+        kapUser('lppm'),
+        kapUser('dekan'),
+        kapUser('kepala_lppm'),
     ];
 
     $rute = [
@@ -139,11 +139,11 @@ test('ka10: staf lolos di semua halaman daftar monitoring', function () {
 });
 
 test('ka10: pengaju tetap bisa membuka halaman proposal disetujui tapi hanya melihat miliknya sendiri', function () {
-    $andi = kaUser('pengaju', ['name' => 'Dr. Andi']);
-    $citra = kaUser('pengaju', ['name' => 'Dr. Citra']);
-    $skema = kaSkema();
-    $milikAndi = kaProposal($andi, $skema, ['judul' => 'Proposal disetujui Andi', 'status' => 'Disetujui']);
-    $milikCitra = kaProposal($citra, $skema, ['judul' => 'Proposal disetujui Citra', 'status' => 'Disetujui']);
+    $andi = kapUser('pengaju', ['name' => 'Dr. Andi']);
+    $citra = kapUser('pengaju', ['name' => 'Dr. Citra']);
+    $skema = kapSkema();
+    $milikAndi = kapProposal($andi, $skema, ['judul' => 'Proposal disetujui Andi', 'status' => 'Disetujui']);
+    $milikCitra = kapProposal($citra, $skema, ['judul' => 'Proposal disetujui Citra', 'status' => 'Disetujui']);
 
     $response = $this->actingAs($andi)->get(route('monitoring.proposalDisetujui'));
 
@@ -155,10 +155,10 @@ test('ka10: pengaju tetap bisa membuka halaman proposal disetujui tapi hanya mel
 });
 
 test('ka10: anggota tim yang diterima ikut melihat proposal disetujui itu di daftarnya', function () {
-    $andi = kaUser('pengaju', ['name' => 'Dr. Andi']);
-    $budi = kaUser('pengaju', ['name' => 'Budi Santoso']);
-    $skema = kaSkema();
-    $proposal = kaProposal($andi, $skema, ['judul' => 'Proposal disetujui tim', 'status' => 'Disetujui']);
+    $andi = kapUser('pengaju', ['name' => 'Dr. Andi']);
+    $budi = kapUser('pengaju', ['name' => 'Budi Santoso']);
+    $skema = kapSkema();
+    $proposal = kapProposal($andi, $skema, ['judul' => 'Proposal disetujui tim', 'status' => 'Disetujui']);
 
     ProposalMember::create([
         'proposal_id' => $proposal->id,
@@ -173,13 +173,13 @@ test('ka10: anggota tim yang diterima ikut melihat proposal disetujui itu di daf
 });
 
 test('ka10: pengaju hanya melihat proposal ditolak dan review selesai miliknya sendiri', function () {
-    $andi = kaUser('pengaju', ['name' => 'Dr. Andi']);
-    $citra = kaUser('pengaju', ['name' => 'Dr. Citra']);
-    $skema = kaSkema();
-    $ditolakAndi = kaProposal($andi, $skema, ['judul' => 'Proposal ditolak Andi', 'status' => 'Ditolak']);
-    $ditolakCitra = kaProposal($citra, $skema, ['judul' => 'Proposal ditolak Citra', 'status' => 'Ditolak']);
-    $selesaiAndi = kaProposal($andi, $skema, ['judul' => 'Proposal selesai Andi', 'status' => 'Review Selesai']);
-    $selesaiCitra = kaProposal($citra, $skema, ['judul' => 'Proposal selesai Citra', 'status' => 'Review Selesai']);
+    $andi = kapUser('pengaju', ['name' => 'Dr. Andi']);
+    $citra = kapUser('pengaju', ['name' => 'Dr. Citra']);
+    $skema = kapSkema();
+    $ditolakAndi = kapProposal($andi, $skema, ['judul' => 'Proposal ditolak Andi', 'status' => 'Ditolak']);
+    $ditolakCitra = kapProposal($citra, $skema, ['judul' => 'Proposal ditolak Citra', 'status' => 'Ditolak']);
+    $selesaiAndi = kapProposal($andi, $skema, ['judul' => 'Proposal selesai Andi', 'status' => 'Review Selesai']);
+    $selesaiCitra = kapProposal($citra, $skema, ['judul' => 'Proposal selesai Citra', 'status' => 'Review Selesai']);
 
     $this->actingAs($andi)->get(route('monitoring.proposalDitolak'))
         ->assertOk()
@@ -193,11 +193,11 @@ test('ka10: pengaju hanya melihat proposal ditolak dan review selesai miliknya s
 });
 
 test('ka10: reviewer hanya melihat proposal yang ditugaskan kepadanya', function () {
-    $reviewer = kaUser('reviewer', ['name' => 'Sinta']);
-    $ketua = kaUser('pengaju', ['name' => 'Dr. Andi']);
-    $skema = kaSkema();
-    $ditugaskan = kaProposal($ketua, $skema, ['judul' => 'Proposal review Sinta', 'status' => 'Sedang Direview']);
-    $lain = kaProposal($ketua, $skema, ['judul' => 'Proposal review orang lain', 'status' => 'Sedang Direview']);
+    $reviewer = kapUser('reviewer', ['name' => 'Sinta']);
+    $ketua = kapUser('pengaju', ['name' => 'Dr. Andi']);
+    $skema = kapSkema();
+    $ditugaskan = kapProposal($ketua, $skema, ['judul' => 'Proposal review Sinta', 'status' => 'Sedang Direview']);
+    $lain = kapProposal($ketua, $skema, ['judul' => 'Proposal review orang lain', 'status' => 'Sedang Direview']);
     $ditugaskan->reviewers()->sync([$reviewer->id]);
 
     $this->actingAs($reviewer)->get(route('monitoring.proposalSedangDireview'))
@@ -205,9 +205,9 @@ test('ka10: reviewer hanya melihat proposal yang ditugaskan kepadanya', function
         ->assertViewHas('proposals', fn ($items) => $items->pluck('id')->contains($ditugaskan->id)
             && ! $items->pluck('id')->contains($lain->id));
 
-    $disetujui = kaProposal($ketua, $skema, ['judul' => 'Proposal disetujui Sinta', 'status' => 'Disetujui']);
+    $disetujui = kapProposal($ketua, $skema, ['judul' => 'Proposal disetujui Sinta', 'status' => 'Disetujui']);
     $disetujui->reviewers()->sync([$reviewer->id]);
-    $disetujuiLain = kaProposal($ketua, $skema, ['judul' => 'Proposal disetujui lain', 'status' => 'Disetujui']);
+    $disetujuiLain = kapProposal($ketua, $skema, ['judul' => 'Proposal disetujui lain', 'status' => 'Disetujui']);
 
     $this->actingAs($reviewer)->get(route('monitoring.proposalDisetujui'))
         ->assertOk()
@@ -218,13 +218,13 @@ test('ka10: reviewer hanya melihat proposal yang ditugaskan kepadanya', function
 // --- Butir 11: update() disamakan dengan edit() soal masa hibah ---
 
 test('ka11: update di luar masa hibah ditolak (tidak ada periode aktif)', function () {
-    $pengaju = kaUser('pengaju', ['name' => 'Dr. Andi']);
-    $skema = kaSkema();
-    $proposal = kaProposal($pengaju, $skema, ['status' => 'Draft', 'judul' => 'Judul lama']);
+    $pengaju = kapUser('pengaju', ['name' => 'Dr. Andi']);
+    $skema = kapSkema();
+    $proposal = kapProposal($pengaju, $skema, ['status' => 'Draft', 'judul' => 'Judul lama']);
 
     $response = $this->actingAs($pengaju)
         ->from(route('proposal.index'))
-        ->put(route('proposal.update', $proposal->id), kaPayloadUpdate($proposal, $skema, [
+        ->put(route('proposal.update', $proposal->id), kapPayloadUpdate($proposal, $skema, [
             'judul' => 'Judul diubah di luar masa hibah',
         ]));
 
@@ -233,14 +233,14 @@ test('ka11: update di luar masa hibah ditolak (tidak ada periode aktif)', functi
 });
 
 test('ka11: update di luar masa hibah ditolak (periode sudah kedaluarsa)', function () {
-    kaPeriodeKedaluarsa();
-    $pengaju = kaUser('pengaju', ['name' => 'Dr. Andi']);
-    $skema = kaSkema();
-    $proposal = kaProposal($pengaju, $skema, ['status' => 'Draft', 'judul' => 'Judul lama']);
+    kapPeriodeKedaluarsa();
+    $pengaju = kapUser('pengaju', ['name' => 'Dr. Andi']);
+    $skema = kapSkema();
+    $proposal = kapProposal($pengaju, $skema, ['status' => 'Draft', 'judul' => 'Judul lama']);
 
     $response = $this->actingAs($pengaju)
         ->from(route('proposal.index'))
-        ->put(route('proposal.update', $proposal->id), kaPayloadUpdate($proposal, $skema, [
+        ->put(route('proposal.update', $proposal->id), kapPayloadUpdate($proposal, $skema, [
             'judul' => 'Judul diubah setelah periode berakhir',
         ]));
 
@@ -249,13 +249,13 @@ test('ka11: update di luar masa hibah ditolak (periode sudah kedaluarsa)', funct
 });
 
 test('ka11: update di dalam masa hibah lolos', function () {
-    kaPeriodeAktif();
-    $pengaju = kaUser('pengaju', ['name' => 'Dr. Andi']);
-    $skema = kaSkema();
-    $proposal = kaProposal($pengaju, $skema, ['status' => 'Draft']);
+    kapPeriodeAktif();
+    $pengaju = kapUser('pengaju', ['name' => 'Dr. Andi']);
+    $skema = kapSkema();
+    $proposal = kapProposal($pengaju, $skema, ['status' => 'Draft']);
 
     $response = $this->actingAs($pengaju)
-        ->put(route('proposal.update', $proposal->id), kaPayloadUpdate($proposal, $skema, [
+        ->put(route('proposal.update', $proposal->id), kapPayloadUpdate($proposal, $skema, [
             'judul' => 'Judul revisi di masa hibah',
         ]));
 
@@ -264,9 +264,9 @@ test('ka11: update di dalam masa hibah lolos', function () {
 });
 
 test('ka11: halaman edit di luar masa hibah tetap ditolak dengan pesan yang sama', function () {
-    $pengaju = kaUser('pengaju', ['name' => 'Dr. Andi']);
-    $skema = kaSkema();
-    $proposal = kaProposal($pengaju, $skema, ['status' => 'Draft']);
+    $pengaju = kapUser('pengaju', ['name' => 'Dr. Andi']);
+    $skema = kapSkema();
+    $proposal = kapProposal($pengaju, $skema, ['status' => 'Draft']);
 
     $response = $this->actingAs($pengaju)
         ->from(route('proposal.index'))
@@ -300,11 +300,11 @@ test('ka15: ParseJumlah menolak format yang tidak jelas', function () {
 
 test('ka15: submit dengan jumlah 1e5 menyimpan 100000 di item RAB dan biaya proposal', function () {
     Storage::fake('public');
-    $pengaju = kaUser('pengaju', ['name' => 'Dr. Andi']);
-    $skema = kaSkema();
+    $pengaju = kapUser('pengaju', ['name' => 'Dr. Andi']);
+    $skema = kapSkema();
 
     $response = $this->actingAs($pengaju)
-        ->post(route('proposal.store'), kaPayloadSubmit($skema, [
+        ->post(route('proposal.store'), kapPayloadSubmit($skema, [
             'rab' => [
                 ['nama_komponen' => 'Honorarium', 'jumlah' => '1e5', 'keterangan' => ''],
             ],
@@ -318,20 +318,20 @@ test('ka15: submit dengan jumlah 1e5 menyimpan 100000 di item RAB dan biaya prop
 
 test('ka15: submit dengan jumlah 1.000.000 dan Rp 1.500.000 menyimpan nilai penuhnya', function () {
     Storage::fake('public');
-    $pengaju = kaUser('pengaju', ['name' => 'Dr. Andi']);
-    $skema = kaSkema();
+    $pengaju = kapUser('pengaju', ['name' => 'Dr. Andi']);
+    $skema = kapSkema();
 
     $this->actingAs($pengaju)
-        ->post(route('proposal.store'), kaPayloadSubmit($skema, [
+        ->post(route('proposal.store'), kapPayloadSubmit($skema, [
             'rab' => [
                 ['nama_komponen' => 'Honorarium', 'jumlah' => '1.000.000', 'keterangan' => ''],
             ],
         ]))->assertSessionHas('success');
     expect((int) Proposal::firstOrFail()->biaya)->toBe(1000000);
 
-    $pengaju2 = kaUser('pengaju', ['name' => 'Dr. Citra']);
+    $pengaju2 = kapUser('pengaju', ['name' => 'Dr. Citra']);
     $this->actingAs($pengaju2)
-        ->post(route('proposal.store'), kaPayloadSubmit($skema, [
+        ->post(route('proposal.store'), kapPayloadSubmit($skema, [
             'rab' => [
                 ['nama_komponen' => 'Honorarium', 'jumlah' => 'Rp 1.500.000', 'keterangan' => ''],
             ],
@@ -341,11 +341,11 @@ test('ka15: submit dengan jumlah 1.000.000 dan Rp 1.500.000 menyimpan nilai penu
 
 test('ka15: submit dengan jumlah 1,5 juta ditolak validasi', function () {
     Storage::fake('public');
-    $pengaju = kaUser('pengaju', ['name' => 'Dr. Andi']);
-    $skema = kaSkema();
+    $pengaju = kapUser('pengaju', ['name' => 'Dr. Andi']);
+    $skema = kapSkema();
 
     $response = $this->actingAs($pengaju)
-        ->post(route('proposal.store'), kaPayloadSubmit($skema, [
+        ->post(route('proposal.store'), kapPayloadSubmit($skema, [
             'rab' => [
                 ['nama_komponen' => 'Honorarium', 'jumlah' => '1,5 juta', 'keterangan' => ''],
             ],
@@ -357,11 +357,11 @@ test('ka15: submit dengan jumlah 1,5 juta ditolak validasi', function () {
 
 test('ka15: plafon ditegakkan dengan nilai hasil parsing — 3e7 ditolak sebagai Rp 30.000.000', function () {
     Storage::fake('public');
-    $pengaju = kaUser('pengaju', ['name' => 'Dr. Andi']);
-    $skema = kaSkema();
+    $pengaju = kapUser('pengaju', ['name' => 'Dr. Andi']);
+    $skema = kapSkema();
 
     $response = $this->actingAs($pengaju)
-        ->post(route('proposal.store'), kaPayloadSubmit($skema, [
+        ->post(route('proposal.store'), kapPayloadSubmit($skema, [
             'rab' => [
                 ['nama_komponen' => 'Honorarium', 'jumlah' => '3e7', 'keterangan' => ''],
             ],
@@ -373,13 +373,13 @@ test('ka15: plafon ditegakkan dengan nilai hasil parsing — 3e7 ditolak sebagai
 });
 
 test('ka15: update draft dengan jumlah 1.000.000 menyimpan nilai penuhnya', function () {
-    kaPeriodeAktif();
-    $pengaju = kaUser('pengaju', ['name' => 'Dr. Andi']);
-    $skema = kaSkema();
-    $proposal = kaProposal($pengaju, $skema, ['status' => 'Draft']);
+    kapPeriodeAktif();
+    $pengaju = kapUser('pengaju', ['name' => 'Dr. Andi']);
+    $skema = kapSkema();
+    $proposal = kapProposal($pengaju, $skema, ['status' => 'Draft']);
 
     $response = $this->actingAs($pengaju)
-        ->put(route('proposal.update', $proposal->id), kaPayloadUpdate($proposal, $skema, [
+        ->put(route('proposal.update', $proposal->id), kapPayloadUpdate($proposal, $skema, [
             'rab' => [
                 ['nama_komponen' => 'Honorarium', 'jumlah' => '1.000.000', 'keterangan' => ''],
             ],
