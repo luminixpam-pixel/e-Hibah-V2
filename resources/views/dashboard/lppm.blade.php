@@ -26,10 +26,10 @@
         </div>
     </div>
 
-    {{-- Statistik --}}
+    {{-- Statistik — kartu berupa tautan (uji ke-5 butir 5). --}}
     <div class="lppm-stats">
 
-        <div class="lppm-stat-card">
+        <a href="{{ route('lppm.plotting') }}" class="lppm-stat-card">
             <div class="lppm-stat-top">
                 <div class="lppm-stat-icon admin">
                     <i class="bi bi-shield-check"></i>
@@ -38,9 +38,9 @@
             </div>
             <h3>{{ $lolosAdmin ?? 0 }}</h3>
             <small>Proposal siap diproses</small>
-        </div>
+        </a>
 
-        <div class="lppm-stat-card">
+        <a href="{{ route('monitoring.proposalSedangDireview') }}" class="lppm-stat-card">
             <div class="lppm-stat-top">
                 <div class="lppm-stat-icon reviewing">
                     <i class="bi bi-arrow-repeat"></i>
@@ -49,9 +49,9 @@
             </div>
             <h3>{{ $sedangDireview ?? 0 }}</h3>
             <small>Proposal dalam penilaian</small>
-        </div>
+        </a>
 
-        <div class="lppm-stat-card">
+        <a href="{{ route('monitoring.reviewSelesai') }}" class="lppm-stat-card">
             <div class="lppm-stat-top">
                 <div class="lppm-stat-icon completed">
                     <i class="bi bi-clipboard-check"></i>
@@ -60,9 +60,9 @@
             </div>
             <h3>{{ $reviewSelesai ?? 0 }}</h3>
             <small>Penilaian telah diselesaikan</small>
-        </div>
+        </a>
 
-        <div class="lppm-stat-card">
+        <a href="{{ route('monitoring.proposalDisetujui') }}" class="lppm-stat-card">
             <div class="lppm-stat-top">
                 <div class="lppm-stat-icon approved">
                     <i class="bi bi-check-circle"></i>
@@ -71,7 +71,7 @@
             </div>
             <h3>{{ $disetujui ?? 0 }}</h3>
             <small>Proposal disetujui</small>
-        </div>
+        </a>
 
     </div>
 
@@ -393,6 +393,10 @@
     min-width: 0;
     box-shadow: 0 4px 15px rgba(32, 86, 60, .04);
     transition: .25s ease;
+    /* Kartu berupa tautan (uji ke-5 butir 5): tampil seperti kartu,
+       bukan seperti tautan teks. */
+    text-decoration: none;
+    color: inherit;
 }
 
 .lppm-stat-card:hover {

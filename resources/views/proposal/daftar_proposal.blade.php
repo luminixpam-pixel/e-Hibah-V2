@@ -34,17 +34,16 @@
         box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     }
 
-    /* TABEL (BUG #1 uji ke-4, 28 Nov): TANPA table-layout: fixed —
-       kolom menyesuaikan isi (lebar minimum di <th>). Anggaran lebar
-       minimum total ~690px di konten efektif ~990px (viewport 1341
-       - sidebar 220 - padding), jadi ada sisa ~300px untuk judul.
-       Kunci perbaikan: baris tombol Aksi SEKARANG benar-benar
-       melipat (aturan global lama hanya membungkus `.d-flex.gap-2`,
-       sedangkan baris ini memakai `gap-1`, jadi 6 tombol ikon 32px
-       memaksa kolom Aksi ~212px+); kolom Aksi min. 116px menampung
-       3 tombol per baris (3+3). Badge Status dikecilkan (font
-       0.7rem, letter-spacing 0.2px) supaya "SEDANG DIREVIEW" muat
-       satu baris di 148px. */
+    /* TABEL (BUG #1 uji ke-4, 28 Nov; UB5 uji ke-5): TANPA
+       table-layout: fixed — kolom menyesuaikan isi (lebar minimum
+       di <th>). Perbaikan UB5 bersifat struktural, bukan anggaran
+       lebar: badge Status TIDAK LAGI text-nowrap (dulu class itu
+       mengalahkan aturan global dan memaksa kolom ~170px; kini
+       badge boleh melipat dua baris), tombol Aksi menumpuk 2 per
+       baris (min. 84px), dan tabel memakai .table-padat (font/
+       padding lebih kecil). Pembungkus .container diganti
+       .container-fluid px-0 supaya padding 12px kiri-kanan tidak
+       memakan lebar tabel. */
     .table-responsive table {
         width: 100%;
     }
@@ -57,7 +56,7 @@
 </style>
 
 @section('content')
-<div class="container mt-4">
+<div class="container-fluid px-0 mt-4">
     {{-- Header & Filter Tahun --}}
     <div class="d-flex justify-content-between align-items-center mb-3">
         @if($role === 'admin')
@@ -107,15 +106,15 @@ document.getElementById('table-search').addEventListener('keyup', function() {
 
     {{-- TABEL --}}
     <div class="table-responsive shadow-sm" style="border-radius: 12px;">
-        <table class="table table-bordered table-hover align-middle bg-white mb-0 table-compact">
+        <table class="table table-bordered table-hover align-middle bg-white mb-0 table-compact table-padat">
             <thead class="table-light text-center">
                 <tr>
-                    <th style="width: 36px;">No</th>
-                    <th style="min-width: 104px;">No. Pengajuan</th>
+                    <th style="width: 32px;">No</th>
+                    <th style="min-width: 100px;">No. Pengajuan</th>
                     <th>Judul Proposal</th>
-                    <th style="min-width: 96px;">Pengusul</th>
-                    <th style="min-width: 148px;">Status Alur</th>
-                    <th style="min-width: 116px;">Aksi</th>
+                    <th style="min-width: 84px;">Pengusul</th>
+                    <th style="min-width: 104px;">Status Alur</th>
+                    <th style="min-width: 84px;">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -150,7 +149,12 @@ document.getElementById('table-search').addEventListener('keyup', function() {
                                 $currentStatus = $statusMap[$proposal->status] ?? ['class' => 'bg-dark', 'icon' => 'bi-info-circle'];
                             @endphp
 
-                            <span class="badge {{ $currentStatus['class'] }} px-2 py-2 rounded-pill shadow-sm text-nowrap" style="font-size: 0.7rem; letter-spacing: 0.2px;">
+                            {{-- Badge BOLEH melipat antar kata (UB5): class
+                                 text-nowrap dihapus — dulu memaksa kolom
+                                 Status ~170px dan mendorong tabel keluar
+                                 layar; aturan global di layout sudah
+                                 mengizinkan badge melipat. --}}
+                            <span class="badge {{ $currentStatus['class'] }} px-2 py-2 rounded-pill shadow-sm" style="font-size: 0.7rem; letter-spacing: 0.2px;">
                                 <i class="{{ $currentStatus['icon'] }} me-1"></i>
                                 {{ $role === 'admin' && $proposal->status === 'Dikirim' ? 'PROPOSAL BARU' : strtoupper($proposal->status) }}
                             </span>

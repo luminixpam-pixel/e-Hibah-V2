@@ -26,10 +26,10 @@
         </div>
     </div>
 
-    {{-- Statistik --}}
+    {{-- Statistik — kartu berupa tautan (uji ke-5 butir 5). --}}
     <div class="klppm-stats">
 
-        <div class="klppm-stat-card">
+        <a href="{{ route('monitoring.reviewSelesai') }}" class="klppm-stat-card">
             <div class="klppm-stat-top">
                 <div class="klppm-stat-icon waiting">
                     <i class="bi bi-hourglass-split"></i>
@@ -38,9 +38,9 @@
             </div>
             <h3>{{ $menungguKeputusan ?? 0 }}</h3>
             <small>Proposal perlu ditindaklanjuti</small>
-        </div>
+        </a>
 
-        <div class="klppm-stat-card">
+        <a href="{{ route('monitoring.proposalDisetujui') }}" class="klppm-stat-card">
             <div class="klppm-stat-top">
                 <div class="klppm-stat-icon approved">
                     <i class="bi bi-check-circle"></i>
@@ -49,9 +49,9 @@
             </div>
             <h3>{{ $disetujui ?? 0 }}</h3>
             <small>Proposal yang telah disetujui</small>
-        </div>
+        </a>
 
-        <div class="klppm-stat-card">
+        <a href="{{ route('monitoring.proposalDitolak') }}" class="klppm-stat-card">
             <div class="klppm-stat-top">
                 <div class="klppm-stat-icon rejected">
                     <i class="bi bi-x-circle"></i>
@@ -60,9 +60,9 @@
             </div>
             <h3>{{ $ditolak ?? 0 }}</h3>
             <small>Proposal yang tidak disetujui</small>
-        </div>
+        </a>
 
-        <div class="klppm-stat-card">
+        <a href="{{ route('monitoring.proposalDirevisi') }}" class="klppm-stat-card">
             <div class="klppm-stat-top">
                 <div class="klppm-stat-icon revised">
                     <i class="bi bi-arrow-repeat"></i>
@@ -71,7 +71,7 @@
             </div>
             <h3>{{ $direvisi ?? 0 }}</h3>
             <small>Proposal yang perlu revisi</small>
-        </div>
+        </a>
 
     </div>
 
@@ -392,6 +392,10 @@
     min-width: 0;
     box-shadow: 0 4px 15px rgba(32, 86, 60, .04);
     transition: .25s ease;
+    /* Kartu berupa tautan (uji ke-5 butir 5): tampil seperti kartu,
+       bukan seperti tautan teks. */
+    text-decoration: none;
+    color: inherit;
 }
 
 .klppm-stat-card:hover {

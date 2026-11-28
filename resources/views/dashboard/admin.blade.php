@@ -28,11 +28,11 @@
         </div>
     </div>
 
-    {{-- STATISTIK --}}
+    {{-- STATISTIK — kartu berupa tautan (uji ke-5 butir 5). --}}
     <div class="row g-4 mb-4">
 
         <div class="col-md-3">
-            <div class="admin-stat-card stat-users">
+            <a href="{{ route('admin.users.index') }}" class="admin-stat-card stat-users">
                 <div class="stat-icon">
                     <i class="bi bi-people"></i>
                 </div>
@@ -41,11 +41,11 @@
                     <h2>{{ $totalUsers ?? 0 }}</h2>
                     <span class="stat-caption">Pengguna terdaftar</span>
                 </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-md-3">
-            <div class="admin-stat-card stat-proposals">
+            <a href="{{ route('proposal.index') }}" class="admin-stat-card stat-proposals">
                 <div class="stat-icon">
                     <i class="bi bi-file-earmark-text"></i>
                 </div>
@@ -54,11 +54,11 @@
                     <h2>{{ $totalProposals ?? 0 }}</h2>
                     <span class="stat-caption">Proposal dalam sistem</span>
                 </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-md-3">
-            <div class="admin-stat-card stat-approved">
+            <a href="{{ route('monitoring.proposalDisetujui') }}" class="admin-stat-card stat-approved">
                 <div class="stat-icon">
                     <i class="bi bi-check-circle"></i>
                 </div>
@@ -67,11 +67,11 @@
                     <h2>{{ $disetujui ?? 0 }}</h2>
                     <span class="stat-caption">Proposal disetujui</span>
                 </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-md-3">
-            <div class="admin-stat-card stat-revision">
+            <a href="{{ route('monitoring.proposalDirevisi') }}" class="admin-stat-card stat-revision">
                 <div class="stat-icon">
                     <i class="bi bi-arrow-repeat"></i>
                 </div>
@@ -80,7 +80,7 @@
                     <h2>{{ ($ditolak ?? 0) + ($direvisi ?? 0) }}</h2>
                     <span class="stat-caption">Perlu tindak lanjut</span>
                 </div>
-            </div>
+            </a>
         </div>
 
     </div>
@@ -360,6 +360,10 @@
     box-shadow: 0 4px 18px rgba(36, 107, 75, .04);
     transition: .25s ease;
     height: 100%;
+    /* Kartu berupa tautan (uji ke-5 butir 5): tampil seperti kartu,
+       bukan seperti tautan teks. */
+    text-decoration: none;
+    color: inherit;
 }
 
 /* Kartu statistik kompak di bawah 1200px: kolom grid kini 4 sebaris

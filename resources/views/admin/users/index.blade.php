@@ -82,8 +82,21 @@
                     </tbody>
                 </table>
             </div>
+            {{-- Pagination Bootstrap 5 (bukan links() default): view
+                 pagination Tailwind bawaan Laravel memakai class
+                 `hidden` / `sm:flex` / `sm:hidden` / `inline-flex`
+                 yang TIDAK PERNAH dimuat di layout ini — layout hanya
+                 memuat CSS Bootstrap 5.3 dari CDN dan tidak memakai
+                 @vite (resources/css/app.css yang mengimpor Tailwind
+                 tidak pernah di-include), sehingga kedua blok
+                 responsif Tailwind (mobile + desktop) tampil
+                 bersamaan tanpa gaya. View pagination::bootstrap-5
+                 memakai markup Bootstrap (ul.pagination, page-link,
+                 d-sm-none) yang memang dimuat layout, jadi hanya satu
+                 kontrol pagination yang tampil dan tertata. URL dan
+                 teks "Showing ... results" tidak berubah. --}}
             <div class="d-flex justify-content-center mt-3">
-                {{ $users->links() }}
+                {{ $users->links('pagination::bootstrap-5') }}
             </div>
         </div>
     </div>

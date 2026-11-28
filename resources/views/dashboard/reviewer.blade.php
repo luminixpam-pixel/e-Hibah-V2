@@ -21,11 +21,12 @@
         </div>
     </div>
 
-    {{-- STATISTIK --}}
+    {{-- STATISTIK — kartu berupa tautan (uji ke-5 butir 5). Ketiga
+         kartu mengarah ke daftar tugas review. --}}
     <div class="row g-4 mb-4">
 
         <div class="col-md-4">
-            <div class="review-stat-card stat-total">
+            <a href="{{ route('monitoring.proposalPerluDireview') }}" class="review-stat-card stat-total">
                 <div class="stat-icon">
                     <i class="bi bi-clipboard-check"></i>
                 </div>
@@ -34,11 +35,11 @@
                     <h2>{{ $totalTugas ?? 0 }}</h2>
                     <span class="stat-caption">Proposal ditugaskan</span>
                 </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-md-4">
-            <div class="review-stat-card stat-pending">
+            <a href="{{ route('monitoring.proposalPerluDireview') }}" class="review-stat-card stat-pending">
                 <div class="stat-icon">
                     <i class="bi bi-hourglass-split"></i>
                 </div>
@@ -47,11 +48,11 @@
                     <h2>{{ $menunggu ?? 0 }}</h2>
                     <span class="stat-caption">Review belum diselesaikan</span>
                 </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-md-4">
-            <div class="review-stat-card stat-completed">
+            <a href="{{ route('monitoring.proposalPerluDireview') }}" class="review-stat-card stat-completed">
                 <div class="stat-icon">
                     <i class="bi bi-check-circle"></i>
                 </div>
@@ -60,7 +61,7 @@
                     <h2>{{ $selesai ?? 0 }}</h2>
                     <span class="stat-caption">Review telah diselesaikan</span>
                 </div>
-            </div>
+            </a>
         </div>
 
     </div>
@@ -241,6 +242,10 @@
     box-shadow: 0 4px 18px rgba(36, 107, 75, .04);
     transition: .25s ease;
     height: 100%;
+    /* Kartu berupa tautan (uji ke-5 butir 5): tampil seperti kartu,
+       bukan seperti tautan teks. */
+    text-decoration: none;
+    color: inherit;
 }
 
 .review-stat-card:hover {

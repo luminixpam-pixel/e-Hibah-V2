@@ -68,7 +68,11 @@
         <div>
             <h4 class="page-title mb-1">Daftar Review Proposal</h4>
             <p class="page-subtitle mb-0">
-                @if(auth()->user()->role === 'admin')
+                {{-- Admin + LPPM mengelola plotting & tenggat di halaman
+                     ini (endpoint assignReviewer & perpanjangTenggat
+                     sama-sama mengizinkan role admin,lppm); peran lain
+                     melihatnya sebagai daftar tugas review. --}}
+                @if(in_array(auth()->user()->role, ['admin', 'lppm'], true))
                     Manajemen pemilihan reviewer dan pemantauan masa penilaian.
                 @else
                     Daftar penugasan review proposal yang harus Anda nilai.
@@ -82,7 +86,7 @@
         </div>
     </div>
     <h4 class="page-title mb-1">
-    {{ auth()->user()->role === 'admin' ? 'Manajemen Reviewer' : 'Tugas Review Saya' }}
+    {{ in_array(auth()->user()->role, ['admin', 'lppm'], true) ? 'Manajemen Reviewer' : 'Tugas Review Saya' }}
 </h4>
 
     {{-- Pesan hasil aksi (sukses/gagal) — sebelumnya tidak ada di halaman
@@ -141,7 +145,15 @@
 
                             {{-- COLUMN 1: SETTING / STATUS --}}
                             <td>
-                                @if(auth()->user()->role === 'admin')
+                                {{-- Admin + LPPM: blok manajemen (plotting
+                                     reviewer & form "Perpanjang Tenggat").
+                                     Sebelumnya hanya admin, sehingga LPPM
+                                     — yang endpoint perpanjangTenggat-nya
+                                     izinkan (role:admin,lppm) — tidak
+                                     pernah melihat formnya dan jatuh ke
+                                     cabang info reviewer di bawah
+                                     (uji manual ke-5, butir 8). --}}
+                                @if(in_array(auth()->user()->role, ['admin', 'lppm'], true))
                                     @if($isAssigned)
                                         <div class="reviewer-assigned-box mb-2">
                                             <div class="d-flex justify-content-between align-items-center mb-2">

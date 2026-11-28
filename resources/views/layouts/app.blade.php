@@ -537,6 +537,45 @@
     font-size: .72rem;
 }
 
+/* UB5 (uji ke-5, 28 Nov) — upaya ketiga untuk tabel yang masih
+   meluber di 1341px. Penyelidikan dari kode: keempat tabel SUDAH
+   memakai .table-compact DAN sudah dibungkus .table-responsive,
+   jadi pembungkus/class bukan penyebabnya. Akar masalahnya ada
+   dua: (a) anggaran lebar batch 18b09a2b dihitung terhadap lebar
+   konten ~990px (viewport 1341px CSS), padahal di Windows dengan
+   scaling 150% lebar CSS efektif hanya ~894px — sidebar 220px +
+   margin/padding menyisakan konten ~604px, sementara jumlah
+   min-width kolom (cek-kuota 636px, disetujui 628px + judul,
+   monev 616px di dalam .main-card yang hanya ~550px) sudah
+   melebihi itu; (b) badge Status di daftar proposal memakai class
+   Bootstrap `text-nowrap` (!important) yang mengalahkan aturan
+   global "badge boleh melipat" di atas, sehingga "SEDANG
+   DIREVIEW" memaksa kolomnya ~170px. Perbaikan di sini TIDAK
+   memakai anggaran lebar baru (cara itu sudah dua kali terbukti
+   salah di render nyata), melainkan struktural: badge di dalam
+   tabel TIDAK BOLEH nowrap (aturan penangkal di bawah — spesifisitas
+   ID + 3 class mengalahkan utilitas Bootstrap), tabel padat
+   .table-padat (font/padding lebih kecil lagi, dipakai keempat
+   halaman bermasalah), dan overflow WAJIB tertahan di dalam
+   .table-responsive (max-width 100% + overflow-x auto) supaya
+   halaman sendiri tidak pernah bergeser horizontal. Batas jujur:
+   tabel terlebar (proposal-disetujui, 8 kolom) butuh konten
+   ~584px, jadi muat tanpa scroll horizontal sampai lebar CSS
+   ~864px (setara layar 1341px fisik pada scaling 150% = 894px
+   CSS); di bawah itu tabel scroll di dalam card, bukan halaman. */
+#mainContent .table-responsive {
+    max-width: 100%;
+}
+#mainContent .table .badge.text-nowrap {
+    white-space: normal;
+}
+#mainContent .table-padat {
+    font-size: .8rem;
+}
+#mainContent .table-responsive .table-padat > :not(caption) > * > * {
+    padding: .35rem .4rem;
+}
+
 /* L2 — modal detail proposal: jangan lebih lebar dari viewport. */
 .modal-dialog.modal-xl {
     max-width: min(1140px, calc(100vw - 2rem));

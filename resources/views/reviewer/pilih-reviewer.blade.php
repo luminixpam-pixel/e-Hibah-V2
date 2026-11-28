@@ -74,7 +74,7 @@
                 @endphp
 
                 <tr>
-                    <td>{{ $index + 1 }}</td>
+                    <td>{{ ($users->firstItem() ?? 0) + $index }}</td>
                     <td>{{ $u->name ?? '-' }}</td>
                     <td class="text-break">{{ $u->email ?? '-' }}</td>
                     <td>{{ $u->nidn ?? '-' }}</td>
@@ -131,6 +131,12 @@
             @endforelse
             </tbody>
         </table>
+    </div>
+
+    {{-- Pagination 20/halaman (uji ke-5 butir 10), pola yang sama
+         dengan /admin/users. --}}
+    <div class="d-flex justify-content-center mt-3">
+        {{ $users->links() }}
     </div>
 
 </div>

@@ -15,25 +15,26 @@
         <p class="text-muted mb-0">Pantau proposal dosen dan laporan akhir di fakultas Anda.</p>
     </div>
 
-    {{-- Kartu statistik --}}
+    {{-- Kartu statistik — berupa tautan (uji ke-5 butir 5). Tetap 3
+         kartu sesuai desain (bukan 4). --}}
     <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="card"><div class="card-body">
+            <a href="{{ route('proposal.index') }}" class="card text-decoration-none text-dark"><div class="card-body">
                 <h6 class="text-muted">Proposal Fakultas</h6>
                 <h3 class="fw-bold mb-0">{{ $total ?? 0 }}</h3>
-            </div></div>
+            </div></a>
         </div>
         <div class="col-md-4">
-            <div class="card"><div class="card-body">
+            <a href="{{ route('monitoring.proposalDisetujui') }}" class="card text-decoration-none text-dark"><div class="card-body">
                 <h6 class="text-muted">Disetujui</h6>
                 <h3 class="fw-bold mb-0">{{ $disetujui ?? 0 }}</h3>
-            </div></div>
+            </div></a>
         </div>
         <div class="col-md-4">
-            <div class="card"><div class="card-body">
+            <a href="{{ route('monitoring.proposalDitolak') }}" class="card text-decoration-none text-dark"><div class="card-body">
                 <h6 class="text-muted">Ditolak</h6>
                 <h3 class="fw-bold mb-0">{{ $ditolak ?? 0 }}</h3>
-            </div></div>
+            </div></a>
         </div>
     </div>
 

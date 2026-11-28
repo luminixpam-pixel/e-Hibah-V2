@@ -25,10 +25,12 @@
         </div>
     </div>
 
-    {{-- Statistik --}}
+    {{-- Statistik — kartu berupa tautan (uji ke-5 butir 5). Belum ada
+         halaman khusus "Lolos Administrasi", jadi kartu Antrean dan
+         Lolos mengarah ke daftar proposal. --}}
     <div class="verif-stats">
 
-        <div class="verif-stat-card">
+        <a href="{{ route('proposal.index') }}" class="verif-stat-card">
             <div class="verif-stat-top">
                 <div class="verif-stat-icon waiting">
                     <i class="bi bi-hourglass-split"></i>
@@ -37,9 +39,9 @@
             </div>
             <h3>{{ $antrean_count ?? 0 }}</h3>
             <small>Proposal menunggu pemeriksaan</small>
-        </div>
+        </a>
 
-        <div class="verif-stat-card">
+        <a href="{{ route('proposal.index') }}" class="verif-stat-card">
             <div class="verif-stat-top">
                 <div class="verif-stat-icon approved">
                     <i class="bi bi-check-circle"></i>
@@ -48,9 +50,9 @@
             </div>
             <h3>{{ $lolos ?? 0 }}</h3>
             <small>Proposal memenuhi persyaratan</small>
-        </div>
+        </a>
 
-        <div class="verif-stat-card">
+        <a href="{{ route('monitoring.proposalDirevisi') }}" class="verif-stat-card">
             <div class="verif-stat-top">
                 <div class="verif-stat-icon revision">
                     <i class="bi bi-arrow-repeat"></i>
@@ -59,7 +61,7 @@
             </div>
             <h3>{{ $revisi ?? 0 }}</h3>
             <small>Proposal perlu diperbaiki</small>
-        </div>
+        </a>
 
     </div>
 
@@ -268,6 +270,10 @@
     min-width: 0;
     box-shadow: 0 4px 15px rgba(32, 86, 60, .04);
     transition: .25s ease;
+    /* Kartu berupa tautan (uji ke-5 butir 5): tampil seperti kartu,
+       bukan seperti tautan teks. */
+    text-decoration: none;
+    color: inherit;
 }
 
 .verif-stat-card:hover {

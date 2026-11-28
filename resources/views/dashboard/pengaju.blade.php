@@ -22,11 +22,13 @@
         </div>
     </div>
 
-    {{-- STATISTIK --}}
+    {{-- STATISTIK — kartu berupa tautan (uji ke-5 butir 5). Belum ada
+         halaman terfilter per status (Draft/Dikirim/hasil), jadi
+         keempat kartu mengarah ke daftar proposal. --}}
     <div class="row g-4 mb-4">
 
         <div class="col-md-3">
-            <div class="pengaju-stat-card stat-proposal">
+            <a href="{{ route('proposal.index') }}" class="pengaju-stat-card stat-proposal">
                 <div class="stat-icon">
                     <i class="bi bi-file-earmark-text"></i>
                 </div>
@@ -35,11 +37,11 @@
                     <h2>{{ $total ?? 0 }}</h2>
                     <span class="stat-caption">Total proposal</span>
                 </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-md-3">
-            <div class="pengaju-stat-card stat-draft">
+            <a href="{{ route('proposal.index') }}" class="pengaju-stat-card stat-draft">
                 <div class="stat-icon">
                     <i class="bi bi-pencil-square"></i>
                 </div>
@@ -48,11 +50,11 @@
                     <h2>{{ $draft ?? 0 }}</h2>
                     <span class="stat-caption">Belum dikirim</span>
                 </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-md-3">
-            <div class="pengaju-stat-card stat-sent">
+            <a href="{{ route('proposal.index') }}" class="pengaju-stat-card stat-sent">
                 <div class="stat-icon">
                     <i class="bi bi-send"></i>
                 </div>
@@ -61,11 +63,11 @@
                     <h2>{{ $dikirim ?? 0 }}</h2>
                     <span class="stat-caption">Dalam proses</span>
                 </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-md-3">
-            <div class="pengaju-stat-card stat-result">
+            <a href="{{ route('proposal.index') }}" class="pengaju-stat-card stat-result">
                 <div class="stat-icon">
                     <i class="bi bi-check-circle"></i>
                 </div>
@@ -74,7 +76,7 @@
                     <h2>{{ ($disetujui ?? 0) }} / {{ ($ditolak ?? 0) }}</h2>
                     <span class="stat-caption">Hasil keputusan</span>
                 </div>
-            </div>
+            </a>
         </div>
 
     </div>
@@ -545,6 +547,10 @@
     box-shadow: 0 4px 18px rgba(36, 107, 75, .04);
     transition: .25s ease;
     height: 100%;
+    /* Kartu berupa tautan (uji ke-5 butir 5): tampil seperti kartu,
+       bukan seperti tautan teks. */
+    text-decoration: none;
+    color: inherit;
 }
 
 /* Kartu statistik kompak di bawah 1200px: kolom grid kini 4 sebaris

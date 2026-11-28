@@ -139,6 +139,17 @@
                         </div>
                     </div>
 
+                    {{-- Uji ke-5 butir 4: tombol hapus akun memang tidak
+                         ditampilkan untuk admin, tapi pemberitahuannya
+                         selama ini hanya ada di delete-user-form yang
+                         tidak pernah di-render. Tampilkan di sini, hanya
+                         untuk admin. Penegakan tetap di DeleteUser. --}}
+                    @if(Auth::user()->role === 'admin')
+                        <div class="alert alert-info border-0 shadow-sm mt-2" role="alert">
+                            <i class="bi bi-info-circle-fill me-2"></i> Akun admin tidak dapat dihapus. Penghapusan akun hanya berlaku untuk user non-admin.
+                        </div>
+                    @endif
+
                     <div class="mt-4">
                         <a href="{{ route('dashboard') }}" class="text-decoration-none text-muted small fw-bold">
                             <i class="bi bi-arrow-left me-1"></i> Kembali ke Dashboard

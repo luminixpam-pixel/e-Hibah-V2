@@ -61,7 +61,10 @@ class ReviewerController extends Controller
     public function index()
     {
         if (Auth::check() && Auth::user()->role === 'admin') {
-            $users = User::orderBy('name')->get();
+            // Pagination 20/halaman (uji ke-5 butir 10): sebelumnya
+            // User::all() memuat ratusan baris sekaligus — pola yang
+            // sama dengan /admin/users (AdminController@indexUsers).
+            $users = User::orderBy('name')->paginate(20);
 
             return view('reviewer.pilih-reviewer', compact('users'));
         }

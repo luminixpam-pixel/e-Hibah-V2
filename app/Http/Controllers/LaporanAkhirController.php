@@ -110,31 +110,46 @@ class LaporanAkhirController extends Controller
     /**
      * Menampilkan daftar proposal untuk laporan akhir.
      * Pengaju melihat proposal miliknya + proposal yang ia ikuti
-     * sebagai anggota Diterima (butir 6) agar bisa mengunggah.
+     * sebagai anggota Diterima (butir 6) agar bisa mengunggah;
+     * reviewer hanya proposal yang di-plot kepadanya; staf pemantau
+     * (admin, lppm, kepala_lppm, verifikator, dekan) melihat semua
+     * proposal — selaras dengan LaporanKemajuanController@index.
+     * Sebelumnya hanya admin yang diistimewakan dan SEMUA peran lain
+     * (termasuk LPPM) diperlakukan seperti pengaju, sehingga LPPM
+     * selalu mendapat daftar kosong ("Belum ada data laporan
+     * akhir.") dan tidak pernah melihat tombol Verifikasi/Revisi
+     * maupun "Riwayat versi" (uji manual ke-5, butir 7).
      */
     public function index()
     {
         $user = Auth::user();
         $query = Proposal::query();
 
+        if ($user->role === 'pengaju') {
+            $query->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereHas('members', function ($m) use ($user) {
+                        $m->where('user_id', $user->id)->where('status_konfirmasi', 'Diterima');
+                    });
+            });
+        } elseif ($user->role === 'reviewer') {
+            $query->whereHas('reviewers', function ($q) use ($user) {
+                $q->where('users.id', $user->id);
+            });
+        }
+        // admin, lppm, kepala_lppm, verifikator, dekan: tanpa filter,
+        // memantau semua laporan. Akses unduh/preview per proposal
+        // tetap dijaga canAccess() (mis. dekan hanya fakultasnya).
+
+        $proposals = $query->with(['user', 'reviewers'])->latest()->get();
+
         if ($user->role === 'admin') {
-            $proposals = $query->with(['user', 'reviewers'])->latest()->get();
             // Dropdown admin: semua proposal yang sudah Disetujui
             // pendanaannya. file_laporan ikut diambil agar form bisa
             // menandai proposal yang belum punya laporan kemajuan
             // (butir 1: laporan akhir wajib ada kemajuan dulu).
             $myProposals = Proposal::where('status_pendanaan', 'Disetujui')->latest()->get(['id', 'judul', 'file_laporan']);
         } else {
-            $proposals = $query->where(function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                    ->orWhereHas('members', function ($m) use ($user) {
-                        $m->where('user_id', $user->id)->where('status_konfirmasi', 'Diterima');
-                    });
-            })
-                ->with(['reviewers'])
-                ->latest()
-                ->get();
-
             // Mengambil proposal untuk dropdown select — milik sendiri
             // atau sebagai anggota Diterima, yang sudah Disetujui
             // pendanaannya (status_pendanaan), selaras dengan laporan

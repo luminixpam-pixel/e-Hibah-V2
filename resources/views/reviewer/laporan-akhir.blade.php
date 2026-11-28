@@ -286,6 +286,7 @@
                         <th style="width: 36px; border-top-left-radius: 15px;">No</th>
                         <th class="text-start" style="min-width: 200px;">Judul & Pengusul</th>
                         <th style="min-width: 110px;">Reviewer</th>
+                        <th style="min-width: 110px;">Status Pendanaan</th>
                         <th style="min-width: 170px;">Berkas Akhir</th>
                         <th style="min-width: 120px;">Status Verifikasi</th>
                         <th style="min-width: 110px; border-top-right-radius: 15px;">Aksi</th>
@@ -310,6 +311,14 @@
                             @else
                                 <span class="text-muted small">-</span>
                             @endif
+                        </td>
+                        <td class="text-center small">
+                            {{-- Status keputusan pendanaan (uji ke-5 butir 3):
+                                 kolom yang sama dengan laporan-kemajuan,
+                                 supaya terlihat proposal mana yang sudah
+                                 Disetujui pendanaannya. --}}
+                            @php($sp = $p->status_pendanaan ?? 'Proses')
+                            <span class="badge {{ $sp === 'Disetujui' ? 'bg-success' : ($sp === 'Ditolak' ? 'bg-danger' : ($sp === 'Direvisi' ? 'bg-warning text-dark' : 'bg-light text-dark border')) }}">{{ $sp }}</span>
                         </td>
                         <td class="text-center">
                             @if($p->file_laporan_akhir)
@@ -417,7 +426,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
+                        <td colspan="7" class="text-center py-5 text-muted">
                             Belum ada data laporan akhir.
                         </td>
                     </tr>

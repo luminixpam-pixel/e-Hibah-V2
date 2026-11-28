@@ -5,39 +5,37 @@
 @section('title', 'Cek Kuota Dosen')
 
 @section('content')
-<div class="container mt-4 mb-5">
+<div class="container-fluid px-0 mt-4 mb-5">
     <h4 class="fw-bold mb-1">Cek Kuota Dosen</h4>
     <p class="text-muted">Kuota keikutsertaan dihitung <strong>per kategori skema</strong> (sebagai ketua atau anggota). Hanya proposal yang sudah dikirim yang dihitung; draft tidak menghabiskan kuota.</p>
 
     <div class="card">
         <div class="table-responsive">
-            {{-- BUG #3 uji ke-4 (28 Nov): layout tetap (fixed) + lebar
-                 persen DIHAPUS. Akar masalah: di `table-layout: fixed`
-                 kolom dipatok persen dari tabel, tapi isi sel (angka
-                 "Rp 15.000.000", badge "Belum ditetapkan") TIDAK
-                 mengecil mengikuti kolomnya — begitu lebar efektif
-                 menyusut, header "Sebagai Ketua" terpotong per suku
-                 kata, angka terbelah di tengah ("Rp 15.000.00/0"),
-                 dan badge Sisa terpotong di tepi kanan. Sekarang
-                 layout otomatis + lebar minimum per kolom (total
-                 anggaran ~735px di konten efektif ~990px): header
-                 dipersingkat "Ketua"/"Anggota" (arti lengkapnya sudah
-                 dijelaskan di paragraf pengantar di atas), sel Plafon
-                 116px supaya "Rp 50.000.000" utuh satu baris, kolom
-                 Sisa 132px supaya badge "Belum ditetapkan" muat satu
-                 baris, Kuota 92px supaya "ditetapkan" tidak terbelah
-                 per suku kata. Teks "Belum ditetapkan" dipertahankan
-                 apa adanya (diuji test: kuota 0 bukan "Penuh"). --}}
-            <table class="table table-hover align-middle mb-0 table-compact">
+            {{-- BUG #3 uji ke-4 (28 Nov; UB5 uji ke-5): layout tetap
+                 (fixed) + lebar persen DIHAPUS. Akar masalah dulu: di
+                 `table-layout: fixed` kolom dipatok persen dari tabel,
+                 tapi isi sel (angka "Rp 15.000.000", badge "Belum
+                 ditetapkan") TIDAK mengecil mengikuti kolomnya.
+                 Perbaikan UB5 bersifat struktural, bukan anggaran
+                 lebar: tiap kolom dipangkas ke lebar isi sebenarnya
+                 (Plafon muat "Rp 50.000.000" satu baris, Sisa muat
+                 badge "Belum ditetapkan" satu baris, Ketua/Anggota/
+                 Total hanya butuh lebar 1-2 digit), tabel memakai
+                 .table-padat, dan pembungkus .container diganti
+                 .container-fluid px-0 supaya padding 12px kiri-kanan
+                 tidak memakan lebar tabel. Teks "Belum ditetapkan"
+                 dipertahankan apa adanya (diuji test: kuota 0 bukan
+                 "Penuh"). --}}
+            <table class="table table-hover align-middle mb-0 table-compact table-padat">
                 <thead class="table-light">
                     <tr>
-                        <th style="min-width: 120px;">Skema</th>
-                        <th class="text-center text-nowrap" style="min-width: 116px;">Plafon</th>
-                        <th class="text-center" style="min-width: 56px;">Ketua</th>
-                        <th class="text-center" style="min-width: 64px;">Anggota</th>
-                        <th class="text-center" style="min-width: 56px;">Total</th>
-                        <th class="text-center" style="min-width: 92px;">Kuota</th>
-                        <th class="text-center" style="min-width: 132px;">Sisa</th>
+                        <th style="min-width: 100px;">Skema</th>
+                        <th class="text-center text-nowrap" style="min-width: 104px;">Plafon</th>
+                        <th class="text-center" style="min-width: 44px;">Ketua</th>
+                        <th class="text-center" style="min-width: 48px;">Anggota</th>
+                        <th class="text-center" style="min-width: 44px;">Total</th>
+                        <th class="text-center" style="min-width: 80px;">Kuota</th>
+                        <th class="text-center" style="min-width: 104px;">Sisa</th>
                     </tr>
                 </thead>
                 <tbody>

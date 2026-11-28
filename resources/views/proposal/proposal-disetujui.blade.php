@@ -15,31 +15,32 @@
     }
 
     .btn-action {
-        padding: 6px 10px;
+        padding: 5px 8px;
         border-radius: 6px;
-        font-size: 13px;
+        font-size: 12px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
+        gap: 4px;
         width: 100%;
     }
 
-    /* TABEL (BUG #1 uji ke-4, 28 Nov): TANPA table-layout: fixed —
-       kolom menyesuaikan isi (lebar minimum di <th>). Anggaran lebar
-       minimum total ~830px di konten efektif ~990px (viewport 1341
-       - sidebar 220 - padding). Kolom dipangkas: No. Pengajuan
-       118→104px, Tanggal 96→92px (nowrap), Pengusul 110→96px,
-       Reviewer 120→100px, Status 96→88px, Aksi 128→112px (dua
-       tombol tetap ditumpuk vertikal memenuhi lebar kolom); kolom
-       Judul fleksibel mengisi sisa. */
+    /* TABEL (BUG #1 uji ke-4, 28 Nov; UB5 uji ke-5): TANPA
+       table-layout: fixed — kolom menyesuaikan isi (lebar minimum
+       di <th>). Perbaikan UB5 bersifat struktural, bukan anggaran
+       lebar: semua kolom dipangkas ke lebar isi sebenarnya
+       (Tanggal, Pengusul, Reviewer, Status boleh melipat/menyusut;
+       tombol Aksi tetap ditumpuk vertikal tapi dengan font/padding
+       lebih kecil), tabel memakai .table-padat, dan pembungkus
+       .container diganti .container-fluid px-0 supaya padding
+       12px kiri-kanan tidak memakan lebar tabel. */
     .table-responsive .table {
         width: 100%;
     }
     .aksi-disetujui {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 5px;
         align-items: stretch;
     }
 
@@ -113,7 +114,7 @@
     }
 @endphp
 
-<div class="container mt-4">
+<div class="container-fluid px-0 mt-4">
 
     {{-- TITLE --}}
     <h4 class="page-title mb-1">Daftar Proposal Yang Disetujui — Universitas YARSI</h4>
@@ -130,17 +131,17 @@
 
     {{-- TABLE --}}
     <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle shadow-sm table-compact">
+        <table class="table table-striped table-hover align-middle shadow-sm table-compact table-padat">
             <thead>
                 <tr>
-                    <th style="width: 36px;">No</th>
-                    <th style="min-width: 104px;">No. Pengajuan</th>
-                    <th style="min-width: 92px;">Tanggal</th>
-                    <th style="min-width: 96px;">Pengusul</th>
+                    <th style="width: 32px;">No</th>
+                    <th style="min-width: 96px;">No. Pengajuan</th>
+                    <th style="min-width: 84px;">Tanggal</th>
+                    <th style="min-width: 84px;">Pengusul</th>
                     <th>Judul Proposal</th>
-                    <th style="min-width: 100px;">Reviewer</th>
-                    <th style="min-width: 88px;">Status</th>
-                    <th style="min-width: 112px;">Aksi</th>
+                    <th style="min-width: 80px;">Reviewer</th>
+                    <th style="min-width: 76px;">Status</th>
+                    <th style="min-width: 92px;">Aksi</th>
                 </tr>
             </thead>
 
