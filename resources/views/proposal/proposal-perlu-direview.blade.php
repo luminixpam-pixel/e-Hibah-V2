@@ -85,6 +85,33 @@
     {{ auth()->user()->role === 'admin' ? 'Manajemen Reviewer' : 'Tugas Review Saya' }}
 </h4>
 
+    {{-- Pesan hasil aksi (sukses/gagal) — sebelumnya tidak ada di halaman
+         ini, sehingga penolakan server (mis. plotting pada proposal yang
+         bukan Lolos Administrasi, atau perpanjangan tenggat yang ditolak)
+         terlihat gagal diam-diam. Pola sama seperti plotting.blade.php. --}}
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+        </div>
+    @endif
+    @if ($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $e)
+                    <li>{{ $e }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+        </div>
+    @endif
+
     <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
@@ -123,7 +150,7 @@
                                                 </span>
                                                 <button class="btn btn-sm btn-link p-0 text-decoration-none small fw-bold"
                                                         onclick="document.getElementById('form-{{ $proposal->id }}').classList.toggle('d-none')">
-                                                    Ubah Tenggat & Reviewer
+                                                    {{ $proposal->status === 'Sedang Direview' ? 'Perpanjang Tenggat' : 'Ubah Tenggat & Reviewer' }}
                                                 </button>
                                             </div>
                                             @foreach($proposal->reviewers as $rev)
@@ -134,6 +161,29 @@
                                         <div class="mb-2"><span class="status-badge bg-waiting">Menunggu Pemilihan</span></div>
                                     @endif
 
+                                    {{-- Proposal "Sedang Direview": reviewer sudah ditugaskan dan
+                                         tidak bisa diubah; hanya tenggat yang bisa diperpanjang.
+                                         Form ini TIDAK boleh ke assignReviewer — endpoint itu hanya
+                                         menerima status "Lolos Administrasi", sehingga submit untuk
+                                         proposal yang sedang direview selalu ditolak. --}}
+                                    @if($proposal->status === 'Sedang Direview')
+                                        <form id="form-{{ $proposal->id }}" action="{{ route('proposal.perpanjangTenggat', $proposal->id) }}"
+                                              method="POST" class="reviewer-form {{ $isAssigned ? 'd-none border-top pt-2 mt-2' : '' }}">
+                                            @csrf
+                                            <div class="small text-muted">Reviewer sudah ditugaskan dan tidak dapat diubah dari halaman ini.</div>
+                                            @forelse($proposal->reviewers as $rev)
+                                                <div class="small text-dark"><i class="bi bi-person-check-fill me-2 text-primary"></i>{{ $rev->name }}</div>
+                                            @empty
+                                                <div class="small text-muted">Belum ada reviewer ditugaskan.</div>
+                                            @endforelse
+                                            <div class="deadline-group">
+                                                <label>Tenggat Penilaian Baru</label>
+                                                <input type="datetime-local" name="review_deadline" class="form-control form-control-sm"
+                                                       value="{{ $dbDeadline ? $dbDeadline->format('Y-m-d\TH:i') : '' }}" required>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary btn-sm w-100 shadow-sm fw-bold">Simpan Tenggat Baru</button>
+                                        </form>
+                                    @else
                                     <form id="form-{{ $proposal->id }}" action="{{ route('proposal.assignReviewer', $proposal->id) }}"
                                           method="POST" class="reviewer-form {{ $isAssigned ? 'd-none border-top pt-2 mt-2' : '' }}">
                                         @csrf
@@ -154,6 +204,7 @@
                                         </div>
                                         <button type="submit" class="btn btn-primary btn-sm w-100 shadow-sm fw-bold">Simpan</button>
                                     </form>
+                                    @endif
                                 @else
                                     {{-- Info untuk Reviewer --}}
                                     <span class="status-badge {{ $hasReviewed ? 'bg-finish' : 'bg-ongoing' }}">

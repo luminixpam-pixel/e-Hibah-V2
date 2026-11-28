@@ -41,7 +41,13 @@
             </select>
         </div>
 
-        {{-- Tenggat Waktu Review --}}
+        {{-- Tenggat Waktu Review — hanya tampil bila proposal masih bisa
+             diedit (Draft / Revisi Administrasi). Form ini submit ke
+             proposal.update yang menolak status lain, jadi menampilkan
+             field ini untuk proposal yang sedang direview menyesatkan:
+             tenggat proposal yang sedang direview diubah lewat halaman
+             "Proposal Perlu Direview" (Perpanjang Tenggat). --}}
+        @if(in_array($proposal->status, ['Draft', 'Revisi Administrasi'], true))
         <div class="mb-3">
             <label for="review_deadline" class="form-label">Tenggat Waktu Review</label>
             <input type="datetime-local" name="review_deadline" id="review_deadline"
@@ -49,6 +55,7 @@
                    value="{{ old('review_deadline', optional($proposal->review_deadline)->format('Y-m-d\TH:i')) }}">
             <small class="text-muted">Format: Tahun-Bulan-Hari Jam:Menit</small>
         </div>
+        @endif
 
         {{-- Tombol Submit --}}
         <div class="text-end mt-4">

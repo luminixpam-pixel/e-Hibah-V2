@@ -272,6 +272,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/proposal/{id}/assign-reviewer', [ProposalController::class, 'assignReviewer'])
         ->middleware('role:admin,lppm')->name('proposal.assignReviewer');
 
+    // Perpanjang tenggat review proposal yang Sedang Direview (dipakai admin & LPPM).
+    // Tanpa ini, proposal yang tenggatnya lewat mentok di "Sedang Direview"
+    // karena reviewer tidak bisa lagi isi-review/submit.
+    Route::post('/proposal/{id}/perpanjang-tenggat', [ProposalController::class, 'perpanjangTenggat'])
+        ->middleware('role:admin,lppm')->name('proposal.perpanjangTenggat');
+
     // Master data LPPM + pengumuman + laporan error (Fase 6) — admin & LPPM.
     Route::middleware('role:admin,lppm')->group(function () {
         // Master data (story 15)

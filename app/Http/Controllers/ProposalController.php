@@ -1429,7 +1429,95 @@ class ProposalController extends Controller
 
             return back()->with('success', 'Berhasil! Reviewer telah ditugaskan.');
         } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Database Error: '.$e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Gagal memperpanjang tenggat review proposal ID '.$id.': '.$e->getMessage());
+
+            return back()->withInput()->with('error', 'Terjadi kesalahan saat memperpanjang tenggat. Silakan coba lagi.');
+        }
+    }
+
+    /**
+     * Perpanjang tenggat review oleh admin/LPPM.
+     *
+     * Dipakai bila review_deadline sudah lewat (atau hampir lewat)
+     * sementara proposal masih "Sedang Direview": tanpa ini reviewer
+     * tidak bisa lagi membuka form isi-review maupun submit, dan
+     * proposal mentok di tahap review. Berbeda dengan assignReviewer
+     * (plotting ulang, hanya dari "Lolos Administrasi"), method ini
+     * hanya mengubah review_deadline — status, reviewer, dan review
+     * yang sudah masuk tidak disentuh.
+     */
+    public function perpanjangTenggat(Request $request, $id)
+    {
+        $proposal = Proposal::findOrFail($id);
+
+        // Pertahanan berlapis: route sudah memakai middleware
+        // role:admin,lppm, tapi cek di sini juga mengikuti pola
+        // setReview() agar pemanggilan langsung tetap tertolak.
+        if (! in_array(auth()->user()->role, ['admin', 'lppm'], true)) {
+            abort(403, 'Hanya admin atau LPPM yang boleh memperpanjang tenggat review.');
+        }
+
+        // Gunakan after_or_equal:today agar tidak error gara-gara selisih jam/menit
+        $request->validate([
+            'review_deadline' => 'required|date|after_or_equal:today',
+        ], [
+            'review_deadline.required' => 'Tenggat review baru wajib diisi.',
+            'review_deadline.date' => 'Tenggat review baru harus berupa tanggal yang valid.',
+            'review_deadline.after_or_equal' => 'Tenggat waktu tidak boleh tanggal yang sudah lewat.',
+        ]);
+
+        // Hanya proposal yang sedang direview yang tenggatnya bisa
+        // diperpanjang. Proposal "Lolos Administrasi" belum punya
+        // tenggat berjalan — perpanjangannya lewat plotting ulang
+        // via assignReviewer.
+        if ($proposal->status !== 'Sedang Direview') {
+            if ($proposal->status === 'Lolos Administrasi') {
+                return back()->withInput()->with('error', 'Proposal yang Lolos Administrasi belum ditugaskan reviewer — gunakan plotting ulang (assignReviewer) untuk menetapkan tenggat.');
+            }
+
+            return back()->withInput()->with('error', 'Hanya proposal yang Sedang Direview yang tenggatnya bisa diperpanjang (status: '.$proposal->status.').');
+        }
+
+        $tenggatBaru = Carbon::parse($request->review_deadline);
+
+        // Tenggat baru harus lebih lambat dari tenggat saat ini, bila
+        // tenggat saat ini ada. Bila null, cukup tanggal di masa depan
+        // (sudah dijamin validasi after_or_equal:today di atas).
+        if ($proposal->review_deadline && $tenggatBaru->lessThanOrEqualTo($proposal->review_deadline)) {
+            return back()->withInput()->with('error', 'Tenggat baru harus lebih lambat dari tenggat saat ini.');
+        }
+
+        $tenggatLama = $proposal->review_deadline
+            ? Carbon::parse($proposal->review_deadline)->timezone('Asia/Jakarta')->translatedFormat('d M Y H:i').' WIB'
+            : 'belum ada';
+
+        try {
+            // Hanya review_deadline yang diubah: status, reviewer,
+            // dan review yang sudah disubmit tidak disentuh.
+            $proposal->update([
+                'review_deadline' => $tenggatBaru,
+            ]);
+
+            // ===============================
+            // ✅ NOTIF KE REVIEWER (langsung muncul di bell)
+            // ===============================
+            $deadlineWib = Carbon::parse($proposal->review_deadline)->timezone('Asia/Jakarta');
+
+            $title = 'Tenggat Review Diperpanjang';
+            $message = 'Tenggat penilaian proposal "'.($proposal->judul ?? '-').'" diperpanjang hingga '.
+                $deadlineWib->translatedFormat('d M Y H:i').' WIB.';
+
+            foreach ($proposal->reviewers->pluck('id')->all() as $reviewerId) {
+                NotificationHelper::send((int) $reviewerId, $title, $message, 'info', $proposal->id);
+            }
+
+            $this->logActivity("Memperpanjang tenggat review proposal ID {$id} dari {$tenggatLama} menjadi ".$deadlineWib->translatedFormat('d M Y H:i').' WIB oleh '.auth()->user()->username);
+
+            return back()->with('success', 'Tenggat review berhasil diperpanjang hingga '.$deadlineWib->translatedFormat('d M Y H:i').' WIB.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Gagal memperpanjang tenggat review proposal ID '.$id.': '.$e->getMessage());
+
+            return back()->withInput()->with('error', 'Terjadi kesalahan saat memperpanjang tenggat. Silakan coba lagi.');
         }
     }
 
