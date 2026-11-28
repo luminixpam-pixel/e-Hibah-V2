@@ -67,10 +67,11 @@ class CalendarController extends Controller
             ]);
         } else {
             // Perilaku lama (tanpa period_id): update baris pertama bila
-            // ada, atau buat periode baru bila tabel kosong. Baris yang
-            // dipilih memakai urutan yang sama dengan activePeriod()
-            // (terbaru dulu) supaya deterministik.
-            $existing = HibahPeriod::orderByDesc('start_date')->orderByDesc('end_date')->orderByDesc('id')->first();
+            // ada, atau buat periode baru bila tabel kosong. Urutan
+            // "terbaru dulu" seperti activePeriod() sengaja TIDAK dipakai
+            // di sini — jalur ini harus tetap mengupdate periode pertama
+            // (dikunci oleh test butir 12 KeputusanAuditAdminTest).
+            $existing = HibahPeriod::first();
 
             if ($existing) {
                 $existing->update([
