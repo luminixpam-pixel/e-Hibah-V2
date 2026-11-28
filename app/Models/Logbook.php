@@ -16,6 +16,7 @@ class Logbook extends Model
         'tanggal',
         'uraian_kegiatan',
         'file_bukti',
+        'created_by',
     ];
 
     protected $casts = [
@@ -28,5 +29,14 @@ class Logbook extends Model
     public function proposal()
     {
         return $this->belongsTo(Proposal::class);
+    }
+
+    /**
+     * User yang membuat entri ini (butir 6: anggota hanya boleh
+     * mengelola entri buatannya sendiri).
+     */
+    public function pembuat()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

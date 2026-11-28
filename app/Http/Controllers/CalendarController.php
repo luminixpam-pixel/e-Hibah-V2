@@ -16,8 +16,9 @@ class CalendarController extends Controller
     public function index()
     {
         $hibahPeriod = HibahPeriod::first();
+        $periodes = HibahPeriod::latest()->get();
 
-        return view('monitoring-data', compact('hibahPeriod'));
+        return view('monitoring-data', compact('hibahPeriod', 'periodes'));
     }
 
     /**
@@ -29,11 +30,13 @@ class CalendarController extends Controller
      * mengklaim "hanya admin" tetapi method ini sebelumnya tidak
      * memeriksa role sama sekali.
      *
-     * CATATAN (tidak diubah): selalu menulis baris PERTAMA
-     * (HibahPeriod::first()). Bila sudah ada lebih dari satu
-     * periode, update dari kalender tetap mengenai periode pertama
-     * saja — lihat PeriodeController untuk keputusan satu vs banyak
-     * periode aktif yang masih terbuka.
+     * Banyak periode aktif DIBOLEHKAN (keputusan audit 28 Nov 2026):
+     * tidak ada validasi satu-periode-aktif di sini maupun di
+     * PeriodeController. Form kalender mengirim period_id periode
+     * yang dimaksud; update mengenai periode itu saja, bukan selalu
+     * periode pertama. Bila period_id tidak dikirim (mis. klien lama
+     * / pemanggil lama), perilaku lama dipertahankan: update baris
+     * pertama bila ada, atau buat periode baru bila tabel kosong.
      */
     public function updatePeriod(Request $request)
     {
@@ -42,19 +45,37 @@ class CalendarController extends Controller
         }
 
         $validated = $request->validate([
+            'period_id' => ['nullable', 'integer', 'exists:hibah_periods,id'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-        ], PesanValidasi::pesan([
-            'start_date' => 'Tanggal mulai',
-            'end_date' => 'Tanggal selesai',
-        ]));
+        ], array_merge(
+            PesanValidasi::pesan([
+                'start_date' => 'Tanggal mulai',
+                'end_date' => 'Tanggal selesai',
+            ]),
+            ['period_id.exists' => 'Periode yang dipilih tidak ditemukan.']
+        ));
 
-        $existing = HibahPeriod::first();
-
-        if ($existing) {
-            $existing->update($validated);
+        if (! empty($validated['period_id'])) {
+            $periode = HibahPeriod::findOrFail($validated['period_id']);
+            $periode->update([
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+            ]);
         } else {
-            HibahPeriod::create($validated);
+            $existing = HibahPeriod::first();
+
+            if ($existing) {
+                $existing->update([
+                    'start_date' => $validated['start_date'],
+                    'end_date' => $validated['end_date'],
+                ]);
+            } else {
+                HibahPeriod::create([
+                    'start_date' => $validated['start_date'],
+                    'end_date' => $validated['end_date'],
+                ]);
+            }
         }
 
         // 🔔 Kirim notifikasi ke semua pengaju

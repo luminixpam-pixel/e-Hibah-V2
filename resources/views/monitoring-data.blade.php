@@ -87,6 +87,27 @@
                 <form id="form-periode" action="{{ route('monitoring.kalender.periode') }}" method="POST"
                       class="d-flex gap-3 align-items-end flex-wrap">
                     @csrf
+                    {{-- Banyak periode aktif dibolehkan: pilih periode yang
+                         diubah. Bila hanya ada satu periode, kirim ID-nya
+                         diam-diam; bila belum ada periode, biarkan kosong
+                         (controller membuat periode baru). --}}
+                    @if(($periodes ?? collect())->count() > 1)
+                        <div class="flex-grow-1 min-w-200">
+                            <label class="fw-semibold" for="periode-pilih">Periode yang Diubah</label>
+                            <select id="periode-pilih" name="period_id" class="form-select">
+                                @foreach($periodes as $periode)
+                                    <option value="{{ $periode->id }}"
+                                        data-start="{{ $periode->start_date?->format('Y-m-d') }}"
+                                        data-end="{{ $periode->end_date?->format('Y-m-d') }}"
+                                        {{ $periode->id === $hibahPeriod?->id ? 'selected' : '' }}>
+                                        {{ $periode->nama ?: 'Periode ' . $periode->start_date?->format('d M Y') . ' – ' . $periode->end_date?->format('d M Y') }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @elseif(($periodes ?? collect())->count() === 1)
+                        <input type="hidden" name="period_id" value="{{ $periodes->first()->id }}">
+                    @endif
                     <div class="flex-grow-1 min-w-200">
                         <label class="fw-semibold">Mulai Pengajuan Hibah</label>
                         <input type="date" id="periode-mulai" name="start_date" class="form-control" value="{{ $periodeStart }}">
@@ -182,6 +203,20 @@ document.addEventListener("DOMContentLoaded", function () {
     if(periodStartFromDb && periodEndFromDb){
         const todayStr = new Date().toISOString().slice(0,10);
         canSubmitNow = todayStr >= periodStartFromDb && todayStr <= periodEndFromDb;
+    }
+
+    // Bila ada pemilih periode: ganti pilihan mengisi ulang kedua
+    // input tanggal dengan tanggal periode yang dipilih, supaya admin
+    // tidak keliru mengedit tanggal periode lain.
+    const periodeSelect = document.getElementById("periode-pilih");
+    if (periodeSelect) {
+        periodeSelect.addEventListener("change", () => {
+            const opt = periodeSelect.selectedOptions[0];
+            const mulai = document.getElementById("periode-mulai");
+            const akhir = document.getElementById("periode-akhir");
+            if (opt && mulai && opt.dataset.start) mulai.value = opt.dataset.start;
+            if (opt && akhir && opt.dataset.end) akhir.value = opt.dataset.end;
+        });
     }
 
     function openProposalPopup(){

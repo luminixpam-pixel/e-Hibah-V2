@@ -78,8 +78,8 @@
             </div>
         @endif
 
-        {{-- FORM TAMBAH (HANYA PENGAJU PEMILIK) --}}
-        @if ($isOwner)
+        {{-- FORM TAMBAH (KETUA ATAU ANGGOTA DITERIMA, butir 6) --}}
+        @if ($canWrite)
         <div class="form-section mb-5">
             <h5 class="fw-bold text-dark mb-4">Tambah Luaran</h5>
             <form action="{{ route('luaran.store', $proposal) }}" method="POST" enctype="multipart/form-data">
@@ -150,7 +150,11 @@
                         <tr>
                             <td class="text-center fw-bold text-muted">{{ $index + 1 }}</td>
                             <td class="text-center"><span class="badge bg-success">{{ $luaran->jenis }}</span></td>
-                            <td>{{ $luaran->judul }}</td>
+                            <td>{{ $luaran->judul }}
+                                @if ($luaran->pembuat)
+                                    <div class="text-muted small mt-1">Dibuat oleh: {{ $luaran->pembuat->name }}</div>
+                                @endif
+                            </td>
                             <td class="text-center"><span class="badge bg-secondary">{{ $luaran->status }}</span></td>
                             <td class="text-center">
                                 @if ($luaran->file)
@@ -165,7 +169,10 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                @if ($isOwner)
+                                {{-- Ketua boleh mengelola semua luaran; anggota
+                                     Diterima hanya luaran buatannya sendiri
+                                     (butir 6). --}}
+                                @if ($isOwner || (int) ($luaran->created_by ?? 0) === (int) auth()->user()->id)
                                     <div class="d-flex justify-content-center gap-2">
                                         <a href="{{ route('luaran.edit', $luaran) }}" class="btn btn-sm btn-outline-warning fw-bold px-3" style="border-radius: 8px;">
                                             <i class="bi bi-pencil me-1"></i> Ubah

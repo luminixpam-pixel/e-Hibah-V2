@@ -86,15 +86,11 @@ test('pengaju lain ditolak 403 saat mengunggah laporan akhir untuk proposal oran
     Storage::disk('public')->assertMissing('laporan_akhir/laporan.pdf');
 });
 
-test('admin dan reviewer ditolak 403 saat mengunggah laporan akhir untuk proposal orang lain', function () {
+test('reviewer ditolak 403 saat mengunggah laporan akhir untuk proposal orang lain', function () {
     Storage::fake('public');
     $pemilik = khBuatUser('pengaju');
     $proposal = khBuatProposal($pemilik);
-
-    $this->actingAs(khBuatUser('admin'))->post(route('laporan.akhir.store'), [
-        'proposal_id' => $proposal->id,
-        'file' => khFilePdf(),
-    ])->assertForbidden();
+    khSimpanFileLaporanKemajuan($proposal);
 
     $this->actingAs(khBuatUser('reviewer'))->post(route('laporan.akhir.store'), [
         'proposal_id' => $proposal->id,
@@ -102,6 +98,31 @@ test('admin dan reviewer ditolak 403 saat mengunggah laporan akhir untuk proposa
     ])->assertForbidden();
 
     expect($proposal->fresh()->file_laporan_akhir)->toBeNull();
+});
+
+test('admin boleh mengunggah laporan akhir atas nama pengaju bila sudah ada kemajuan (butir 5), ditolak bila belum ada (butir 1)', function () {
+    Storage::fake('public');
+    $pemilik = khBuatUser('pengaju');
+    $proposal = khBuatProposal($pemilik);
+
+    // Belum ada laporan kemajuan: ditolak (redirect + error, bukan 403).
+    $response = $this->actingAs(khBuatUser('admin'))->post(route('laporan.akhir.store'), [
+        'proposal_id' => $proposal->id,
+        'file' => khFilePdf(),
+    ]);
+    $response->assertRedirect();
+    $response->assertSessionHas('error');
+    expect($proposal->fresh()->file_laporan_akhir)->toBeNull();
+
+    // Sesudah ada laporan kemajuan: admin boleh mengunggah.
+    khSimpanFileLaporanKemajuan($proposal);
+    $response = $this->actingAs(khBuatUser('admin'))->post(route('laporan.akhir.store'), [
+        'proposal_id' => $proposal->id,
+        'file' => khFilePdf(),
+    ]);
+    $response->assertRedirect();
+    $response->assertSessionHas('success');
+    expect($proposal->fresh()->file_laporan_akhir)->not->toBeNull();
 });
 
 test('pemilik ditolak saat mengunggah laporan akhir untuk proposal yang belum didanai', function () {
@@ -126,6 +147,8 @@ test('pemilik berhasil mengunggah laporan akhir untuk proposal yang didanai', fu
     Storage::fake('public');
     $pengaju = khBuatUser('pengaju');
     $proposal = khBuatProposal($pengaju);
+    // Butir 1: laporan akhir wajib ada laporan kemajuan dulu.
+    khSimpanFileLaporanKemajuan($proposal);
 
     $response = $this->actingAs($pengaju)->post(route('laporan.akhir.store'), [
         'proposal_id' => $proposal->id,
@@ -149,10 +172,12 @@ test('unggah laporan akhir dengan proposal_id yang tidak ada ditolak validasi', 
     ])->assertSessionHasErrors('proposal_id');
 });
 
-test('unggah ulang laporan akhir menghapus file lama', function () {
+test('unggah ulang laporan akhir mengarsipkan file lama sebagai riwayat versi, bukan menghapusnya (butir 3)', function () {
     Storage::fake('public');
     $pengaju = khBuatUser('pengaju');
     $proposal = khBuatProposal($pengaju);
+    // Butir 1: laporan akhir wajib ada laporan kemajuan dulu.
+    khSimpanFileLaporanKemajuan($proposal);
     khSimpanFileLaporanAkhir($proposal);
 
     $this->actingAs($pengaju)->post(route('laporan.akhir.store'), [
@@ -160,7 +185,15 @@ test('unggah ulang laporan akhir menghapus file lama', function () {
         'file' => khFilePdf('baru.pdf'),
     ])->assertRedirect();
 
-    Storage::disk('public')->assertMissing('laporan_akhir/akhir.pdf');
+    // PERUBAHAN PERILAKU dari 4fb1ddef: berkas lama TIDAK dihapus,
+    // melainkan disimpan sebagai versi 1 di laporan_versi_berkas.
+    Storage::disk('public')->assertExists('laporan_akhir/akhir.pdf');
+    $this->assertDatabaseHas('laporan_versi_berkas', [
+        'proposal_id' => $proposal->id,
+        'jenis' => 'akhir',
+        'file_path' => 'laporan_akhir/akhir.pdf',
+        'nomor_versi' => 1,
+    ]);
     expect($proposal->fresh()->file_laporan_akhir)->not->toBe('laporan_akhir/akhir.pdf');
 });
 

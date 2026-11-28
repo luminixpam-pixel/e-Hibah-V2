@@ -18,13 +18,18 @@ use Illuminate\Support\Facades\Storage;
  * datanya menyimpang arah amannya adalah menolak.
  *
  * Kepemilikan / visibilitas (sama seperti LogbookController):
- *  - pengaju      : hanya proposal milik sendiri (user_id = id user login).
+ *  - pengaju      : hanya proposal milik sendiri (user_id = id user login)
+ *    atau yang ia ikuti sebagai anggota Diterima (butir 6).
  *  - lppm, kepala_lppm, admin : semua proposal yang didanai.
  *  - dekan        : hanya proposal di fakultasnya (fakultas_prodi =
  *    fakultas_id user); bila fakultas_id belum diisi, semua proposal
  *    (meniru RoleDashboardController::dekan()).
  *  - reviewer, verifikator : tidak berhak melihat apa pun (403).
- *  - Tulis / ubah / hapus : hanya pengaju pemilik proposal.
+ *  - Tulis : ketua pemilik atau anggota Diterima (butir 6).
+ *  - Ubah / hapus : ketua boleh mengelola SEMUA luaran proposalnya;
+ *    anggota Diterima hanya luaran yang dibuatnya sendiri (kolom
+ *    created_by; luaran lama tanpa created_by hanya bisa dikelola
+ *    ketua).
  *
  * Luaran berstatus Published / Granted wajib melampirkan file bukti —
  * klaim terbit/terdaftar tanpa berkas tidak bisa disimpan.
@@ -73,19 +78,22 @@ class LuaranController extends Controller
             abort(403, 'Anda tidak berhak melihat luaran proposal ini.');
         }
 
-        $luarans = Luaran::where('proposal_id', $proposal->id)->latest()->get();
+        $luarans = Luaran::where('proposal_id', $proposal->id)->with('pembuat')->latest()->get();
         $isOwner = $this->isOwner(auth()->user(), $proposal);
+        // Form tambah tampil untuk ketua maupun anggota Diterima.
+        $canWrite = $this->canWrite(auth()->user(), $proposal);
 
-        return view('pasca-hibah.luaran-show', compact('proposal', 'luarans', 'isOwner'));
+        return view('pasca-hibah.luaran-show', compact('proposal', 'luarans', 'isOwner', 'canWrite'));
     }
 
     /**
-     * Simpan luaran baru. Hanya pengaju pemilik proposal yang didanai.
+     * Simpan luaran baru. Ketua pemilik atau anggota Diterima,
+     * untuk proposal yang didanai.
      */
     public function store(Request $request, Proposal $proposal)
     {
-        if (! $this->isOwner(auth()->user(), $proposal) || ! $this->isDidanai($proposal)) {
-            abort(403, 'Hanya pengaju pemilik proposal yang didanai yang bisa menambah luaran.');
+        if (! $this->canWrite(auth()->user(), $proposal) || ! $this->isDidanai($proposal)) {
+            abort(403, 'Hanya ketua pengusul atau anggota tim yang sudah Diterima pada proposal yang didanai yang bisa menambah luaran.');
         }
 
         $validated = $request->validate([
@@ -111,6 +119,7 @@ class LuaranController extends Controller
             'judul' => $validated['judul'],
             'status' => $validated['status'],
             'file' => $path,
+            'created_by' => auth()->user()->id,
         ]);
 
         $this->logActivity("Menambah luaran proposal ID {$proposal->id}");
@@ -119,14 +128,15 @@ class LuaranController extends Controller
     }
 
     /**
-     * Form ubah luaran. Hanya pengaju pemilik proposal yang didanai.
+     * Form ubah luaran. Ketua boleh mengubah semua luaran; anggota
+     * Diterima hanya luaran buatannya sendiri.
      */
     public function edit(Luaran $luaran)
     {
         $proposal = $luaran->proposal;
 
-        if (! $this->isOwner(auth()->user(), $proposal) || ! $this->isDidanai($proposal)) {
-            abort(403, 'Hanya pengaju pemilik proposal yang didanai yang bisa mengubah luaran.');
+        if (! $this->canManageEntry(auth()->user(), $proposal, $luaran) || ! $this->isDidanai($proposal)) {
+            abort(403, 'Hanya ketua pengusul atau pembuat luaran ini yang bisa mengubah luaran.');
         }
 
         return view('pasca-hibah.luaran-edit', compact('luaran', 'proposal'));
@@ -139,8 +149,8 @@ class LuaranController extends Controller
     {
         $proposal = $luaran->proposal;
 
-        if (! $this->isOwner(auth()->user(), $proposal) || ! $this->isDidanai($proposal)) {
-            abort(403, 'Hanya pengaju pemilik proposal yang didanai yang bisa mengubah luaran.');
+        if (! $this->canManageEntry(auth()->user(), $proposal, $luaran) || ! $this->isDidanai($proposal)) {
+            abort(403, 'Hanya ketua pengusul atau pembuat luaran ini yang bisa mengubah luaran.');
         }
 
         $validated = $request->validate([
@@ -186,8 +196,8 @@ class LuaranController extends Controller
     {
         $proposal = $luaran->proposal;
 
-        if (! $this->isOwner(auth()->user(), $proposal) || ! $this->isDidanai($proposal)) {
-            abort(403, 'Hanya pengaju pemilik proposal yang didanai yang bisa menghapus luaran.');
+        if (! $this->canManageEntry(auth()->user(), $proposal, $luaran) || ! $this->isDidanai($proposal)) {
+            abort(403, 'Hanya ketua pengusul atau pembuat luaran ini yang bisa menghapus luaran.');
         }
 
         if ($luaran->file && Storage::disk('public')->exists($luaran->file)) {
@@ -251,7 +261,14 @@ class LuaranController extends Controller
             ->where('status_pendanaan', 'Disetujui');
 
         if ($user->role === 'pengaju') {
-            $query->where('user_id', $user->id);
+            // Proposal milik sendiri atau yang diikuti sebagai anggota
+            // Diterima (butir 6).
+            $query->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereHas('members', function ($m) use ($user) {
+                        $m->where('user_id', $user->id)->where('status_konfirmasi', 'Diterima');
+                    });
+            });
         } elseif ($user->role === 'dekan') {
             if ($user->fakultas_id) {
                 $query->where('fakultas_prodi', $user->fakultas_id);
@@ -283,7 +300,8 @@ class LuaranController extends Controller
         }
 
         if ($user->role === 'pengaju') {
-            return (int) $proposal->user_id === (int) $user->id;
+            return (int) $proposal->user_id === (int) $user->id
+                || $proposal->isAnggotaDiterima((int) $user->id);
         }
 
         if ($user->role === 'dekan') {
@@ -300,5 +318,32 @@ class LuaranController extends Controller
     {
         return $user->role === 'pengaju'
             && (int) $proposal->user_id === (int) $user->id;
+    }
+
+    /**
+     * Apakah user boleh menambah luaran (tulis) untuk proposal ini?
+     * Ketua pemilik atau anggota tim berstatus Diterima (butir 6).
+     */
+    protected function canWrite($user, Proposal $proposal): bool
+    {
+        return $this->isOwner($user, $proposal)
+            || $proposal->isAnggotaDiterima((int) $user->id);
+    }
+
+    /**
+     * Apakah user boleh mengubah/menghapus satu luaran ini?
+     * Ketua boleh mengelola SEMUA luaran proposalnya; anggota
+     * Diterima hanya luaran yang dibuatnya sendiri (created_by).
+     * Luaran lama tanpa created_by hanya bisa dikelola ketua.
+     */
+    protected function canManageEntry($user, Proposal $proposal, Luaran $luaran): bool
+    {
+        if ($this->isOwner($user, $proposal)) {
+            return true;
+        }
+
+        return $proposal->isAnggotaDiterima((int) $user->id)
+            && $luaran->created_by !== null
+            && (int) $luaran->created_by === (int) $user->id;
     }
 }

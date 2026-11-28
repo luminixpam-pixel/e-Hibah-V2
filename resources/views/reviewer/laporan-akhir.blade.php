@@ -155,6 +155,47 @@
         </div>
         @endif
 
+        {{-- ADMIN : FORM UNGGAH ATAS NAMA PENGAJU (butir 5) --}}
+        @if(Auth::user()->role === 'admin')
+        <div class="form-section mb-5">
+            <h5 class="fw-bold text-dark mb-1">Unggah Laporan Akhir (atas nama pengaju)</h5>
+            <p class="text-muted small mb-4">Admin boleh mengunggah laporan akhir untuk proposal apa pun yang sudah disetujui pendanaannya. Syaratnya sama: proposal wajib sudah memiliki laporan kemajuan (butir 1).</p>
+
+            <div class="alert alert-warning border-0 shadow-sm d-none mb-4" id="peringatanKemajuanAdmin" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Proposal ini belum memiliki laporan kemajuan — laporan akhir belum bisa diunggah. Minta pengaju mengunggah laporan kemajuan terlebih dahulu.
+            </div>
+
+            <form action="{{ route('laporan.akhir.store') }}" method="POST" enctype="multipart/form-data" id="uploadFormAdmin">
+                @csrf
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold small text-muted">Pilih Judul Proposal</label>
+                        <select name="proposal_id" id="proposalSelectAdmin" class="form-select @error('proposal_id') is-invalid @enderror" required style="border-radius: 10px; padding: 10px;">
+                            <option value="">-- Pilih Proposal --</option>
+                            @foreach($myProposals as $p)
+                                <option value="{{ $p->id }}" data-kemajuan="{{ $p->file_laporan ? '1' : '0' }}">{{ $p->judul }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold small text-muted">File Laporan Akhir (PDF)</label>
+                        <input type="file" name="file" class="form-control @error('file') is-invalid @enderror" accept=".pdf" required style="border-radius: 10px; padding: 10px;">
+                    </div>
+
+                    <div class="col-12 mb-4">
+                        <label class="form-label fw-bold small text-muted">Keterangan Akhir (Opsional)</label>
+                        <textarea name="keterangan" class="form-control" rows="3" placeholder="Contoh: Berkas final penelitian telah selesai..." style="border-radius: 10px;">{{ old('keterangan') }}</textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success px-5 fw-bold shadow-sm" style="border-radius: 10px; height: 45px;" id="submitBtnAdmin">
+                    <i class="bi bi-cloud-arrow-up-fill me-2"></i>Unggah Laporan Akhir
+                </button>
+            </form>
+        </div>
+        @endif
+
         {{-- USER : FORM UPLOAD --}}
         @if(Auth::user()->role !== 'admin')
         <div class="form-section mb-5">
@@ -187,15 +228,22 @@
                 @endif
             </div>
 
+            {{-- Butir 1: laporan akhir wajib ada laporan kemajuan dulu.
+                 Peringatan + tombol nonaktif mengikuti proposal yang
+                 dipilih (data-kemajuan di tiap option). --}}
+            <div class="alert alert-warning border-0 shadow-sm d-none mb-4" id="peringatanKemajuan" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Proposal ini belum memiliki laporan kemajuan — laporan akhir belum bisa diunggah. Unggah laporan kemajuan terlebih dahulu.
+            </div>
+
             <form action="{{ route('laporan.akhir.store') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
                 @csrf
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold small text-muted">Pilih Judul Proposal</label>
-                        <select name="proposal_id" class="form-select @error('proposal_id') is-invalid @enderror" required style="border-radius: 10px; padding: 10px;">
+                        <select name="proposal_id" id="proposalSelect" class="form-select @error('proposal_id') is-invalid @enderror" required style="border-radius: 10px; padding: 10px;">
                             <option value="">-- Pilih Proposal --</option>
                             @foreach($myProposals as $p)
-                                <option value="{{ $p->id }}">{{ $p->judul }}</option>
+                                <option value="{{ $p->id }}" data-kemajuan="{{ $p->file_laporan ? '1' : '0' }}">{{ $p->judul }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -239,6 +287,7 @@
                         <th class="text-start" style="min-width: 200px;">Judul & Pengusul</th>
                         <th style="min-width: 110px;">Reviewer</th>
                         <th style="min-width: 170px;">Berkas Akhir</th>
+                        <th style="min-width: 120px;">Status Verifikasi</th>
                         <th style="min-width: 110px; border-top-right-radius: 15px;">Aksi</th>
                     </tr>
                 </thead>
@@ -277,10 +326,34 @@
                                 <div class="mt-1 text-muted" style="font-size: 10px;">
                                     Diperbarui: {{ \Carbon\Carbon::parse($p->updated_at)->format('d/m/Y') }}
                                 </div>
+                                {{-- Riwayat versi berkas lama (butir 3): tombol
+                                     unduh per versi, tunduk pada aturan akses
+                                     yang sama dengan berkas aktif. --}}
+                                @if(($versiPerProposal[$p->id] ?? collect())->isNotEmpty())
+                                    <div class="mt-2 text-start" style="font-size: 11px;">
+                                        <div class="fw-bold text-muted mb-1">Riwayat versi:</div>
+                                        @foreach($versiPerProposal[$p->id] as $v)
+                                            <div>
+                                                <a href="{{ route('laporan.versi.download', $v) }}">Versi {{ $v->nomor_versi }}</a>
+                                                <span class="text-muted">({{ \Carbon\Carbon::parse($v->created_at)->format('d/m/Y') }})</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
                             @else
                                 <span class="badge-empty">
                                     <i class="bi bi-info-circle me-1"></i> Belum Ada Berkas
                                 </span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            {{-- Status verifikasi laporan akhir (butir 4):
+                                 Menunggu Verifikasi / Terverifikasi / Revisi. --}}
+                            @if($p->file_laporan_akhir)
+                                @php($stAkhir = $p->status_laporan_akhir ?? 'Menunggu Verifikasi')
+                                <span class="badge {{ $stAkhir === 'Terverifikasi' ? 'bg-success' : ($stAkhir === 'Revisi' ? 'bg-warning text-dark' : 'bg-light text-dark border') }}">{{ $stAkhir }}</span>
+                            @else
+                                <span class="text-muted small">-</span>
                             @endif
                         </td>
                         <td class="text-center">
@@ -304,6 +377,37 @@
                                     <i class="bi bi-eye"></i>
                                 </button>
                             </div>
+                            {{-- Verifikasi oleh LPPM (butir 4, pola Monev):
+                                 hanya bila status Menunggu Verifikasi. --}}
+                            @if(Auth::user()->role === 'lppm' && ($p->status_laporan_akhir ?? null) === 'Menunggu Verifikasi')
+                                <div class="d-flex justify-content-center gap-2 mt-2">
+                                    <form action="{{ route('laporan.akhir.verifikasi', $p->id) }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="keputusan" value="terverifikasi">
+                                        <button type="submit" class="btn btn-sm btn-success fw-bold px-2" title="Tandai Terverifikasi">
+                                            <i class="bi bi-check-lg me-1"></i>Verifikasi
+                                        </button>
+                                    </form>
+                                    <form action="{{ route('laporan.akhir.verifikasi', $p->id) }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="keputusan" value="revisi">
+                                        <button type="submit" class="btn btn-sm btn-warning fw-bold px-2" title="Minta revisi">
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i>Revisi
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
+                            {{-- Hapus laporan akhir (butir 4): ketua atau
+                                 admin, hanya bila belum Terverifikasi. --}}
+                            @if(($p->user_id === Auth::user()->id || Auth::user()->role === 'admin') && ($p->status_laporan_akhir ?? null) !== 'Terverifikasi')
+                                <form action="{{ route('laporan.akhir.destroy', $p->id) }}" method="POST" class="mt-2" data-ehibah-confirm="Hapus laporan akhir ini beserta seluruh riwayat versinya? Tanggungan laporan pengaju akan kembali berlaku sampai laporan akhir diunggah ulang." data-ehibah-confirm-title="Hapus Laporan Akhir" data-ehibah-confirm-label="Hapus" data-ehibah-confirm-btn="btn-danger">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger fw-bold px-2" title="Hapus laporan akhir">
+                                        <i class="bi bi-trash me-1"></i>Hapus
+                                    </button>
+                                </form>
+                            @endif
                             @else
                                 <span class="text-muted small">-</span>
                             @endif
@@ -311,7 +415,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">
+                        <td colspan="6" class="text-center py-5 text-muted">
                             Belum ada data laporan akhir.
                         </td>
                     </tr>
@@ -337,6 +441,25 @@
             btnText.innerText = 'Sedang Mengunggah...';
         }
     }
+
+    // Butir 1: bila proposal yang dipilih belum punya laporan
+    // kemajuan, tampilkan peringatan dan nonaktifkan tombol unggah.
+    function pasangPeringatanKemajuan(selectId, peringatanId, tombolId) {
+        const select = document.getElementById(selectId);
+        const peringatan = document.getElementById(peringatanId);
+        const tombol = document.getElementById(tombolId);
+        if (!select || !peringatan || !tombol) return;
+        const cek = () => {
+            const opt = select.options[select.selectedIndex];
+            const tanpaKemajuan = opt && opt.value && opt.dataset.kemajuan === '0';
+            peringatan.classList.toggle('d-none', !tanpaKemajuan);
+            tombol.disabled = !!tanpaKemajuan;
+        };
+        select.addEventListener('change', cek);
+        cek();
+    }
+    pasangPeringatanKemajuan('proposalSelect', 'peringatanKemajuan', 'submitBtn');
+    pasangPeringatanKemajuan('proposalSelectAdmin', 'peringatanKemajuanAdmin', 'submitBtnAdmin');
 </script>
 @endpush
 @endsection

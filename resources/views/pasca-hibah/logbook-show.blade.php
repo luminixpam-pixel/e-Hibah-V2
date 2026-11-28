@@ -78,8 +78,8 @@
             </div>
         @endif
 
-        {{-- FORM TAMBAH (HANYA PENGAJU PEMILIK) --}}
-        @if ($isOwner)
+        {{-- FORM TAMBAH (KETUA ATAU ANGGOTA DITERIMA, butir 6) --}}
+        @if ($canWrite)
         <div class="form-section mb-5">
             <h5 class="fw-bold text-dark mb-4">Tambah Entri Logbook</h5>
             <form action="{{ route('logbook.store', $proposal) }}" method="POST" enctype="multipart/form-data">
@@ -132,7 +132,11 @@
                         <tr>
                             <td class="text-center fw-bold text-muted">{{ $index + 1 }}</td>
                             <td class="text-center">{{ \Carbon\Carbon::parse($logbook->tanggal)->format('d/m/Y') }}</td>
-                            <td>{{ $logbook->uraian_kegiatan }}</td>
+                            <td>{{ $logbook->uraian_kegiatan }}
+                                @if ($logbook->pembuat)
+                                    <div class="text-muted small mt-1">Dibuat oleh: {{ $logbook->pembuat->name }}</div>
+                                @endif
+                            </td>
                             <td class="text-center">
                                 @if ($logbook->file_bukti)
                                     <a href="{{ route('logbook.download', $logbook) }}" class="btn btn-sm btn-outline-primary fw-bold px-3" style="border-radius: 8px;">
@@ -146,7 +150,10 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                @if ($isOwner)
+                                {{-- Ketua boleh mengelola semua entri; anggota
+                                     Diterima hanya entri buatannya sendiri
+                                     (butir 6). --}}
+                                @if ($isOwner || (int) ($logbook->created_by ?? 0) === (int) auth()->user()->id)
                                     <div class="d-flex justify-content-center gap-2">
                                         <a href="{{ route('logbook.edit', $logbook) }}" class="btn btn-sm btn-outline-warning fw-bold px-3" style="border-radius: 8px;">
                                             <i class="bi bi-pencil me-1"></i> Ubah

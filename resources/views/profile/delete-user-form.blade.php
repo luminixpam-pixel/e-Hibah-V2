@@ -12,11 +12,21 @@
             {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.') }}
         </div>
 
-        <div class="mt-5">
-            <x-danger-button wire:click="confirmUserDeletion" wire:loading.attr="disabled">
-                {{ __('Delete Account') }}
-            </x-danger-button>
-        </div>
+        {{-- Keputusan audit 28 Nov 2026 (butir 14): akun admin tidak
+             boleh dihapus sendiri. Tombol disembunyikan untuk admin;
+             penegakan sesungguhnya ada di DeleteUser (action), jadi
+             pemanggilan langsung tetap ditolak. --}}
+        @if(auth()->user()?->role !== 'admin')
+            <div class="mt-5">
+                <x-danger-button wire:click="confirmUserDeletion" wire:loading.attr="disabled">
+                    {{ __('Delete Account') }}
+                </x-danger-button>
+            </div>
+        @else
+            <div class="mt-5 max-w-xl text-sm text-gray-600">
+                {{ __('Akun admin tidak dapat dihapus. Penghapusan akun hanya berlaku untuk user non-admin.') }}
+            </div>
+        @endif
 
         <!-- Delete User Confirmation Modal -->
         <x-dialog-modal wire:model.live="confirmingUserDeletion">

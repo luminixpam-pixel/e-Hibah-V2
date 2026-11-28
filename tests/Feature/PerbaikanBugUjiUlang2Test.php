@@ -54,6 +54,15 @@ function pu2RabDiAtasPlafon(): array
     ];
 }
 
+function pu2PeriodeAktif(): HibahPeriod
+{
+    return HibahPeriod::create([
+        'nama' => 'Periode 2026',
+        'start_date' => now()->subMonth(),
+        'end_date' => now()->addMonth(),
+    ]);
+}
+
 // --- Bug #1: form verifikasi tinjau ---
 
 test('pu2: verifikasi Lolos berhasil lewat HTTP', function () {
@@ -115,6 +124,7 @@ test('pu2: verifikasi Revisi tanpa alasan ditolak validasi', function () {
 // --- Bug #7: plafon hanya dicek saat kirim, bukan saat simpan draft ---
 
 test('pu2: simpan draft di form EDIT dengan RAB di atas plafon diizinkan', function () {
+    pu2PeriodeAktif();
     $pengaju = pu2User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu2Skema();
     $proposal = pu2Proposal($pengaju, $skema, [
@@ -188,6 +198,7 @@ test('pu2: kirim dari form CREATE dengan RAB di atas plafon tetap ditolak', func
 });
 
 test('pu2: kirim dari form EDIT dengan RAB di atas plafon tetap ditolak', function () {
+    pu2PeriodeAktif();
     $pengaju = pu2User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu2Skema();
     $proposal = pu2Proposal($pengaju, $skema, [
@@ -217,6 +228,7 @@ test('pu2: kirim dari form EDIT dengan RAB di atas plafon tetap ditolak', functi
 test('pu2: berkas proposal tidak hilang saat simpan draft edit gagal validasi', function () {
     Storage::fake('public');
     Storage::disk('public')->put('proposal_files/lama.pdf', 'isi berkas lama');
+    pu2PeriodeAktif();
     $pengaju = pu2User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu2Skema();
     $proposal = pu2Proposal($pengaju, $skema, [

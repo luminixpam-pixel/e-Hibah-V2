@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\LaporanVersiBerkas;
 use App\Models\Proposal;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -30,6 +31,7 @@ class LaporanAkhirController extends Controller
      * Apakah user boleh mengakses (baca/unduh/preview) laporan akhir
      * proposal ini?
      *  - pengaju pemilik proposal (user_id = id user login);
+     *  - anggota tim proposal berstatus Diterima (butir 6);
      *  - reviewer yang di-plot ke proposal ini;
      *  - dekan di fakultas proposal;
      *  - peran pengelola: verifikator, lppm, kepala_lppm, admin.
@@ -41,7 +43,8 @@ class LaporanAkhirController extends Controller
         }
 
         if ($user->role === 'pengaju') {
-            return (int) $proposal->user_id === (int) $user->id;
+            return (int) $proposal->user_id === (int) $user->id
+                || $proposal->isAnggotaDiterima((int) $user->id);
         }
 
         if ($user->role === 'reviewer') {
@@ -57,8 +60,7 @@ class LaporanAkhirController extends Controller
 
     /**
      * Apakah user adalah ketua pengusul (pemilik) proposal ini?
-     * Hanya pemilik yang boleh mengunggah laporan akhir. Kepemilikan
-     * ditentukan oleh user_id proposal, bukan role saat ini.
+     * Kepemilikan ditentukan oleh user_id proposal, bukan role saat ini.
      */
     private function isOwner(User $user, Proposal $proposal): bool
     {
@@ -66,7 +68,49 @@ class LaporanAkhirController extends Controller
     }
 
     /**
-     * Menampilkan daftar proposal untuk laporan akhir
+     * Apakah user boleh mengunggah laporan akhir proposal ini?
+     * (butir 5 + 6): ketua pemilik, admin (atas nama pengaju), atau
+     * anggota tim berstatus Diterima. Anggota Menunggu/Ditolak dan
+     * pengaju lain tetap tidak boleh.
+     */
+    private function canUpload(User $user, Proposal $proposal): bool
+    {
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        return $this->isOwner($user, $proposal)
+            || $proposal->isAnggotaDiterima((int) $user->id);
+    }
+
+    /**
+     * Arsipkan berkas aktif lama sebagai riwayat versi sebelum
+     * digantikan berkas baru (butir 3): berkas lama TIDAK dihapus.
+     * Dipakai juga oleh LaporanKemajuanController dengan pola sama.
+     */
+    private function arsipkanVersiLama(Proposal $proposal, string $jenis, ?string $filePathLama, int $diunggahOleh): void
+    {
+        if (! $filePathLama || ! Storage::disk('public')->exists($filePathLama)) {
+            return;
+        }
+
+        $nomorBerikutnya = (int) LaporanVersiBerkas::where('proposal_id', $proposal->id)
+            ->where('jenis', $jenis)
+            ->max('nomor_versi') + 1;
+
+        LaporanVersiBerkas::create([
+            'proposal_id' => $proposal->id,
+            'jenis' => $jenis,
+            'file_path' => $filePathLama,
+            'nomor_versi' => $nomorBerikutnya,
+            'diunggah_oleh' => $diunggahOleh,
+        ]);
+    }
+
+    /**
+     * Menampilkan daftar proposal untuk laporan akhir.
+     * Pengaju melihat proposal miliknya + proposal yang ia ikuti
+     * sebagai anggota Diterima (butir 6) agar bisa mengunggah.
      */
     public function index()
     {
@@ -76,36 +120,58 @@ class LaporanAkhirController extends Controller
         if ($user->role === 'admin') {
             $proposals = $query->with(['user', 'reviewers'])->latest()->get();
             // Dropdown admin: semua proposal yang sudah Disetujui
-            // pendanaannya (sebelumnya kosong, sehingga form unggah
-            // tidak bisa dipakai admin). Definisi "disetujui" adalah
-            // status_pendanaan (keputusan pendanaan), selaras dengan
-            // laporan kemajuan — bukan status alur.
-            $myProposals = Proposal::where('status_pendanaan', 'Disetujui')->latest()->get(['id', 'judul']);
+            // pendanaannya. file_laporan ikut diambil agar form bisa
+            // menandai proposal yang belum punya laporan kemajuan
+            // (butir 1: laporan akhir wajib ada kemajuan dulu).
+            $myProposals = Proposal::where('status_pendanaan', 'Disetujui')->latest()->get(['id', 'judul', 'file_laporan']);
         } else {
-            $proposals = $query->where('user_id', $user->id)
+            $proposals = $query->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereHas('members', function ($m) use ($user) {
+                        $m->where('user_id', $user->id)->where('status_konfirmasi', 'Diterima');
+                    });
+            })
                 ->with(['reviewers'])
                 ->latest()
                 ->get();
 
-            // Mengambil proposal milik user untuk dropdown select — hanya
-            // yang sudah Disetujui pendanaannya (status_pendanaan),
-            // selaras dengan laporan kemajuan.
-            $myProposals = Proposal::where('user_id', $user->id)
+            // Mengambil proposal untuk dropdown select — milik sendiri
+            // atau sebagai anggota Diterima, yang sudah Disetujui
+            // pendanaannya (status_pendanaan), selaras dengan laporan
+            // kemajuan.
+            $myProposals = Proposal::where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereHas('members', function ($m) use ($user) {
+                        $m->where('user_id', $user->id)->where('status_konfirmasi', 'Diterima');
+                    });
+            })
                 ->where('status_pendanaan', 'Disetujui')
                 ->latest()
-                ->get(['id', 'judul']);
+                ->get(['id', 'judul', 'file_laporan']);
         }
 
-        return view('reviewer.laporan-akhir', compact('proposals', 'myProposals'));
+        // Riwayat versi berkas lama per proposal (butir 3), dipakai
+        // tabel untuk tombol unduh per versi.
+        $versiPerProposal = LaporanVersiBerkas::whereIn('proposal_id', $proposals->pluck('id'))
+            ->where('jenis', 'akhir')
+            ->orderBy('nomor_versi')
+            ->get()
+            ->groupBy('proposal_id');
+
+        return view('reviewer.laporan-akhir', compact('proposals', 'myProposals', 'versiPerProposal'));
     }
 
     /**
      * Proses simpan berkas laporan akhir.
      *
-     * Hanya ketua pengusul (pemilik proposal) yang boleh mengunggah,
-     * dan hanya bila pendanaan proposal sudah Disetujui. Sebelumnya
-     * tidak ada cek kepemilikan sama sekali: user login mana pun bisa
-     * mengunggah laporan akhir untuk proposal_id mana pun.
+     * Yang boleh mengunggah (butir 5 + 6): ketua pemilik proposal,
+     * admin (atas nama pengaju), atau anggota tim berstatus Diterima.
+     * Syarat: pendanaan proposal sudah Disetujui, DAN proposal sudah
+     * punya laporan kemajuan (butir 1 — berlaku untuk semua, termasuk
+     * admin). Unggah ulang mengarsipkan berkas lama sebagai riwayat
+     * versi, bukan menghapusnya (butir 3 — PERUBAHAN PERILAKU dari
+     * 4fb1ddef yang menghapus berkas lama). Laporan yang baru
+     * diunggah berstatus 'Menunggu Verifikasi' (butir 4).
      */
     public function store(Request $request)
     {
@@ -125,12 +191,13 @@ class LaporanAkhirController extends Controller
             return back()->with('error', 'ID Proposal tidak ditemukan di database.');
         }
 
-        // Hanya pemilik proposal yang boleh mengunggah laporan akhir.
-        // Cek ini HARUS di luar blok try di bawah: abort(403) melempar
-        // HttpException yang tertangkap catch (\Exception) bila
-        // diletakkan di dalam try, sehingga 403 berubah jadi redirect.
-        if (! $this->isOwner(Auth::user(), $proposal)) {
-            abort(403, 'Hanya ketua pengusul pemilik proposal yang boleh mengunggah laporan akhir.');
+        // Hanya ketua pemilik, admin, atau anggota Diterima yang boleh
+        // mengunggah laporan akhir. Cek ini HARUS di luar blok try di
+        // bawah: abort(403) melempar HttpException yang tertangkap
+        // catch (\Exception) bila diletakkan di dalam try, sehingga
+        // 403 berubah jadi redirect.
+        if (! $this->canUpload(Auth::user(), $proposal)) {
+            abort(403, 'Hanya ketua pengusul, anggota tim yang sudah Diterima, atau admin yang boleh mengunggah laporan akhir.');
         }
 
         // Laporan akhir hanya untuk proposal yang sudah disetujui
@@ -140,15 +207,19 @@ class LaporanAkhirController extends Controller
             return back()->with('error', 'Laporan akhir hanya dapat diunggah untuk proposal yang sudah disetujui pendanaannya.');
         }
 
+        // Butir 1: laporan akhir wajib ada laporan kemajuan dulu —
+        // cukup keberadaannya, tidak peduli status verifikasinya.
+        if (empty($proposal->file_laporan)) {
+            return back()->with('error', 'Laporan akhir belum bisa diunggah karena proposal ini belum memiliki laporan kemajuan. Unggah laporan kemajuan terlebih dahulu.');
+        }
+
         try {
             if ($request->hasFile('file')) {
                 $file = $request->file('file');
 
-                // Hapus file lama bila ada (unggah ulang menggantikan
-                // berkas sebelumnya, selaras dengan laporan kemajuan).
-                if ($proposal->file_laporan_akhir && Storage::disk('public')->exists($proposal->file_laporan_akhir)) {
-                    Storage::disk('public')->delete($proposal->file_laporan_akhir);
-                }
+                // Arsipkan berkas lama sebagai riwayat versi sebelum
+                // digantikan (butir 3) — berkas lama TIDAK dihapus.
+                $this->arsipkanVersiLama($proposal, 'akhir', $proposal->file_laporan_akhir, (int) auth()->user()->id);
 
                 // Simpan file
                 $path = $file->store('laporan_akhir', 'public');
@@ -157,10 +228,12 @@ class LaporanAkhirController extends Controller
                 $isSuccess = $proposal->update([
                     'file_laporan_akhir' => $path,
                     'keterangan_akhir' => $request->keterangan,
+                    'status_laporan_akhir' => 'Menunggu Verifikasi',
                 ]);
 
                 if ($isSuccess) {
-                    $this->logActivity("Mengunggah laporan akhir proposal ID {$proposal->id}");
+                    $pelaku = Auth::user()->role === 'admin' ? 'Admin mengunggah laporan akhir atas nama pengaju untuk proposal' : 'Mengunggah laporan akhir proposal';
+                    $this->logActivity("{$pelaku} ID {$proposal->id}");
 
                     return back()->with('success', 'Laporan akhir berhasil diunggah!');
                 } else {
@@ -179,6 +252,97 @@ class LaporanAkhirController extends Controller
         }
 
         return back()->with('error', 'Gagal: File tidak terbaca oleh server.');
+    }
+
+    /**
+     * Verifikasi laporan akhir oleh LPPM (butir 4).
+     *
+     * Pola mengikuti verifikasi Monev: yang memverifikasi adalah
+     * LPPM (route memakai middleware role:lppm; dicek ulang di sini).
+     * Keputusan: 'terverifikasi' atau 'revisi'. Hanya laporan
+     * berstatus 'Menunggu Verifikasi' yang bisa diverifikasi.
+     */
+    public function verifikasi(Request $request, $id)
+    {
+        if (auth()->user()->role !== 'lppm') {
+            abort(403, 'Hanya LPPM yang boleh memverifikasi laporan akhir.');
+        }
+
+        $request->validate([
+            'keputusan' => 'required|in:terverifikasi,revisi',
+        ]);
+
+        $proposal = Proposal::findOrFail($id);
+
+        if (! $proposal->file_laporan_akhir) {
+            return back()->with('error', 'Belum ada berkas laporan akhir yang bisa diverifikasi.');
+        }
+
+        if ($proposal->status_laporan_akhir !== 'Menunggu Verifikasi') {
+            return back()->with('error', 'Hanya laporan berstatus Menunggu Verifikasi yang bisa diverifikasi (status saat ini: '.($proposal->status_laporan_akhir ?? '-').').');
+        }
+
+        $statusBaru = $request->keputusan === 'terverifikasi' ? 'Terverifikasi' : 'Revisi';
+        $proposal->update(['status_laporan_akhir' => $statusBaru]);
+
+        $this->logActivity("LPPM memverifikasi laporan akhir proposal ID {$proposal->id} (status: {$statusBaru})");
+
+        return back()->with('success', 'Laporan akhir dinyatakan '.$statusBaru.'.');
+    }
+
+    /**
+     * Hapus laporan akhir (butir 4).
+     *
+     * Yang boleh: ketua pemilik proposal atau admin. Hanya bila
+     * laporan belum 'Terverifikasi' — laporan yang sudah terverifikasi
+     * tidak bisa dihapus. Berkas aktif + seluruh riwayat versinya
+     * ikut dihapus; kolom laporan dikosongkan.
+     *
+     * Dampak tanggungan: hasTanggunganLaporan() (ProposalController)
+     * menganggap proposal bertanggungan bila file_laporan_akhir
+     * kosong — jadi begitu laporan akhir dihapus, tanggungan
+     * pengaju muncul kembali secara otomatis dan ia tidak bisa
+     * mengajukan proposal baru sampai mengunggah ulang.
+     */
+    public function destroy($id)
+    {
+        $proposal = Proposal::findOrFail($id);
+        $user = Auth::user();
+
+        if (! $this->isOwner($user, $proposal) && $user->role !== 'admin') {
+            abort(403, 'Hanya ketua pengusul atau admin yang boleh menghapus laporan akhir.');
+        }
+
+        if ($proposal->status_laporan_akhir === 'Terverifikasi') {
+            return back()->with('error', 'Laporan akhir yang sudah Terverifikasi tidak bisa dihapus.');
+        }
+
+        if (! $proposal->file_laporan_akhir) {
+            return back()->with('error', 'Belum ada berkas laporan akhir yang bisa dihapus.');
+        }
+
+        if (Storage::disk('public')->exists($proposal->file_laporan_akhir)) {
+            Storage::disk('public')->delete($proposal->file_laporan_akhir);
+        }
+
+        // Riwayat versi laporan ini ikut terhapus beserta berkasnya.
+        $versi = LaporanVersiBerkas::where('proposal_id', $proposal->id)->where('jenis', 'akhir')->get();
+        foreach ($versi as $v) {
+            if (Storage::disk('public')->exists($v->file_path)) {
+                Storage::disk('public')->delete($v->file_path);
+            }
+            $v->delete();
+        }
+
+        $proposal->update([
+            'file_laporan_akhir' => null,
+            'keterangan_akhir' => null,
+            'status_laporan_akhir' => null,
+        ]);
+
+        $this->logActivity("Menghapus laporan akhir proposal ID {$proposal->id}");
+
+        return back()->with('success', 'Laporan akhir berhasil dihapus. Tanggungan laporan pengaju kembali berlaku sampai laporan akhir diunggah ulang.');
     }
 
     /**

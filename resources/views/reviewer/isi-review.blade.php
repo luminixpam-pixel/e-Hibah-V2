@@ -13,9 +13,27 @@
 
     {{-- TENGGAT WAKTU REVIEW --}}
     @if($proposal->review_deadline)
-        <p class="text-danger fw-bold">
-            Tenggat Waktu: {{ \Carbon\Carbon::parse($proposal->review_deadline)->format('d M Y H:i') }}
+        @php
+            $tenggat = \Carbon\Carbon::parse($proposal->review_deadline);
+            $tenggatLewat = now()->greaterThan($tenggat);
+            $tenggatMendesak = ! $tenggatLewat && now()->diffInHours($tenggat, false) <= 24;
+        @endphp
+        <p class="text-danger fw-bold mb-1">
+            Tenggat Waktu: {{ $tenggat->format('d M Y H:i') }}
         </p>
+        {{-- Penjaga di ReviewerController sudah menolak membuka form ini
+             bila tenggat lewat; peringatan di sini untuk keadaan mendesak
+             (≤24 jam) dan sebagai pertahanan tampilan bila halaman ini
+             sempat dirender setelah tenggat. --}}
+        @if($tenggatLewat)
+            <div class="alert alert-danger py-2" role="alert">
+                Tenggat penilaian sudah lewat — review tidak dapat dikirim lagi untuk proposal ini.
+            </div>
+        @elseif($tenggatMendesak)
+            <div class="alert alert-warning py-2" role="alert">
+                Tenggat penilaian kurang dari 24 jam lagi. Segera kirim review Anda.
+            </div>
+        @endif
     @endif
 
     {{-- Tombol Download --}}

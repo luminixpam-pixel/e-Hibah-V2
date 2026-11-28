@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\NotificationHelper;
+use App\Helpers\ParseJumlah;
 use App\Models\ActivityLog;
 use App\Models\Fakultas;
 use App\Models\HibahPeriod;
@@ -94,6 +95,46 @@ class ProposalController extends Controller
     }
 
     /**
+     * Role staf untuk halaman daftar monitoring (keputusan audit #10):
+     * admin, verifikator, lppm, dekan, dan kepala_lppm melihat semua
+     * proposal di halaman tersebut.
+     */
+    private const ROLE_STAF_MONITORING = ['admin', 'verifikator', 'lppm', 'dekan', 'kepala_lppm'];
+
+    /**
+     * Batasi query daftar monitoring menurut role (keputusan audit #10).
+     * Staf (ROLE_STAF_MONITORING) melihat semua proposal; pengaju
+     * hanya proposalnya sendiri — sebagai ketua, atau sebagai anggota
+     * tim yang status konfirmasinya Menunggu/Diterima (selaras dengan
+     * dapatMengaksesProposal); reviewer hanya proposal yang ditugaskan
+     * kepadanya. Halaman yang murni antrean kerja staf (perluDireview,
+     * proposalSedangDireview, daftarReview) tidak memakai helper ini —
+     * pengaju ditolak 403 di sana.
+     */
+    private function batasiDaftarMonitoring($query)
+    {
+        $user = auth()->user();
+
+        if (in_array($user->role, self::ROLE_STAF_MONITORING, true)) {
+            return $query;
+        }
+
+        if ($user->role === 'pengaju') {
+            return $query->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereHas('members', function ($m) use ($user) {
+                        $m->where('user_id', $user->id)
+                            ->whereIn('status_konfirmasi', ['Menunggu', 'Diterima']);
+                    });
+            });
+        }
+
+        return $query->whereHas('reviewers', function ($q) use ($user) {
+            $q->where('proposal_reviewers.reviewer_id', $user->id);
+        });
+    }
+
+    /**
      * Tahun filter yang aman untuk index()/dikirim(): hanya angka
      * 4 digit yang masuk akal; nilai lain kembali ke tahun berjalan.
      */
@@ -182,6 +223,34 @@ class ProposalController extends Controller
         }));
 
         $request->merge(['rab' => $bersih]);
+    }
+
+    /**
+     * Normalisasi jumlah RAB sebelum validasi (keputusan audit #15).
+     * Nilai yang bisa dipahami ParseJumlah (notasi ilmiah, format
+     * Indonesia '1.000.000', awalan 'Rp') diubah menjadi angka biasa
+     * agar lolos aturan numeric|min:0; nilai yang tidak bisa dipahami
+     * ('1,5 juta', 'satu juta') dibiarkan apa adanya supaya validasi
+     * menolaknya dengan 'Jumlah RAB harus berupa angka.'. Dipanggil
+     * di store()/update() tepat setelah saringBarisRabKosong() dan
+     * sebelum validate(), sehingga total RAB, plafon, dan item yang
+     * disimpan semuanya memakai nilai yang sama.
+     */
+    private function normalisasiJumlahRab(Request $request): void
+    {
+        $rab = (array) $request->input('rab', []);
+
+        foreach ($rab as $i => $item) {
+            if (! is_array($item) || ! array_key_exists('jumlah', $item)) {
+                continue;
+            }
+            $parsed = ParseJumlah::parse($item['jumlah']);
+            if ($parsed !== null) {
+                $rab[$i]['jumlah'] = $parsed;
+            }
+        }
+
+        $request->merge(['rab' => $rab]);
     }
 
     /**
@@ -501,7 +570,7 @@ class ProposalController extends Controller
         $total = 0;
         foreach ($rabInput as $item) {
             $nama = trim((string) ($item['nama_komponen'] ?? ''));
-            $jumlah = (float) preg_replace('/[^0-9.]/', '', (string) ($item['jumlah'] ?? 0));
+            $jumlah = ParseJumlah::parse($item['jumlah'] ?? 0) ?? 0;
             if ($nama === '' && $jumlah <= 0) {
                 continue;
             }
@@ -721,6 +790,10 @@ class ProposalController extends Controller
         // Baris RAB yang sepenuhnya kosong diabaikan sebelum validasi (bug #7).
         $this->saringBarisRabKosong($request);
 
+        // Jumlah RAB dinormalisasi sebelum validasi (keputusan audit
+        // #15): '1e5' / '1.000.000' / 'Rp 1.500.000' menjadi angka.
+        $this->normalisasiJumlahRab($request);
+
         // 3. Validasi form (draft boleh dilengkapi bertahap, submit harus lengkap).
         // Nama komponen RAB harus ada di daftar bawaan + kustom (settings
         // key 'rab_komponen_kustom'); bila key belum ada, daftar kustom kosong.
@@ -794,7 +867,7 @@ class ProposalController extends Controller
         // 6. Hitung total RAB dan validasi terhadap plafon skema (hanya saat submit).
         $rabTotal = 0;
         foreach ((array) $request->input('rab', []) as $item) {
-            $rabTotal += (float) preg_replace('/[^0-9.]/', '', (string) ($item['jumlah'] ?? 0));
+            $rabTotal += ParseJumlah::parse($item['jumlah'] ?? 0) ?? 0;
         }
         if (! $isDraft && $skema && $skema->plafon > 0 && $rabTotal > (float) $skema->plafon) {
             return $this->sertakanFileTersimpan(
@@ -936,6 +1009,18 @@ class ProposalController extends Controller
             return redirect()->back()->withInput()->with('error', 'Proposal dengan status '.$proposal->status.' sudah tidak bisa diubah.');
         }
 
+        // 3. Cek Masa Hibah (Keamanan) — sama seperti edit():
+        // update di luar masa hibah ditolak.
+        $now = now();
+        $isMasaHibah = \Illuminate\Support\Facades\DB::table('hibah_periods')
+            ->whereDate('start_date', '<=', $now)
+            ->whereDate('end_date', '>=', $now)
+            ->exists();
+
+        if (! $isMasaHibah) {
+            return redirect()->back()->withInput()->with('error', 'Masa pengeditan proposal telah berakhir.');
+        }
+
         $user = auth()->user();
         $aksi = $request->input('aksi', 'submit');
         // Kirim ulang hasil Revisi Administrasi dihitung sebagai pengajuan juga,
@@ -949,6 +1034,10 @@ class ProposalController extends Controller
 
         // Baris RAB yang sepenuhnya kosong diabaikan sebelum validasi (bug #7).
         $this->saringBarisRabKosong($request);
+
+        // Jumlah RAB dinormalisasi sebelum validasi (keputusan audit
+        // #15): '1e5' / '1.000.000' / 'Rp 1.500.000' menjadi angka.
+        $this->normalisasiJumlahRab($request);
 
         // Validasi: draft boleh dilengkapi bertahap; pengiriman dan revisi harus lengkap.
         // Nama komponen RAB harus ada di daftar bawaan + kustom (settings
@@ -1024,7 +1113,7 @@ class ProposalController extends Controller
         $hasRab = false;
         foreach ($rabInput as $item) {
             $namaItem = trim((string) ($item['nama_komponen'] ?? ''));
-            $jumlahItem = (float) preg_replace('/[^0-9.]/', '', (string) ($item['jumlah'] ?? 0));
+            $jumlahItem = ParseJumlah::parse($item['jumlah'] ?? 0) ?? 0;
             if ($namaItem !== '' || $jumlahItem > 0) {
                 $hasRab = true;
             }
@@ -1428,8 +1517,15 @@ class ProposalController extends Controller
         // Inisialisasi Query
         $query = Proposal::with(['reviewers', 'user']);
 
-        if ($user->role === 'admin') {
-            // Admin bisa melihat semua yang perlu diplot atau sedang direview
+        // Halaman antrean plotting/review (keputusan audit #10):
+        // staf (admin, verifikator, lppm, dekan, kepala_lppm) melihat
+        // antrean yang perlu diplot / sedang direview; reviewer hanya
+        // yang ditugaskan kepadanya. Pengaju ditolak — ia memantau
+        // proposalnya lewat Status Proposal. Sebelumnya pengaju (dan
+        // staf selain admin) melihat SEMUA proposal di sini karena
+        // tidak ada cabang else.
+        if (in_array($user->role, self::ROLE_STAF_MONITORING, true)) {
+            // Staf bisa melihat semua yang perlu diplot atau sedang direview
             $query->whereIn('status', ['Dikirim', 'Perlu Direview', 'Sedang Direview', 'Hasil Revisi']);
         } elseif ($user->role === 'reviewer') {
             // Reviewer HANYA melihat proposal yang ditugaskan kepadanya
@@ -1437,6 +1533,8 @@ class ProposalController extends Controller
                 ->whereHas('reviewers', function ($q) use ($user) {
                     $q->where('reviewer_id', $user->id);
                 });
+        } else {
+            abort(403, 'Halaman ini hanya untuk staf LPPM dan reviewer yang ditugaskan.');
         }
 
         $proposals = $query->latest()->get();
@@ -1447,8 +1545,25 @@ class ProposalController extends Controller
 
     public function proposalSedangDireview()
     {
-        $proposals = Proposal::where('status', 'Sedang Direview')
-            ->with(['reviewers', 'reviews'])
+        // Halaman monitoring review (keputusan audit #10): staf
+        // melihat semua yang sedang direview, reviewer hanya yang
+        // ditugaskan kepadanya, pengaju ditolak (ia memantau status
+        // proposalnya lewat Status Proposal). Sebelumnya halaman ini
+        // menampilkan semua proposal ke semua role tanpa pembatasan.
+        $user = auth()->user();
+
+        if ($user->role === 'reviewer') {
+            $query = Proposal::where('status', 'Sedang Direview')
+                ->whereHas('reviewers', function ($q) use ($user) {
+                    $q->where('proposal_reviewers.reviewer_id', $user->id);
+                });
+        } elseif (in_array($user->role, self::ROLE_STAF_MONITORING, true)) {
+            $query = Proposal::where('status', 'Sedang Direview');
+        } else {
+            abort(403, 'Halaman ini hanya untuk staf LPPM dan reviewer yang ditugaskan.');
+        }
+
+        $proposals = $query->with(['reviewers', 'reviews'])
             ->latest()
             ->get();
 
@@ -1457,8 +1572,18 @@ class ProposalController extends Controller
 
     public function reviewSelesai()
     {
-        $proposals = Proposal::where('status', 'Review Selesai')
-            ->orWhereIn('status_pendanaan', ['Disetujui', 'Ditolak', 'Direvisi'])
+        // Daftar monitoring (keputusan audit #10): staf melihat
+        // semua, pengaju hanya proposalnya sendiri, reviewer hanya
+        // yang ditugaskan kepadanya. Kondisi OR dibungkus closure
+        // agar pembatasan role (AND) berlaku untuk kedua cabangnya —
+        // tanpa bungkus ini, 'Review Selesai' milik siapa pun lolos
+        // karena AND mengikat lebih kuat daripada OR.
+        $proposals = $this->batasiDaftarMonitoring(
+            Proposal::where(function ($q) {
+                $q->where('status', 'Review Selesai')
+                    ->orWhereIn('status_pendanaan', ['Disetujui', 'Ditolak', 'Direvisi']);
+            })
+        )
             ->with(['user', 'reviews.reviewer'])
             ->latest('updated_at')
             ->get();
@@ -1468,14 +1593,24 @@ class ProposalController extends Controller
 
     public function proposalDitolak()
     {
-        $proposals = Proposal::where('status', 'Ditolak')->latest()->get();
+        // Daftar monitoring (keputusan audit #10): staf melihat
+        // semua, pengaju hanya proposalnya sendiri, reviewer hanya
+        // yang ditugaskan kepadanya.
+        $proposals = $this->batasiDaftarMonitoring(
+            Proposal::where('status', 'Ditolak')
+        )->latest()->get();
 
         return view('proposal.proposal-ditolak', compact('proposals'));
     }
 
     public function proposalDirevisi()
     {
-        $proposals = Proposal::whereIn('status', ['Ditolak', 'Direvisi'])->latest()->get();
+        // Daftar monitoring (keputusan audit #10): staf melihat
+        // semua, pengaju hanya proposalnya sendiri, reviewer hanya
+        // yang ditugaskan kepadanya.
+        $proposals = $this->batasiDaftarMonitoring(
+            Proposal::whereIn('status', ['Ditolak', 'Direvisi'])
+        )->latest()->get();
 
         return view('proposal.proposal-direvisi', compact('proposals'));
     }
@@ -1492,7 +1627,16 @@ class ProposalController extends Controller
         // Disetujui. Pola ini sama dengan halaman monitoring lain
         // (proposalDitolak, proposalSedangDireview, reviewSelesai) yang
         // tidak memfilter pemilik.
-        $proposals = Proposal::where('status', 'Disetujui')
+        //
+        // Keputusan audit #10: staf tetap melihat semua; pengaju
+        // tetap bisa membuka halaman ini (terbukti di uji web:
+        // pengaju melihat proposalnya sendiri di sini) tapi HANYA
+        // proposalnya sendiri — sebelumnya pengaju melihat proposal
+        // Disetujui milik semua orang. Reviewer hanya yang ditugaskan
+        // kepadanya.
+        $proposals = $this->batasiDaftarMonitoring(
+            Proposal::where('status', 'Disetujui')
+        )
             ->with(['reviewers', 'user']) // Eager loading untuk menampilkan nama reviewer + pengusul
             ->latest()
             ->get();
@@ -1503,13 +1647,17 @@ class ProposalController extends Controller
     // Tambahkan juga fungsi ini jika belum ada (antisipasi error berikutnya)
     public function proposalSelesai()
     {
-        // Ambil semua proposal yang sudah melewati tahap review
-        $proposals = Proposal::whereIn('status', [
-            'Review Selesai',
-            'Disetujui',
-            'Ditolak',
-            'Selesai',
-        ])
+        // Metode ini tidak punya route (route /proposal-selesai
+        // memakai reviewSelesai()), tapi tetap dibatasi sama seperti
+        // reviewSelesai (keputusan audit #10) bila suatu saat di-route.
+        $proposals = $this->batasiDaftarMonitoring(
+            Proposal::whereIn('status', [
+                'Review Selesai',
+                'Disetujui',
+                'Ditolak',
+                'Selesai',
+            ])
+        )
             ->latest()
             ->get();
 
@@ -1518,7 +1666,12 @@ class ProposalController extends Controller
 
     public function hasilRevisi()
     {
-        $proposals = Proposal::where('status', 'Hasil Revisi')->latest()->get();
+        // Daftar monitoring (keputusan audit #10): staf melihat
+        // semua, pengaju hanya proposalnya sendiri, reviewer hanya
+        // yang ditugaskan kepadanya.
+        $proposals = $this->batasiDaftarMonitoring(
+            Proposal::where('status', 'Hasil Revisi')
+        )->latest()->get();
 
         return view('proposal.hasil-review', compact('proposals'));
     }
@@ -1619,6 +1772,15 @@ class ProposalController extends Controller
     public function daftarReview(Request $request)
     {
         $user = Auth::user();
+
+        // Daftar review (keputusan audit #10): pengaju ditolak —
+        // sebelumnya pengaju melihat SEMUA proposal beserta
+        // reviewernya di sini. Staf melihat semua; reviewer hanya
+        // yang ditugaskan kepadanya (sudah ada di bawah).
+        if ($user->role === 'pengaju') {
+            abort(403, 'Halaman ini hanya untuk staf LPPM dan reviewer yang ditugaskan.');
+        }
+
         $query = Proposal::with(['user', 'reviewers']);
 
         if ($user->role === 'reviewer') {

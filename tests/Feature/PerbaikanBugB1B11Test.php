@@ -4,6 +4,7 @@
 // Helper berprefix bb* agar tidak bentrok dengan pb* / f3* / at*.
 
 use App\Models\Fakultas;
+use App\Models\HibahPeriod;
 use App\Models\Proposal;
 use App\Models\Review;
 use App\Models\Skema;
@@ -205,6 +206,11 @@ test('bb7: laporan error menampilkan pesan sukses di halaman form', function () 
 // --- B8: ketua sebagai anggota ---
 
 test('bb8: ketua yang dipilih sebagai anggota diberi peringatan dan tidak tercatat sebagai anggota', function () {
+    HibahPeriod::create([
+        'nama' => 'Periode 2026',
+        'start_date' => now()->subMonth(),
+        'end_date' => now()->addMonth(),
+    ]);
     $pengaju = bbUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = bbSkema();
     $proposal = bbProposal($pengaju, $skema, [

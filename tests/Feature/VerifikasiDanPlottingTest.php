@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProposalReviewerController;
 use App\Models\Fakultas;
+use App\Models\HibahPeriod;
 use App\Models\Proposal;
 use App\Models\ProposalMember;
 use App\Models\Review;
@@ -141,6 +142,11 @@ test('proposal yang sudah diverifikasi tidak bisa diverifikasi lagi', function (
 
 test('pengaju bisa kirim ulang proposal Revisi Administrasi tanpa makan kuota baru', function () {
     Storage::fake('public');
+    HibahPeriod::create([
+        'nama' => 'Periode 2026',
+        'start_date' => now()->subMonth(),
+        'end_date' => now()->addMonth(),
+    ]);
     $pengaju = f3User('pengaju', ['name' => 'Dr. Andi']);
     $skema = f3Skema(['kuota' => 1]);
     $fakultas = Fakultas::create(['nama_fakultas' => 'Fakultas Teknologi Informasi']);

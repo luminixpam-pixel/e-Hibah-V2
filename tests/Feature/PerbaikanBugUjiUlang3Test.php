@@ -7,6 +7,7 @@
 // Helper berprefix pu3* agar tidak bentrok dengan bb* / pu2* / f3*.
 
 use App\Models\Fakultas;
+use App\Models\HibahPeriod;
 use App\Models\Proposal;
 use App\Models\Skema;
 use App\Models\User;
@@ -44,6 +45,15 @@ function pu3Proposal(User $user, Skema $skema, array $attrs = []): Proposal
         'status' => 'Dikirim',
         'biaya' => 1000000,
     ], $attrs));
+}
+
+function pu3PeriodeAktif(): HibahPeriod
+{
+    return HibahPeriod::create([
+        'nama' => 'Periode 2026',
+        'start_date' => now()->subMonth(),
+        'end_date' => now()->addMonth(),
+    ]);
 }
 
 function pu3PayloadSubmit(Skema $skema, Fakultas $fakultas, array $override = []): array
@@ -117,6 +127,7 @@ test('pu3: submit proposal tanpa file menampilkan pesan validasi Bahasa Indonesi
 // --- Pesan validasi Bahasa Indonesia: edit (update) ---
 
 test('pu3: edit proposal tanpa judul menampilkan pesan validasi Bahasa Indonesia', function () {
+    pu3PeriodeAktif();
     $pengaju = pu3User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu3Skema();
     $fakultas = Fakultas::first() ?? Fakultas::create(['nama_fakultas' => 'Fakultas Teknologi Informasi']);

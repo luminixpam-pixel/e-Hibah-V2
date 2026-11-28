@@ -251,6 +251,7 @@
                         <th style="min-width: 100px;">Reviewer</th>
                         <th style="min-width: 110px;">Status Pendanaan</th>
                         <th style="min-width: 170px;">Berkas Laporan</th>
+                        <th style="min-width: 120px;">Status Verifikasi</th>
                         <th style="min-width: 100px; border-top-right-radius: 15px;">Aksi</th>
                     </tr>
                 </thead>
@@ -296,10 +297,34 @@
                                     <div class="mt-1 text-muted" style="font-size: 10px;">
                                         Diperbarui: {{ \Carbon\Carbon::parse($proposal->updated_at)->format('d/m/Y') }}
                                     </div>
+                                    {{-- Riwayat versi berkas lama (butir 3): tombol
+                                         unduh per versi, tunduk pada aturan akses
+                                         yang sama dengan berkas aktif. --}}
+                                    @if(($versiPerProposal[$proposal->id] ?? collect())->isNotEmpty())
+                                        <div class="mt-2 text-start" style="font-size: 11px;">
+                                            <div class="fw-bold text-muted mb-1">Riwayat versi:</div>
+                                            @foreach($versiPerProposal[$proposal->id] as $v)
+                                                <div>
+                                                    <a href="{{ route('laporan.versi.download', $v) }}">Versi {{ $v->nomor_versi }}</a>
+                                                    <span class="text-muted">({{ \Carbon\Carbon::parse($v->created_at)->format('d/m/Y') }})</span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 @else
                                     <span class="badge-empty">
                                         <i class="bi bi-info-circle me-1"></i> Belum Ada Berkas
                                     </span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                {{-- Status verifikasi laporan kemajuan (butir 4):
+                                     Menunggu Verifikasi / Terverifikasi / Revisi. --}}
+                                @if($proposal->file_laporan)
+                                    @php($stKemajuan = $proposal->status_laporan_kemajuan ?? 'Menunggu Verifikasi')
+                                    <span class="badge {{ $stKemajuan === 'Terverifikasi' ? 'bg-success' : ($stKemajuan === 'Revisi' ? 'bg-warning text-dark' : 'bg-light text-dark border') }}">{{ $stKemajuan }}</span>
+                                @else
+                                    <span class="text-muted small">-</span>
                                 @endif
                             </td>
                             <td class="text-center">
@@ -325,11 +350,42 @@
                                         </button>
                                     @endif
                                 </div>
+                                {{-- Verifikasi oleh LPPM (butir 4, pola Monev):
+                                     hanya bila status Menunggu Verifikasi. --}}
+                                @if(Auth::user()->role === 'lppm' && $proposal->file_laporan && ($proposal->status_laporan_kemajuan ?? null) === 'Menunggu Verifikasi')
+                                    <div class="d-flex justify-content-center gap-2 mt-2">
+                                        <form action="{{ route('laporan.kemajuan.verifikasi', $proposal->id) }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="keputusan" value="terverifikasi">
+                                            <button type="submit" class="btn btn-sm btn-success fw-bold px-2" title="Tandai Terverifikasi">
+                                                <i class="bi bi-check-lg me-1"></i>Verifikasi
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('laporan.kemajuan.verifikasi', $proposal->id) }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="keputusan" value="revisi">
+                                            <button type="submit" class="btn btn-sm btn-warning fw-bold px-2" title="Minta revisi">
+                                                <i class="bi bi-arrow-counterclockwise me-1"></i>Revisi
+                                            </button>
+                                        </form>
+                                    </div>
+                                @endif
+                                {{-- Hapus laporan kemajuan (butir 4): ketua atau
+                                     admin, hanya bila belum Terverifikasi. --}}
+                                @if($proposal->file_laporan && ($proposal->user_id === Auth::user()->id || Auth::user()->role === 'admin') && ($proposal->status_laporan_kemajuan ?? null) !== 'Terverifikasi')
+                                    <form action="{{ route('laporan.kemajuan.destroy', $proposal->id) }}" method="POST" class="mt-2" data-ehibah-confirm="Hapus laporan kemajuan ini beserta seluruh riwayat versinya?" data-ehibah-confirm-title="Hapus Laporan Kemajuan" data-ehibah-confirm-label="Hapus" data-ehibah-confirm-btn="btn-danger">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger fw-bold px-2" title="Hapus laporan kemajuan">
+                                            <i class="bi bi-trash me-1"></i>Hapus
+                                        </button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">
+                            <td colspan="7" class="text-center py-5 text-muted">
                                 Tidak ada data laporan kemajuan yang ditemukan.
                             </td>
                         </tr>

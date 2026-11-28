@@ -122,6 +122,7 @@ test('pu4: submit proposal tanpa file menampilkan pesan validasi Bahasa Indonesi
 });
 
 test('pu4: edit proposal tanpa judul menampilkan pesan validasi Bahasa Indonesia', function () {
+    pu4PeriodeAktif();
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();
     $fakultas = pu4Fakultas();
@@ -144,6 +145,7 @@ test('pu4: edit proposal tanpa judul menampilkan pesan validasi Bahasa Indonesia
 });
 
 test('pu4: kirim edit draft tanpa file menampilkan pesan File proposal wajib diunggah', function () {
+    pu4PeriodeAktif();
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();
     $fakultas = pu4Fakultas();
@@ -209,6 +211,7 @@ test('pu4: file tersimpan saat Simpan Draft dari form buat', function () {
 
 test('pu4: file tersimpan saat Simpan Draft dari form edit', function () {
     Storage::fake('public');
+    pu4PeriodeAktif();
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();
     $fakultas = pu4Fakultas();
@@ -282,6 +285,7 @@ test('pu4: file bertahan saat submit gagal karena tanggungan laporan', function 
 
 test('pu4: file baru bertahan saat edit draft gagal validasi (berkas lama tetap tertaut)', function () {
     Storage::fake('public');
+    pu4PeriodeAktif();
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();
     $fakultas = pu4Fakultas();
@@ -426,6 +430,7 @@ test('pu4: submit dengan semua baris RAB kosong tetap ditolak sebagai RAB belum 
 
 test('pu4: baris RAB kosong diabaikan saat simpan draft dari form edit', function () {
     Storage::fake('public');
+    pu4PeriodeAktif();
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();
     $fakultas = pu4Fakultas();

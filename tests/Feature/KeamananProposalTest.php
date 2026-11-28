@@ -499,6 +499,7 @@ test('kp: injeksi status/user_id/file_path/biaya lewat store tidak berpengaruh',
 });
 
 test('kp: injeksi status/user_id lewat update tidak berpengaruh', function () {
+    kpPeriodeAktif();
     $ketua = kpUser('pengaju', ['name' => 'Dr. Andi']);
     $korban = kpUser('pengaju', ['name' => 'Korban']);
     $skema = kpSkema();
@@ -585,6 +586,7 @@ test('kp: plafon tidak bisa dilewati lewat request langsung (bypass UI)', functi
 });
 
 test('kp: update dengan fakultas_prodi yang tidak ada ditolak validasi', function () {
+    kpPeriodeAktif();
     $ketua = kpUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = kpSkema();
     $proposal = kpProposal($ketua, $skema, ['status' => 'Draft']);

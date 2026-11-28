@@ -17,6 +17,7 @@ class Luaran extends Model
         'judul',
         'status',
         'file',
+        'created_by',
     ];
 
     /**
@@ -25,5 +26,14 @@ class Luaran extends Model
     public function proposal()
     {
         return $this->belongsTo(Proposal::class);
+    }
+
+    /**
+     * User yang membuat luaran ini (butir 6: anggota hanya boleh
+     * mengelola luaran buatannya sendiri).
+     */
+    public function pembuat()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

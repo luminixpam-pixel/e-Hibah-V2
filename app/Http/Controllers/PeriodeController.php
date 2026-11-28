@@ -15,16 +15,14 @@ use Illuminate\Http\Request;
  * Otorisasi ditangani route (middleware role:admin,lppm) — controller
  * ini tidak membandingkan role sendiri.
  *
- * OVERLAP (dilaporkan, tidak diubah): CalendarController@updatePeriod
- * juga menulis tabel hibah_periods — tetapi selalu pada baris PERTAMA
- * (HibahPeriod::first()) dan tanpa mengisi kolom nama. Bila LPPM
- * membuat lebih dari satu periode lewat CRUD ini, halaman kalender
- * (monitoring-data) tetap memakai periode pertama saja.
+ * OVERLAP (diperbaiki, keputusan audit 28 Nov 2026): banyak periode
+ * aktif DIBOLEHKAN — tidak ada validasi satu-periode-aktif di sini.
+ * CalendarController@updatePeriod kini menerima period_id dan
+ * mengupdate periode yang dimaksud, bukan selalu baris pertama.
  *
- * Tumpang tindih antar-periode juga BELUM divalidasi di sini: belum
- * ada keputusan tim/LPPM apakah hanya boleh ada satu periode aktif
- * atau boleh banyak — sampai keputusan itu ada, jangan menambah
- * penolakan overlap sepihak.
+ * Tumpang tindih antar-periode juga TIDAK divalidasi di sini:
+ * periode boleh tumpang tindih tanggalnya; pengajuan memakai periode
+ * yang tanggalnya mencakup hari ini (ProposalController::activePeriod).
  *
  * Catatan: menghapus periode yang masih dipakai proposal DITOLAK
  * (lihat destroy()) — FK proposals.periode_id memang nullOnDelete,

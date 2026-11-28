@@ -43,6 +43,8 @@ class Proposal extends Model
         'file_laporan_akhir',
         'keterangan_akhir',
         'status_laporan',
+        'status_laporan_kemajuan',
+        'status_laporan_akhir',
         'no_pengajuan',
         'skema_id',
         'periode_id',
@@ -122,6 +124,30 @@ class Proposal extends Model
     public function members()
     {
         return $this->hasMany(ProposalMember::class, 'proposal_id');
+    }
+
+    /**
+     * Apakah user ini anggota tim proposal dengan status Diterima?
+     * Dipakai otorisasi pasca-hibah (keputusan audit 28 Nov 2026,
+     * butir 6): anggota Diterima boleh mengunggah laporan/logbook/
+     * luaran; anggota Menunggu/Ditolak tidak. Ketua (user_id
+     * proposal) bukan "anggota" di sini — cek isOwner terpisah.
+     */
+    public function isAnggotaDiterima(int $userId): bool
+    {
+        return $this->members()
+            ->where('user_id', $userId)
+            ->where('status_konfirmasi', 'Diterima')
+            ->exists();
+    }
+
+    /**
+     * Riwayat versi berkas laporan kemajuan/akhir (One to Many,
+     * butir 3: berkas lama disimpan, bukan dihapus).
+     */
+    public function laporanVersi()
+    {
+        return $this->hasMany(LaporanVersiBerkas::class, 'proposal_id');
     }
 
     /**
