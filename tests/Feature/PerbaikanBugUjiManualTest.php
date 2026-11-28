@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Fakultas;
+use App\Models\HibahPeriod;
 use App\Models\Proposal;
 use App\Models\Review;
 use App\Models\Skema;
@@ -26,6 +27,15 @@ function pbSkema(array $attrs = []): Skema
         'deskripsi' => 'Skema pembinaan.',
         'syarat' => 'Dosen aktif.',
     ], $attrs));
+}
+
+function pbPeriodeAktif(): HibahPeriod
+{
+    return HibahPeriod::create([
+        'nama' => 'Periode 2026',
+        'start_date' => now()->subMonth(),
+        'end_date' => now()->addMonth(),
+    ]);
 }
 
 function pbProposal(User $user, Skema $skema, array $attrs = []): Proposal
@@ -223,6 +233,7 @@ test('bug 2: seeder membuat akun reviewer kedua agar plotting 2 reviewer berbeda
 // --- Minor (a): kirim proposal langsung dari daftar ---
 
 test('minor a: pemilik bisa mengirim draft dari daftar, nomor pengajuan terbit', function () {
+    pbPeriodeAktif();
     $pengaju = pbUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = pbSkema();
     $proposal = pbProposal($pengaju, $skema, [
@@ -241,6 +252,7 @@ test('minor a: pemilik bisa mengirim draft dari daftar, nomor pengajuan terbit',
 });
 
 test('minor a: bukan pemilik tidak bisa mengirim proposal orang lain', function () {
+    pbPeriodeAktif();
     $pengaju = pbUser('pengaju', ['name' => 'Dr. Andi']);
     $lain = pbUser('pengaju', ['name' => 'Budi']);
     $skema = pbSkema();
@@ -254,6 +266,7 @@ test('minor a: bukan pemilik tidak bisa mengirim proposal orang lain', function 
 });
 
 test('minor a: proposal yang sudah dikirim tidak bisa dikirim ulang dari daftar', function () {
+    pbPeriodeAktif();
     $pengaju = pbUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = pbSkema();
     $proposal = pbProposal($pengaju, $skema, ['status' => 'Dikirim', 'file_path' => 'proposal_files/draft.pdf']);
@@ -266,6 +279,7 @@ test('minor a: proposal yang sudah dikirim tidak bisa dikirim ulang dari daftar'
 });
 
 test('minor a: draft tanpa berkas tidak bisa dikirim dari daftar', function () {
+    pbPeriodeAktif();
     $pengaju = pbUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = pbSkema();
     $proposal = pbProposal($pengaju, $skema, ['status' => 'Draft', 'file_path' => null]);

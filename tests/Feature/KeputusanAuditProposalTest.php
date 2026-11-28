@@ -299,6 +299,7 @@ test('ka15: ParseJumlah menolak format yang tidak jelas', function () {
 });
 
 test('ka15: submit dengan jumlah 1e5 menyimpan 100000 di item RAB dan biaya proposal', function () {
+    kapPeriodeAktif();
     Storage::fake('public');
     $pengaju = kapUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = kapSkema();
@@ -317,6 +318,7 @@ test('ka15: submit dengan jumlah 1e5 menyimpan 100000 di item RAB dan biaya prop
 });
 
 test('ka15: submit dengan jumlah 1.000.000 dan Rp 1.500.000 menyimpan nilai penuhnya', function () {
+    kapPeriodeAktif();
     Storage::fake('public');
     $pengaju = kapUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = kapSkema();
@@ -340,6 +342,7 @@ test('ka15: submit dengan jumlah 1.000.000 dan Rp 1.500.000 menyimpan nilai penu
 });
 
 test('ka15: submit dengan jumlah 1,5 juta ditolak validasi', function () {
+    kapPeriodeAktif();
     Storage::fake('public');
     $pengaju = kapUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = kapSkema();
@@ -356,6 +359,7 @@ test('ka15: submit dengan jumlah 1,5 juta ditolak validasi', function () {
 });
 
 test('ka15: plafon ditegakkan dengan nilai hasil parsing — 3e7 ditolak sebagai Rp 30.000.000', function () {
+    kapPeriodeAktif();
     Storage::fake('public');
     $pengaju = kapUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = kapSkema();

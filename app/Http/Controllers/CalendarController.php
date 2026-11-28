@@ -15,7 +15,10 @@ class CalendarController extends Controller
      */
     public function index()
     {
-        $hibahPeriod = HibahPeriod::first();
+        // Urutan yang sama dengan activePeriod() di ProposalController:
+        // periode terbaru dulu — tanpa orderBy, baris yang terpilih
+        // tidak tentu bila ada periode yang tumpang tindih.
+        $hibahPeriod = HibahPeriod::orderByDesc('start_date')->orderByDesc('end_date')->orderByDesc('id')->first();
         $periodes = HibahPeriod::latest()->get();
 
         return view('monitoring-data', compact('hibahPeriod', 'periodes'));
@@ -63,7 +66,11 @@ class CalendarController extends Controller
                 'end_date' => $validated['end_date'],
             ]);
         } else {
-            $existing = HibahPeriod::first();
+            // Perilaku lama (tanpa period_id): update baris pertama bila
+            // ada, atau buat periode baru bila tabel kosong. Baris yang
+            // dipilih memakai urutan yang sama dengan activePeriod()
+            // (terbaru dulu) supaya deterministik.
+            $existing = HibahPeriod::orderByDesc('start_date')->orderByDesc('end_date')->orderByDesc('id')->first();
 
             if ($existing) {
                 $existing->update([

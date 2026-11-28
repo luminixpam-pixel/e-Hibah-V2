@@ -218,29 +218,35 @@ test('butir 4: laporan yang baru diunggah berstatus Menunggu Verifikasi', functi
     expect($proposal->fresh()->status_laporan_akhir)->toBe('Menunggu Verifikasi');
 });
 
-test('butir 4: lppm bisa memverifikasi laporan, pengaju dan admin tidak bisa', function () {
+test('butir 4: lppm dan admin bisa memverifikasi laporan, pengaju tidak bisa', function () {
     Storage::fake('public');
     $pengaju = kaBuatUser('pengaju');
     $proposal = kaBuatProposal($pengaju);
     kaUnggahKemajuan($pengaju, $proposal);
 
-    // Pengaju (bukan LPPM): 403 via middleware role:lppm.
+    // Pengaju (bukan verifikator laporan): 403.
     $this->actingAs($pengaju)->post(route('laporan.kemajuan.verifikasi', $proposal->id), [
         'keputusan' => 'terverifikasi',
     ])->assertForbidden();
+    expect($proposal->fresh()->status_laporan_kemajuan)->toBe('Menunggu Verifikasi');
 
-    // Admin juga bukan LPPM: 403.
-    $this->actingAs(kaBuatUser('admin'))->post(route('laporan.kemajuan.verifikasi', $proposal->id), [
-        'keputusan' => 'terverifikasi',
-    ])->assertForbidden();
-
-    // LPPM berhasil.
-    $response = $this->actingAs(kaBuatUser('lppm'))->post(route('laporan.kemajuan.verifikasi', $proposal->id), [
+    // Admin kini boleh memverifikasi (keputusan user 28 Nov 2026).
+    $response = $this->actingAs(kaBuatUser('admin'))->post(route('laporan.kemajuan.verifikasi', $proposal->id), [
         'keputusan' => 'terverifikasi',
     ]);
     $response->assertRedirect();
     $response->assertSessionHas('success');
     expect($proposal->fresh()->status_laporan_kemajuan)->toBe('Terverifikasi');
+
+    // LPPM tetap bisa (proposal kedua, karena yang pertama sudah Terverifikasi).
+    $proposal2 = kaBuatProposal($pengaju);
+    kaUnggahKemajuan($pengaju, $proposal2);
+    $response = $this->actingAs(kaBuatUser('lppm'))->post(route('laporan.kemajuan.verifikasi', $proposal2->id), [
+        'keputusan' => 'terverifikasi',
+    ]);
+    $response->assertRedirect();
+    $response->assertSessionHas('success');
+    expect($proposal2->fresh()->status_laporan_kemajuan)->toBe('Terverifikasi');
 });
 
 test('butir 4: lppm bisa meminta revisi dan verifikasi kedua ditolak', function () {

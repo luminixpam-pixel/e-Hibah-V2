@@ -377,9 +377,11 @@
                                     <i class="bi bi-eye"></i>
                                 </button>
                             </div>
-                            {{-- Verifikasi oleh LPPM (butir 4, pola Monev):
-                                 hanya bila status Menunggu Verifikasi. --}}
-                            @if(Auth::user()->role === 'lppm' && ($p->status_laporan_akhir ?? null) === 'Menunggu Verifikasi')
+                            {{-- Verifikasi oleh LPPM, admin, atau Kepala
+                                 LPPM (keputusan 28 Nov 2026; butir 4,
+                                 pola Monev): hanya bila status Menunggu
+                                 Verifikasi dan berkas ada. --}}
+                            @if(in_array(Auth::user()->role, ['lppm', 'admin', 'kepala_lppm'], true) && $p->file_laporan_akhir && ($p->status_laporan_akhir ?? null) === 'Menunggu Verifikasi')
                                 <div class="d-flex justify-content-center gap-2 mt-2">
                                     <form action="{{ route('laporan.akhir.verifikasi', $p->id) }}" method="POST">
                                         @csrf

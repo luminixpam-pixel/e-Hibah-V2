@@ -94,6 +94,7 @@ function pu4ProposalDisetujui(User $user, Skema $skema, array $attrs = []): Prop
 // --- Bug #4: pesan validasi Indonesia tampil lewat server ---
 
 test('pu4: submit proposal tanpa judul menampilkan pesan validasi Bahasa Indonesia', function () {
+    pu4PeriodeAktif();
     Storage::fake('public');
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();
@@ -107,6 +108,7 @@ test('pu4: submit proposal tanpa judul menampilkan pesan validasi Bahasa Indones
 });
 
 test('pu4: submit proposal tanpa file menampilkan pesan validasi Bahasa Indonesia', function () {
+    pu4PeriodeAktif();
     Storage::fake('public');
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();
@@ -191,6 +193,7 @@ test('pu4: form buat dan form edit memakai novalidate agar validasi server yang 
 // --- Bug #5: file tersimpan saat Simpan Draft dan bertahan saat submit gagal ---
 
 test('pu4: file tersimpan saat Simpan Draft dari form buat', function () {
+    pu4PeriodeAktif();
     Storage::fake('public');
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();
@@ -237,6 +240,7 @@ test('pu4: file tersimpan saat Simpan Draft dari form edit', function () {
 });
 
 test('pu4: file bertahan saat submit gagal validasi dan bisa dipakai ulang tanpa unggah ulang', function () {
+    pu4PeriodeAktif();
     Storage::fake('public');
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();
@@ -266,6 +270,7 @@ test('pu4: file bertahan saat submit gagal validasi dan bisa dipakai ulang tanpa
 });
 
 test('pu4: file bertahan saat submit gagal karena tanggungan laporan', function () {
+    pu4PeriodeAktif();
     Storage::fake('public');
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();
@@ -318,6 +323,7 @@ test('pu4: file baru bertahan saat edit draft gagal validasi (berkas lama tetap 
 // --- Bug #6: submit diblokir tanggungan menampilkan pesan error yang jelas ---
 
 test('pu4: submit saat tanggungan menampilkan pesan error dan form buat memberi peringatan dinamis', function () {
+    pu4PeriodeAktif();
     Storage::fake('public');
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();
@@ -351,6 +357,7 @@ test('pu4: form edit draft menampilkan peringatan tanggungan saat pengaju bertan
 // --- Bug #7: baris RAB kosong diabaikan, baris terisi sebagian tetap divalidasi ---
 
 test('pu4: baris RAB kosong diabaikan saat submit', function () {
+    pu4PeriodeAktif();
     Storage::fake('public');
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();
@@ -373,6 +380,7 @@ test('pu4: baris RAB kosong diabaikan saat submit', function () {
 });
 
 test('pu4: baris RAB terisi sebagian tetap divalidasi (nama kosong, jumlah terisi)', function () {
+    pu4PeriodeAktif();
     Storage::fake('public');
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();
@@ -392,6 +400,7 @@ test('pu4: baris RAB terisi sebagian tetap divalidasi (nama kosong, jumlah teris
 });
 
 test('pu4: baris RAB terisi sebagian tetap divalidasi (jumlah kosong, nama terisi)', function () {
+    pu4PeriodeAktif();
     Storage::fake('public');
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();
@@ -411,6 +420,7 @@ test('pu4: baris RAB terisi sebagian tetap divalidasi (jumlah kosong, nama teris
 });
 
 test('pu4: submit dengan semua baris RAB kosong tetap ditolak sebagai RAB belum diisi', function () {
+    pu4PeriodeAktif();
     Storage::fake('public');
     $pengaju = pu4User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu4Skema();

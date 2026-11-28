@@ -292,6 +292,7 @@ test('kp: admin tidak bisa menghapus proposal yang sudah Disetujui', function ()
 // --- B: kirim ulang / double submit ---
 
 test('kp: kirim ulang proposal yang sudah Dikirim ditolak', function () {
+    kpPeriodeAktif();
     kpSimpanBerkas();
     $ketua = kpUser('pengaju', ['name' => 'Dr. Andi']);
     $proposal = kpProposal($ketua, kpSkema(), ['status' => 'Dikirim']);
@@ -302,6 +303,7 @@ test('kp: kirim ulang proposal yang sudah Dikirim ditolak', function () {
 });
 
 test('kp: kirim dua kali berurutan — yang kedua ditolak dan tidak ada pengiriman ganda', function () {
+    kpPeriodeAktif();
     kpSimpanBerkas();
     $ketua = kpUser('pengaju', ['name' => 'Dr. Andi']);
     $proposal = kpProposal($ketua, kpSkema(), ['status' => 'Draft']);
@@ -476,6 +478,7 @@ test('kp: pengaju tidak bisa memindahkan proposal ke tahap review; admin hanya d
 // --- A3: mass assignment ---
 
 test('kp: injeksi status/user_id/file_path/biaya lewat store tidak berpengaruh', function () {
+    kpPeriodeAktif();
     Storage::fake('public');
     $ketua = kpUser('pengaju', ['name' => 'Dr. Andi']);
     $korban = kpUser('pengaju', ['name' => 'Korban']);
@@ -521,6 +524,7 @@ test('kp: injeksi status/user_id lewat update tidak berpengaruh', function () {
 // --- A4/A5 + B: validasi unggahan, RAB, skema, fakultas ---
 
 test('kp: RAB negatif ditolak validasi saat submit', function () {
+    kpPeriodeAktif();
     Storage::fake('public');
     $ketua = kpUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = kpSkema();
@@ -536,6 +540,7 @@ test('kp: RAB negatif ditolak validasi saat submit', function () {
 });
 
 test('kp: RAB total nol ditolak saat submit dan saat kirim draft', function () {
+    kpPeriodeAktif();
     Storage::fake('public');
     $ketua = kpUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = kpSkema();
@@ -558,6 +563,7 @@ test('kp: RAB total nol ditolak saat submit dan saat kirim draft', function () {
 });
 
 test('kp: skema_id yang tidak ada ditolak validasi', function () {
+    kpPeriodeAktif();
     Storage::fake('public');
     $ketua = kpUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = kpSkema();
@@ -571,6 +577,7 @@ test('kp: skema_id yang tidak ada ditolak validasi', function () {
 });
 
 test('kp: plafon tidak bisa dilewati lewat request langsung (bypass UI)', function () {
+    kpPeriodeAktif();
     Storage::fake('public');
     $ketua = kpUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = kpSkema(['plafon' => 1000000]);
@@ -601,6 +608,7 @@ test('kp: update dengan fakultas_prodi yang tidak ada ditolak validasi', functio
 });
 
 test('kp: unggahan selain PDF/DOC/DOCX ditolak validasi', function () {
+    kpPeriodeAktif();
     Storage::fake('public');
     $ketua = kpUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = kpSkema();
@@ -616,6 +624,7 @@ test('kp: unggahan selain PDF/DOC/DOCX ditolak validasi', function () {
 // --- B: anggota tim ---
 
 test('kp: ketua tidak tercatat sebagai anggota dan nama anggota duplikat hanya tersimpan sekali', function () {
+    kpPeriodeAktif();
     Storage::fake('public');
     $ketua = kpUser('pengaju', ['name' => 'Dr. Andi']);
     $anggota = kpUser('pengaju', ['name' => 'Budi Santoso']);

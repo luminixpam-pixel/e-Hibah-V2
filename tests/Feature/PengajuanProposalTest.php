@@ -71,6 +71,7 @@ function buatProposalDikirim(User $user, Skema $skema, array $attrs = []): Propo
 }
 
 test('draft proposal bisa disimpan tanpa file, skema, dan RAB', function () {
+    buatPeriodeAktif();
     $user = buatPengaju();
 
     $response = $this->actingAs($user)->post(route('proposal.store'), [

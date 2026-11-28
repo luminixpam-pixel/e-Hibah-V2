@@ -51,11 +51,19 @@ class ProposalController extends Controller
 
     /**
      * Periode hibah yang sedang berjalan (dipakai mengisi proposals.periode_id).
+     *
+     * Bila ada beberapa periode aktif yang tumpang tindih, pilih secara
+     * deterministik: start_date terbaru dulu, lalu end_date terbaru, lalu
+     * id terbesar sebagai penentu akhir. Tanpa orderBy eksplisit, periode
+     * yang terpilih bergantung pada urutan baris di database (tidak tentu).
      */
     private function activePeriod(): ?HibahPeriod
     {
         return HibahPeriod::whereDate('start_date', '<=', now())
             ->whereDate('end_date', '>=', now())
+            ->orderByDesc('start_date')
+            ->orderByDesc('end_date')
+            ->orderByDesc('id')
             ->first();
     }
 
@@ -654,6 +662,11 @@ class ProposalController extends Controller
             abort(403, 'Anda tidak memiliki izin untuk mengajukan proposal.');
         }
 
+        // Di luar masa hibah tidak ada pengajuan baru.
+        if (! $this->activePeriod()) {
+            return redirect()->back()->with('error', 'Masa pengajuan proposal telah berakhir.');
+        }
+
         $list_fakultas = \App\Models\Fakultas::all();
         $list_skema = \App\Models\Skema::orderBy('kategori')->orderBy('bidang')->get();
         $all_dosen = \App\Models\User::whereIn('role', ['pengaju', 'reviewer'])
@@ -767,6 +780,12 @@ class ProposalController extends Controller
         // 1. Proteksi Role
         if (! in_array(auth()->user()->role, ['pengaju', 'reviewer'])) {
             abort(403, 'Anda tidak memiliki izin untuk mengunggah proposal.');
+        }
+
+        // Di luar masa hibah tidak ada pengajuan baru — sebelum file
+        // disimpan atau validasi apa pun dijalankan.
+        if (! $this->activePeriod()) {
+            return redirect()->back()->withInput()->with('error', 'Masa pengajuan proposal telah berakhir.');
         }
 
         $user = auth()->user();
@@ -1213,6 +1232,11 @@ class ProposalController extends Controller
         // Hanya Draft dan Revisi Administrasi yang bisa dikirim.
         if (! in_array($proposal->status, ['Draft', 'Revisi Administrasi'], true)) {
             return back()->with('error', 'Proposal ini sudah tidak bisa dikirim (status: '.$proposal->status.').');
+        }
+
+        // Di luar masa hibah proposal tidak bisa dikirim.
+        if (! $this->activePeriod()) {
+            return back()->with('error', 'Masa pengajuan proposal telah berakhir.');
         }
 
         if (! $proposal->skema) {

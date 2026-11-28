@@ -151,6 +151,7 @@ test('pu2: simpan draft di form EDIT dengan RAB di atas plafon diizinkan', funct
 });
 
 test('pu2: simpan draft di form CREATE dengan RAB di atas plafon diizinkan', function () {
+    pu2PeriodeAktif();
     $pengaju = pu2User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu2Skema();
     $fakultas = Fakultas::first() ?? Fakultas::create(['nama_fakultas' => 'Fakultas Teknologi Informasi']);
@@ -176,6 +177,7 @@ test('pu2: simpan draft di form CREATE dengan RAB di atas plafon diizinkan', fun
 });
 
 test('pu2: kirim dari form CREATE dengan RAB di atas plafon tetap ditolak', function () {
+    pu2PeriodeAktif();
     Storage::fake('public');
     $pengaju = pu2User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu2Skema();

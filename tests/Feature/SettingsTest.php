@@ -148,6 +148,7 @@ test('admin bisa mengubah dan menghapus setelan', function () {
 });
 
 test('komponen RAB kustom dari settings muncul di form pengajuan', function () {
+    f6cPeriodeAktif();
     $pengaju = f6cUser('pengaju', ['name' => 'Dr. Andi']);
     Setting::create(['key' => 'rab_komponen_kustom', 'value' => '["Sewa Lab", "Uji Sampel"]']);
 

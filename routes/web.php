@@ -159,10 +159,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/laporan-kemajuan', [LaporanKemajuanController::class, 'store'])->name('laporan.kemajuan.store');
     Route::get('/laporan-kemajuan/download/{id}', [LaporanKemajuanController::class, 'downloadLaporan'])->name('laporan.kemajuan.download');
     Route::get('/laporan-kemajuan/preview/{id}', [LaporanKemajuanController::class, 'preview'])->name('laporan.kemajuan.preview');
-    // Butir 4 (keputusan audit 28 Nov 2026): verifikasi oleh LPPM
-    // (pola Monev) + hapus laporan kemajuan (ketua/admin, belum
+    // Butir 4 (keputusan audit 28 Nov 2026): verifikasi oleh LPPM,
+    // admin, atau Kepala LPPM (keputusan 28 Nov 2026; sebelumnya
+    // hanya LPPM) + hapus laporan kemajuan (ketua/admin, belum
     // Terverifikasi).
-    Route::post('/laporan-kemajuan/{id}/verifikasi', [LaporanKemajuanController::class, 'verifikasi'])->middleware('role:lppm')->name('laporan.kemajuan.verifikasi');
+    Route::post('/laporan-kemajuan/{id}/verifikasi', [LaporanKemajuanController::class, 'verifikasi'])->middleware('role:lppm,admin,kepala_lppm')->name('laporan.kemajuan.verifikasi');
     Route::delete('/laporan-kemajuan/{id}', [LaporanKemajuanController::class, 'destroy'])->name('laporan.kemajuan.destroy');
     // Butir 3: unduh satu berkas versi lama (kemajuan/akhir).
     Route::get('/laporan-versi/{versi}/download', [LaporanKemajuanController::class, 'downloadVersi'])->name('laporan.versi.download');
@@ -171,10 +172,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/laporan-akhir/store', [LaporanAkhirController::class, 'store'])->name('laporan.akhir.store');
     Route::get('/laporan-akhir/download/{id}', [LaporanAkhirController::class, 'download'])->name('laporan.akhir.download');
     Route::get('/laporan-akhir/preview/{id}', [LaporanAkhirController::class, 'preview'])->name('laporan.akhir.preview');
-    // Butir 4 (keputusan audit 28 Nov 2026): verifikasi oleh LPPM
-    // (pola Monev) + hapus laporan akhir (ketua/admin, belum
+    // Butir 4 (keputusan audit 28 Nov 2026): verifikasi oleh LPPM,
+    // admin, atau Kepala LPPM (keputusan 28 Nov 2026; sebelumnya
+    // hanya LPPM) + hapus laporan akhir (ketua/admin, belum
     // Terverifikasi).
-    Route::post('/laporan-akhir/{id}/verifikasi', [LaporanAkhirController::class, 'verifikasi'])->middleware('role:lppm')->name('laporan.akhir.verifikasi');
+    Route::post('/laporan-akhir/{id}/verifikasi', [LaporanAkhirController::class, 'verifikasi'])->middleware('role:lppm,admin,kepala_lppm')->name('laporan.akhir.verifikasi');
     Route::delete('/laporan-akhir/{id}', [LaporanAkhirController::class, 'destroy'])->name('laporan.akhir.destroy');
 
     // Pasca-hibah (Fase 5, story 9 & 10) — hanya proposal Disetujui.

@@ -99,6 +99,7 @@ test('pu3: halaman proposal disetujui menampilkan kolom No. Pengajuan', function
 // --- Pesan validasi Bahasa Indonesia: pengajuan (store) ---
 
 test('pu3: submit proposal tanpa judul menampilkan pesan validasi Bahasa Indonesia', function () {
+    pu3PeriodeAktif();
     $pengaju = pu3User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu3Skema();
     $fakultas = Fakultas::create(['nama_fakultas' => 'Fakultas Teknologi Informasi']);
@@ -111,6 +112,7 @@ test('pu3: submit proposal tanpa judul menampilkan pesan validasi Bahasa Indones
 });
 
 test('pu3: submit proposal tanpa file menampilkan pesan validasi Bahasa Indonesia', function () {
+    pu3PeriodeAktif();
     $pengaju = pu3User('pengaju', ['name' => 'Dr. Andi']);
     $skema = pu3Skema();
     $fakultas = Fakultas::create(['nama_fakultas' => 'Fakultas Teknologi Informasi']);

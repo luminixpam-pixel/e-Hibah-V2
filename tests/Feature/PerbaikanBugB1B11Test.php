@@ -48,6 +48,11 @@ function bbProposal(User $user, Skema $skema, array $attrs = []): Proposal
 // --- B1: kirim draft dari daftar ---
 
 test('bb1: kirim draft dari daftar berhasil dan pesan sukses terlihat', function () {
+    HibahPeriod::create([
+        'nama' => 'Periode 2026',
+        'start_date' => now()->subMonth(),
+        'end_date' => now()->addMonth(),
+    ]);
     $pengaju = bbUser('pengaju', ['name' => 'Dr. Andi']);
     $skema = bbSkema();
     $proposal = bbProposal($pengaju, $skema, [

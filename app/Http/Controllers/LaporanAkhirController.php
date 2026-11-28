@@ -255,17 +255,18 @@ class LaporanAkhirController extends Controller
     }
 
     /**
-     * Verifikasi laporan akhir oleh LPPM (butir 4).
+     * Verifikasi laporan akhir oleh LPPM, admin, atau Kepala LPPM
+     * (keputusan 28 Nov 2026; sebelumnya hanya LPPM).
      *
-     * Pola mengikuti verifikasi Monev: yang memverifikasi adalah
-     * LPPM (route memakai middleware role:lppm; dicek ulang di sini).
+     * Pola mengikuti verifikasi Monev (route memakai middleware
+     * role:lppm,admin,kepala_lppm; dicek ulang di sini).
      * Keputusan: 'terverifikasi' atau 'revisi'. Hanya laporan
      * berstatus 'Menunggu Verifikasi' yang bisa diverifikasi.
      */
     public function verifikasi(Request $request, $id)
     {
-        if (auth()->user()->role !== 'lppm') {
-            abort(403, 'Hanya LPPM yang boleh memverifikasi laporan akhir.');
+        if (! in_array(auth()->user()->role, ['lppm', 'admin', 'kepala_lppm'], true)) {
+            abort(403, 'Hanya LPPM, admin, atau Kepala LPPM yang boleh memverifikasi laporan akhir.');
         }
 
         $request->validate([
@@ -285,7 +286,7 @@ class LaporanAkhirController extends Controller
         $statusBaru = $request->keputusan === 'terverifikasi' ? 'Terverifikasi' : 'Revisi';
         $proposal->update(['status_laporan_akhir' => $statusBaru]);
 
-        $this->logActivity("LPPM memverifikasi laporan akhir proposal ID {$proposal->id} (status: {$statusBaru})");
+        $this->logActivity(auth()->user()->role_label." memverifikasi laporan akhir proposal ID {$proposal->id} (status: {$statusBaru})");
 
         return back()->with('success', 'Laporan akhir dinyatakan '.$statusBaru.'.');
     }
