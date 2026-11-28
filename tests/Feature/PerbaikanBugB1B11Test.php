@@ -168,6 +168,30 @@ test('bb6: keputusan pendanaan menampilkan pesan sukses di halaman proposal sele
         'status' => 'Review Selesai',
     ]);
 
+    // Sejak audit keamanan, keputusan() menolak bila belum semua reviewer
+    // mengirim review (minimal 1 review). Proposal "Review Selesai" yang
+    // sah selalu punya review, jadi tugaskan 2 reviewer + 2 review dulu —
+    // pola yang sama dengan f4cProposalSiapDiputuskan di RiwayatKeputusanTest.
+    $reviewer1 = bbUser('reviewer', ['name' => 'Reviewer Proposal']);
+    $reviewer2 = bbUser('reviewer', ['name' => 'Reviewer Proposal 2']);
+    $proposal->reviewers()->sync([$reviewer1->id, $reviewer2->id]);
+
+    foreach ([$reviewer1, $reviewer2] as $reviewer) {
+        Review::create([
+            'proposal_id' => $proposal->id,
+            'reviewer_id' => $reviewer->id,
+            'nilai_1' => 4,
+            'nilai_2' => 4,
+            'nilai_3' => 4,
+            'nilai_4' => 4,
+            'nilai_5' => 4,
+            'nilai_6' => 4,
+            'nilai_7' => 4,
+            'total_score' => 400,
+            'catatan' => 'Bagus.',
+        ]);
+    }
+
     $response = $this->actingAs($admin)
         ->from(route('monitoring.reviewSelesai'))
         ->followingRedirects()

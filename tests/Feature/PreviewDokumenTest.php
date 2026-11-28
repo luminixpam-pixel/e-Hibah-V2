@@ -141,7 +141,7 @@ test('tamu tidak bisa membuka route preview dan diarahkan ke login', function ()
 
 // --- 3: Berkas proposal ---
 
-test('pemilik dan user login lain bisa me-preview berkas proposal', function () {
+test('pemilik dan reviewer ter-plot bisa me-preview berkas proposal, pengaju lain ditolak 403', function () {
     Storage::fake('public');
     pvSimpanPdf('proposal/proposal.pdf');
     $pengaju = pvBuatUser('pengaju');
@@ -150,10 +150,17 @@ test('pemilik dan user login lain bisa me-preview berkas proposal', function () 
     // Pemilik.
     pvAssertInlinePdf($this->actingAs($pengaju)->get(route('proposal.preview', $proposal)));
 
-    // User login lain juga bisa — mirror perilaku download() yang
-    // tidak membatasi kepemilikan (hanya auth).
+    // Pengaju lain yang bukan anggota maupun reviewer yang ditugaskan
+    // ditolak — sejak audit keamanan, preview memakai cek kepemilikan
+    // yang sama dengan download (dapatMengaksesProposal), bukan lagi
+    // terbuka untuk semua user login.
     $orangLain = pvBuatUser('pengaju', ['name' => 'Budi Santoso']);
-    pvAssertInlinePdf($this->actingAs($orangLain)->get(route('proposal.preview', $proposal)));
+    $this->actingAs($orangLain)->get(route('proposal.preview', $proposal))->assertForbidden();
+
+    // Reviewer yang di-plot ke proposal ini boleh.
+    $reviewer = pvBuatUser('reviewer', ['name' => 'Sinta']);
+    $proposal->reviewers()->sync([$reviewer->id]);
+    pvAssertInlinePdf($this->actingAs($reviewer)->get(route('proposal.preview', $proposal)));
 });
 
 // --- 4: Logbook ---
