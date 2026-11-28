@@ -75,6 +75,7 @@ test('pemilik melihat daftar luaran proposal disetujui di index dan show', funct
 });
 
 test('pemilik bisa tambah luaran', function () {
+    Storage::fake('public');
     $pengaju = f5luarBuatPengaju();
     $proposal = f5luarBuatProposalDisetujui($pengaju, f5luarBuatSkema());
 
@@ -82,6 +83,10 @@ test('pemilik bisa tambah luaran', function () {
         'jenis' => 'HKI',
         'judul' => 'Hak cipta aplikasi E-Hibah.',
         'status' => 'Granted',
+        // Sejak audit keamanan, luaran berstatus Published/Granted wajib
+        // melampirkan file bukti — tanpa file, store menolak dengan
+        // "Luaran berstatus Granted wajib melampirkan file bukti."
+        'file' => UploadedFile::fake()->create('bukti.pdf', 100, 'application/pdf'),
     ]);
 
     $response->assertRedirect(route('luaran.show', $proposal));

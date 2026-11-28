@@ -606,15 +606,17 @@ test('nama file template hasil traversal dibersihkan sebelum disimpan', function
     Storage::fake('public');
     $admin = khBuatUser('admin');
 
-    $file = UploadedFile::fake()->create('template.docx', 100, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    // Simulasikan nama asli berisi traversal (client bisa mengirimnya).
-    $file = new UploadedFile(
-        $file->getPathname(),
-        '../../jahat.docx',
-        $file->getMimeType(),
-        null,
-        true
-    );
+    // Nama asli berisi traversal (client bisa mengirimnya). File fake
+    // dibuat langsung dengan nama itu — JANGAN dibungkus ulang dengan
+    // `new UploadedFile(...)`: pembungkusan ulang membuat berkas temp
+    // tidak terbaca saat validasi mimes (500 "file does not exist or
+    // is not readable" di FileinfoMimeTypeGuesser). Symfony sendiri
+    // sudah membuang komponen direktori di konstruktor UploadedFile,
+    // jadi yang diuji di sini adalah ujung-ke-ujung: nama yang tersimpan
+    // bersih dan berkasnya ada di folder templates/; basename() +
+    // preg_replace() di controller tetap dipertahankan sebagai pertahanan
+    // berlapis.
+    $file = UploadedFile::fake()->create('../../jahat.docx', 100, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 
     $this->actingAs($admin)->post(route('admin.template.upload'), [
         'file_template' => $file,
