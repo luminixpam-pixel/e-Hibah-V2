@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PesanValidasi;
 use App\Models\DokumenResmi;
 use App\Models\Fakultas;
 use App\Models\Notification;
@@ -21,7 +22,14 @@ class DashboardController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
         $role = $user->role ?? null;
-        $tahun = $request->get('tahun', date('Y'));
+        // Tahun dari query string dipakai di whereYear() (binding aman
+        // dari injeksi), tetapi tetap dibatasi ke angka 4 digit yang
+        // wajar agar nilai aneh tidak menghasilkan statistik kosong
+        // yang membingungkan.
+        $tahun = (int) $request->get('tahun', date('Y'));
+        if ($tahun < 2000 || $tahun > 2100) {
+            $tahun = (int) date('Y');
+        }
 
         // --- TAMBAHKAN INI ---
         // Diperlukan agar form popup pengaju tidak kosong/error
@@ -93,7 +101,14 @@ class DashboardController extends Controller
             'fakultas' => 'nullable|string',
             'program_studi' => 'nullable|string|max:100',
             'jabatan' => 'nullable|string|max:100',
-        ]);
+        ], PesanValidasi::pesan([
+            'name' => 'Nama',
+            'nidn' => 'NIDN',
+            'no_telepon' => 'Nomor telepon',
+            'fakultas' => 'Fakultas',
+            'program_studi' => 'Program studi',
+            'jabatan' => 'Jabatan',
+        ]));
 
         $user->update($request->only([
             'name', 'nidn', 'no_telepon', 'fakultas', 'program_studi', 'jabatan',
@@ -199,6 +214,22 @@ class DashboardController extends Controller
         }
 
         $user = User::findOrFail($id);
+
+        // SEBELUMNYA: nilai role dari request disimpan mentah tanpa
+        // validasi — string apa pun (mis. 'superadmin', '') bisa
+        // masuk ke kolom role dan merusak alur role user itu.
+        $request->validate([
+            'role' => 'required|in:admin,pengaju,reviewer,verifikator,lppm,dekan,kepala_lppm',
+        ], PesanValidasi::pesan([
+            'role' => 'Role',
+        ]));
+
+        // 🔒 Admin tidak boleh mengubah role akunnya sendiri (lihat
+        // AdminController@updateUser untuk alasannya).
+        if ((int) $user->id === (int) Auth::user()->id && $request->role !== $user->role) {
+            return back()->with('error', 'Anda tidak dapat mengubah role akun Anda sendiri.');
+        }
+
         $user->role = $request->role; // 'admin', 'reviewer', atau 'pengaju'
         $user->save();
 

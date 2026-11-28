@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PesanValidasi;
 use App\Models\Skema;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,9 +16,11 @@ use Illuminate\Validation\Rule;
  * Otorisasi ditangani route (middleware role:admin,lppm) — controller
  * ini tidak membandingkan role sendiri.
  *
- * Catatan: menghapus skema aman untuk proposal yang memakainya —
- * FK proposals.skema_id memakai nullOnDelete, jadi skema_id proposal
- * terkait menjadi null, bukan error.
+ * Catatan: menghapus skema yang masih dipakai proposal DITOLAK
+ * (lihat destroy()) — FK proposals.skema_id memang nullOnDelete,
+ * tetapi membiarkan skema_id menjadi null diam-diam akan merusak
+ * jejak audit proposal (skema, plafon, dan kuota yang dipakai saat
+ * pengajuan jadi tidak terlacak).
  */
 class SkemaController extends Controller
 {
@@ -53,7 +56,14 @@ class SkemaController extends Controller
             'kuota' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
             'syarat' => 'nullable|string',
-        ]);
+        ], PesanValidasi::pesan([
+            'kategori' => 'Kategori',
+            'bidang' => 'Bidang',
+            'plafon' => 'Plafon',
+            'kuota' => 'Kuota',
+            'deskripsi' => 'Deskripsi',
+            'syarat' => 'Syarat',
+        ]));
 
         Skema::create($validated);
 
@@ -82,7 +92,14 @@ class SkemaController extends Controller
             'kuota' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
             'syarat' => 'nullable|string',
-        ]);
+        ], PesanValidasi::pesan([
+            'kategori' => 'Kategori',
+            'bidang' => 'Bidang',
+            'plafon' => 'Plafon',
+            'kuota' => 'Kuota',
+            'deskripsi' => 'Deskripsi',
+            'syarat' => 'Syarat',
+        ]));
 
         $skema->update($validated);
 
@@ -90,11 +107,21 @@ class SkemaController extends Controller
     }
 
     /**
-     * Hapus skema. Proposal yang memakai skema ini tidak ikut terhapus
-     * (skema_id-nya menjadi null via FK nullOnDelete).
+     * Hapus skema. DITOLAK bila masih dipakai proposal — skema yang
+     * dipakai tidak boleh hilang diam-diam (skema_id proposal terkait
+     * akan menjadi null via FK nullOnDelete dan jejak skema/plafon
+     * pengajuan rusak). Hapus atau pindahkan dulu proposal terkait,
+     * baru hapus skemanya.
      */
     public function destroy(Skema $skema)
     {
+        $jumlahProposal = $skema->proposals()->count();
+
+        if ($jumlahProposal > 0) {
+            return redirect()->route('admin.skema.index')
+                ->with('error', "Skema {$skema->label()} tidak dapat dihapus karena masih dipakai oleh {$jumlahProposal} proposal.");
+        }
+
         $skema->delete();
 
         return redirect()->route('admin.skema.index')->with('success', 'Skema berhasil dihapus.');

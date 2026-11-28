@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PesanValidasi;
 use App\Models\HibahPeriod;
 use Illuminate\Http\Request;
 
@@ -20,9 +21,15 @@ use Illuminate\Http\Request;
  * membuat lebih dari satu periode lewat CRUD ini, halaman kalender
  * (monitoring-data) tetap memakai periode pertama saja.
  *
- * Catatan: menghapus periode aman untuk proposal yang memakainya —
- * FK proposals.periode_id memakai nullOnDelete, jadi periode_id
- * proposal terkait menjadi null, bukan error.
+ * Tumpang tindih antar-periode juga BELUM divalidasi di sini: belum
+ * ada keputusan tim/LPPM apakah hanya boleh ada satu periode aktif
+ * atau boleh banyak — sampai keputusan itu ada, jangan menambah
+ * penolakan overlap sepihak.
+ *
+ * Catatan: menghapus periode yang masih dipakai proposal DITOLAK
+ * (lihat destroy()) — FK proposals.periode_id memang nullOnDelete,
+ * tetapi membiarkan periode_id menjadi null diam-diam akan merusak
+ * jejak audit proposal.
  */
 class PeriodeController extends Controller
 {
@@ -54,7 +61,11 @@ class PeriodeController extends Controller
             'nama' => 'required|string|max:255',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
-        ]);
+        ], PesanValidasi::pesan([
+            'nama' => 'Nama periode',
+            'start_date' => 'Tanggal mulai',
+            'end_date' => 'Tanggal selesai',
+        ]));
 
         HibahPeriod::create($validated);
 
@@ -78,7 +89,11 @@ class PeriodeController extends Controller
             'nama' => 'required|string|max:255',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
-        ]);
+        ], PesanValidasi::pesan([
+            'nama' => 'Nama periode',
+            'start_date' => 'Tanggal mulai',
+            'end_date' => 'Tanggal selesai',
+        ]));
 
         $periode->update($validated);
 
@@ -86,11 +101,18 @@ class PeriodeController extends Controller
     }
 
     /**
-     * Hapus periode. Proposal yang memakai periode ini tidak ikut
-     * terhapus (periode_id-nya menjadi null via FK nullOnDelete).
+     * Hapus periode. DITOLAK bila masih dipakai proposal (alasan sama
+     * seperti SkemaController@destroy).
      */
     public function destroy(HibahPeriod $periode)
     {
+        $jumlahProposal = $periode->proposals()->count();
+
+        if ($jumlahProposal > 0) {
+            return redirect()->route('admin.periode.index')
+                ->with('error', "Periode {$periode->nama} tidak dapat dihapus karena masih dipakai oleh {$jumlahProposal} proposal.");
+        }
+
         $periode->delete();
 
         return redirect()->route('admin.periode.index')->with('success', 'Periode berhasil dihapus.');

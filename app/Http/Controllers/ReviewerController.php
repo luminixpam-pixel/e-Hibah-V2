@@ -91,6 +91,12 @@ class ReviewerController extends Controller
             abort(403);
         }
 
+        // 🔒 Admin tidak boleh mengubah role akunnya sendiri lewat
+        // jalur ini (lihat AdminController@updateUser).
+        if ((int) $user->id === (int) Auth::user()->id) {
+            return back()->with('error', 'Anda tidak dapat mengubah role akun Anda sendiri.');
+        }
+
         // admin tidak boleh diubah
         if ($user->role === 'admin') {
             return back()->with('error', 'Admin tidak bisa dijadikan reviewer.');
@@ -99,6 +105,15 @@ class ReviewerController extends Controller
         // ✅ kalau sudah reviewer, stop aja
         if ($user->role === 'reviewer') {
             return back()->with('error', 'User ini sudah menjadi reviewer.');
+        }
+
+        // ✅ Hanya pengaju yang bisa dijadikan reviewer. Sebelumnya
+        // user lppm/dekan/verifikator/kepala_lppm pun bisa diubah
+        // menjadi reviewer lewat sini, sehingga role istimewanya
+        // hilang diam-diam. Perubahan role lintas jabatan tetap bisa
+        // lewat halaman manajemen user (AdminController@updateUser).
+        if ($user->role !== 'pengaju') {
+            return back()->with('error', 'Hanya user dengan role Pengaju yang bisa dijadikan reviewer.');
         }
 
         $user->role = 'reviewer';
@@ -126,9 +141,33 @@ class ReviewerController extends Controller
             abort(403);
         }
 
+        // 🔒 Admin tidak boleh mengubah role akunnya sendiri lewat
+        // jalur ini (lihat AdminController@updateUser).
+        if ((int) $user->id === (int) Auth::user()->id) {
+            return back()->with('error', 'Anda tidak dapat mengubah role akun Anda sendiri.');
+        }
+
         // ✅ kalau bukan reviewer, stop
         if ($user->role !== 'reviewer') {
             return back()->with('error', 'User ini bukan reviewer.');
+        }
+
+        // ✅ Tolak bila reviewer masih punya tugas review yang belum
+        // dinilai: sebelumnya role dikembalikan ke pengaju begitu
+        // saja, tetapi penugasan di proposal_reviewers tetap ada
+        // sehingga proposal itu menggantung tanpa reviewer aktif.
+        // Cabut dulu penugasannya (atau tunggu review selesai),
+        // baru hentikan status reviewernya.
+        $tugasAktif = \Illuminate\Support\Facades\DB::table('proposal_reviewers')
+            ->where('reviewer_id', $user->id)
+            ->pluck('proposal_id');
+        $sudahDinilai = Review::where('reviewer_id', $user->id)
+            ->whereIn('proposal_id', $tugasAktif->all())
+            ->pluck('proposal_id');
+        $belumDinilai = $tugasAktif->diff($sudahDinilai)->count();
+
+        if ($belumDinilai > 0) {
+            return back()->with('error', "Reviewer ini masih memiliki {$belumDinilai} tugas review yang belum dinilai. Selesaikan atau cabut penugasannya terlebih dahulu.");
         }
 
         $user->role = 'pengaju';
@@ -163,6 +202,23 @@ class ReviewerController extends Controller
             }
         }
 
+        // 🔒 Form review hanya saat proposal sedang direview. Tanpa
+        // penjaga ini, form bisa dibuka untuk proposal yang sudah
+        // selesai/ditolak, lalu submit-nya lolos diam-diam.
+        if ($proposal->status !== 'Sedang Direview') {
+            return back()->with('error', 'Proposal ini sudah tidak dalam tahap review.');
+        }
+
+        // 🔒 Tenggat penilaian sudah lewat.
+        if ($proposal->review_deadline && now()->greaterThan($proposal->review_deadline)) {
+            return back()->with('error', 'Tenggat penilaian proposal ini sudah lewat.');
+        }
+
+        // 🔒 Satu reviewer hanya menilai sekali.
+        if (Review::where('proposal_id', $proposal->id)->where('reviewer_id', $userId)->exists()) {
+            return back()->with('error', 'Anda sudah mengirim review untuk proposal ini.');
+        }
+
         return view('reviewer.isi-review', compact('proposal'));
     }
 
@@ -176,6 +232,9 @@ class ReviewerController extends Controller
         // ✅ Pastikan reviewer benar-benar ditugaskan (seperti isiReview).
         // Tanpa cek ini, reviewer mana pun bisa mengirim review untuk
         // proposal yang bukan tugasnya lewat POST langsung.
+        // Catatan: route ini sudah di dalam grup middleware
+        // role:reviewer, jadi admin/peran lain tidak pernah sampai
+        // ke sini — cek di bawah adalah pertahanan berlapis.
         if (Auth::user()->role === 'reviewer') {
             $isAssigned = $proposal->reviewers->pluck('id')->contains(Auth::user()->id);
 
@@ -184,8 +243,28 @@ class ReviewerController extends Controller
             }
         }
 
+        // 🔒 Hanya saat proposal sedang direview. Tanpa penjaga ini,
+        // review bisa masuk untuk proposal Draft/Dikirim/Disetujui.
+        if ($proposal->status !== 'Sedang Direview') {
+            return back()->with('error', 'Proposal ini sudah tidak dalam tahap review.');
+        }
+
+        // 🔒 Tenggat penilaian sudah lewat.
+        if ($proposal->review_deadline && now()->greaterThan($proposal->review_deadline)) {
+            return back()->with('error', 'Tenggat penilaian proposal ini sudah lewat.');
+        }
+
+        // 🔒 Satu reviewer hanya boleh menilai sekali. Tanpa penjaga
+        // ini, reviewer yang sama bisa submit 2x dan penghitung
+        // updateProposalStatus() mengira semua reviewer sudah
+        // menilai, sehingga proposal jadi "Review Selesai" padahal
+        // reviewer kedua belum mereview.
+        if (Review::where('proposal_id', $proposal->id)->where('reviewer_id', Auth::user()->id)->exists()) {
+            return back()->with('error', 'Anda sudah mengirim review untuk proposal ini.');
+        }
+
         // ✅ validasi
-        $request->validate([
+        $validated = $request->validate([
             'nilai_1' => 'required|integer|min:0|max:5',
             'nilai_2' => 'required|integer|min:0|max:5',
             'nilai_3' => 'required|integer|min:0|max:5',
@@ -197,7 +276,30 @@ class ReviewerController extends Controller
             'komentar' => 'nullable|string',
             'status' => 'nullable|in:disetujui,ditolak',
             'rekomendasi_biaya' => 'nullable|numeric|min:0',
-        ]);
+        ], array_merge(
+            \App\Helpers\PesanValidasi::pesan([
+                'nilai_1' => 'Nilai kriteria 1',
+                'nilai_2' => 'Nilai kriteria 2',
+                'nilai_3' => 'Nilai kriteria 3',
+                'nilai_4' => 'Nilai kriteria 4',
+                'nilai_5' => 'Nilai kriteria 5',
+                'nilai_6' => 'Nilai kriteria 6',
+                'nilai_7' => 'Nilai kriteria 7',
+                'catatan' => 'Catatan',
+                'komentar' => 'Komentar',
+                'status' => 'Keputusan review',
+                'rekomendasi_biaya' => 'Rekomendasi biaya',
+            ]),
+            [
+                'nilai_1.max' => 'Nilai kriteria 1 maksimal 5.',
+                'nilai_2.max' => 'Nilai kriteria 2 maksimal 5.',
+                'nilai_3.max' => 'Nilai kriteria 3 maksimal 5.',
+                'nilai_4.max' => 'Nilai kriteria 4 maksimal 5.',
+                'nilai_5.max' => 'Nilai kriteria 5 maksimal 5.',
+                'nilai_6.max' => 'Nilai kriteria 6 maksimal 5.',
+                'nilai_7.max' => 'Nilai kriteria 7 maksimal 5.',
+            ]
+        ));
 
         // ✅ bobot (sesuaikan kalau berbeda)
         $bobot = [5, 5, 5, 3, 5, 5, 10];

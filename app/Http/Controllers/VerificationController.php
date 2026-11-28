@@ -35,16 +35,35 @@ class VerificationController extends Controller
 
         $statusBaru = $request->hasil === 'Lolos' ? 'Lolos Administrasi' : 'Revisi Administrasi';
 
-        DB::transaction(function () use ($request, $proposal, $statusBaru) {
+        // Kunci baris proposal selama pemeriksaan dan periksa ulang
+        // statusnya di dalam transaksi: dua verifikator yang menekan
+        // bersamaan sebelumnya sama-sama membaca status Dikirim,
+        // sehingga dua baris verifikasi bisa tersimpan untuk satu
+        // proposal. Bila status sudah berubah, tidak ada yang ditulis.
+        $gagal = null;
+
+        DB::transaction(function () use ($request, $proposal, $statusBaru, &$gagal) {
+            $terkunci = Proposal::where('id', $proposal->id)->lockForUpdate()->firstOrFail();
+
+            if ($terkunci->status !== 'Dikirim') {
+                $gagal = 'Proposal ini sudah tidak menunggu verifikasi (status: '.$terkunci->status.').';
+
+                return;
+            }
+
             Verification::create([
-                'proposal_id' => $proposal->id,
+                'proposal_id' => $terkunci->id,
                 'verifikator_id' => auth()->user()->id,
                 'hasil' => $request->hasil,
                 'catatan' => $request->catatan,
             ]);
 
-            $proposal->update(['status' => $statusBaru]);
+            $terkunci->update(['status' => $statusBaru]);
         });
+
+        if ($gagal) {
+            return redirect()->back()->with('error', $gagal);
+        }
 
         // Beri tahu pengaju agar ia tahu proposalnya lolos atau perlu diperbaiki.
         NotificationHelper::send(

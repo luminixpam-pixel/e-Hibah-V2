@@ -9,14 +9,34 @@ use Illuminate\Support\Facades\Storage;
 class TemplateController extends Controller
 {
     /**
+     * Jenis template yang dikenal aplikasi (dipakai view laporan dan
+     * AppServiceProvider). Jenis lain tidak boleh dibuat lewat unggahan.
+     */
+    private const JENIS_TEMPLATE = ['laporan_kemajuan', 'laporan_akhir'];
+
+    /**
+     * Kelola template hanya boleh dilakukan admin. Route sudah di dalam
+     * grup middleware role:admin, tapi controller tetap memeriksa
+     * sendiri (defense in depth).
+     */
+    private function ensureAdmin(): void
+    {
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Hanya admin yang boleh mengelola template.');
+        }
+    }
+
+    /**
      * Menyimpan atau memperbarui template (Khusus Admin)
      */
     public function store(Request $request)
     {
+        $this->ensureAdmin();
+
         // 1. Validasi Input
         $request->validate([
             'file_template' => 'required|mimes:docx,doc,pdf,xlsx|max:5120', // Maks 5MB
-            'jenis' => 'required|string', // misal: 'laporan_kemajuan'
+            'jenis' => 'required|string|in:'.implode(',', self::JENIS_TEMPLATE),
         ]);
 
         try {
@@ -30,15 +50,22 @@ class TemplateController extends Controller
                     Storage::disk('public')->delete($oldTemplate->file_path);
                 }
 
-                // 3. Simpan file baru ke folder 'templates' di public storage
-                $fileName = time().'_'.$file->getClientOriginalName();
+                // 3. Simpan file baru ke folder 'templates' di public storage.
+                // Nama asli dari client dibersihkan dulu: basename()
+                // membuang komponen direktori ('../') dan karakter
+                // selain huruf/angka/titik/dash/underscore dihapus,
+                // supaya nama file tidak bisa dipakai untuk traversal.
+                $originalName = basename($file->getClientOriginalName());
+                $safeName = preg_replace('/[^A-Za-z0-9._-]+/', '_', $originalName);
+                $safeName = $safeName !== '' ? $safeName : 'template';
+                $fileName = time().'_'.$safeName;
                 $path = $file->storeAs('templates', $fileName, 'public');
 
                 // 4. Update Database
                 Template::updateOrCreate(
                     ['jenis' => $jenis],
                     [
-                        'nama_template' => $file->getClientOriginalName(),
+                        'nama_template' => $safeName,
                         'file_path' => $path,
                     ]
                 );
@@ -55,6 +82,8 @@ class TemplateController extends Controller
      */
     public function destroy($id)
     {
+        $this->ensureAdmin();
+
         $template = Template::findOrFail($id);
 
         if (Storage::disk('public')->exists($template->file_path)) {

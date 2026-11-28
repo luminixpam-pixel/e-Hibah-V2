@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PesanValidasi;
 use App\Models\Announcement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -63,7 +64,15 @@ class PengumumanController extends Controller
             'kategori' => 'required|in:eksternal,internal',
             'file' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
             'published_at' => 'nullable|date',
-        ]);
+        ], array_merge(PesanValidasi::pesan([
+            'judul' => 'Judul',
+            'isi' => 'Isi pengumuman',
+            'kategori' => 'Kategori',
+            'file' => 'File lampiran',
+            'published_at' => 'Tanggal tayang',
+        ]), [
+            'file.max' => 'Ukuran file lampiran maksimal 2 MB.',
+        ]));
 
         $data = [
             'judul' => $validated['judul'],
@@ -116,7 +125,15 @@ class PengumumanController extends Controller
             'kategori' => 'required|in:eksternal,internal',
             'file' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
             'published_at' => 'nullable|date',
-        ]);
+        ], array_merge(PesanValidasi::pesan([
+            'judul' => 'Judul',
+            'isi' => 'Isi pengumuman',
+            'kategori' => 'Kategori',
+            'file' => 'File lampiran',
+            'published_at' => 'Tanggal tayang',
+        ]), [
+            'file.max' => 'Ukuran file lampiran maksimal 2 MB.',
+        ]));
 
         $data = [
             'judul' => $validated['judul'],

@@ -11,17 +11,23 @@ use Illuminate\Support\Facades\Storage;
 /**
  * Luaran pasca-hibah (Fase 5, story 9).
  *
- * Hanya untuk proposal berstatus 'Disetujui' (kolom status; keputusan
- * pendanaan menulis 'Disetujui' ke status sekaligus status_pendanaan).
+ * Hanya untuk proposal yang DIDANAI: status_pendanaan = 'Disetujui'
+ * (keputusan pendanaan; kolom status alur saja tidak cukup — pelajaran
+ * bug #10). Kedua kolom dicek bersamaan; keputusan() menulis keduanya
+ * sekaligus, jadi pada alur normal keduanya selalu sama, dan bila
+ * datanya menyimpang arah amannya adalah menolak.
  *
  * Kepemilikan / visibilitas (sama seperti LogbookController):
  *  - pengaju      : hanya proposal milik sendiri (user_id = id user login).
- *  - lppm, kepala_lppm, admin : semua proposal Disetujui.
+ *  - lppm, kepala_lppm, admin : semua proposal yang didanai.
  *  - dekan        : hanya proposal di fakultasnya (fakultas_prodi =
  *    fakultas_id user); bila fakultas_id belum diisi, semua proposal
  *    (meniru RoleDashboardController::dekan()).
  *  - reviewer, verifikator : tidak berhak melihat apa pun (403).
  *  - Tulis / ubah / hapus : hanya pengaju pemilik proposal.
+ *
+ * Luaran berstatus Published / Granted wajib melampirkan file bukti —
+ * klaim terbit/terdaftar tanpa berkas tidak bisa disimpan.
  *
  * Catatan Auth::id(): mengembalikan USERNAME, bukan users.id — di sini
  * selalu dipakai auth()->user()->id untuk membandingkan ID angka.
@@ -74,12 +80,12 @@ class LuaranController extends Controller
     }
 
     /**
-     * Simpan luaran baru. Hanya pengaju pemilik proposal Disetujui.
+     * Simpan luaran baru. Hanya pengaju pemilik proposal yang didanai.
      */
     public function store(Request $request, Proposal $proposal)
     {
-        if (! $this->isOwner(auth()->user(), $proposal) || $proposal->status !== 'Disetujui') {
-            abort(403, 'Hanya pengaju pemilik proposal yang disetujui yang bisa menambah luaran.');
+        if (! $this->isOwner(auth()->user(), $proposal) || ! $this->isDidanai($proposal)) {
+            abort(403, 'Hanya pengaju pemilik proposal yang didanai yang bisa menambah luaran.');
         }
 
         $validated = $request->validate([
@@ -88,6 +94,11 @@ class LuaranController extends Controller
             'status' => 'required|in:Draft,Submitted,Published,Granted',
             'file' => 'nullable|file|mimes:pdf|max:2048',
         ]);
+
+        // Luaran yang diklaim sudah terbit/terdaftar wajib ada buktinya.
+        if (in_array($validated['status'], ['Published', 'Granted'], true) && ! $request->hasFile('file')) {
+            return back()->withErrors(['file' => 'Luaran berstatus '.$validated['status'].' wajib melampirkan file bukti.'])->withInput();
+        }
 
         $path = null;
         if ($request->hasFile('file')) {
@@ -108,14 +119,14 @@ class LuaranController extends Controller
     }
 
     /**
-     * Form ubah luaran. Hanya pengaju pemilik proposal Disetujui.
+     * Form ubah luaran. Hanya pengaju pemilik proposal yang didanai.
      */
     public function edit(Luaran $luaran)
     {
         $proposal = $luaran->proposal;
 
-        if (! $this->isOwner(auth()->user(), $proposal) || $proposal->status !== 'Disetujui') {
-            abort(403, 'Hanya pengaju pemilik proposal yang disetujui yang bisa mengubah luaran.');
+        if (! $this->isOwner(auth()->user(), $proposal) || ! $this->isDidanai($proposal)) {
+            abort(403, 'Hanya pengaju pemilik proposal yang didanai yang bisa mengubah luaran.');
         }
 
         return view('pasca-hibah.luaran-edit', compact('luaran', 'proposal'));
@@ -128,8 +139,8 @@ class LuaranController extends Controller
     {
         $proposal = $luaran->proposal;
 
-        if (! $this->isOwner(auth()->user(), $proposal) || $proposal->status !== 'Disetujui') {
-            abort(403, 'Hanya pengaju pemilik proposal yang disetujui yang bisa mengubah luaran.');
+        if (! $this->isOwner(auth()->user(), $proposal) || ! $this->isDidanai($proposal)) {
+            abort(403, 'Hanya pengaju pemilik proposal yang didanai yang bisa mengubah luaran.');
         }
 
         $validated = $request->validate([
@@ -138,6 +149,15 @@ class LuaranController extends Controller
             'status' => 'required|in:Draft,Submitted,Published,Granted',
             'file' => 'nullable|file|mimes:pdf|max:2048',
         ]);
+
+        // Naik status ke Published/Granted wajib ada file bukti —
+        // file baru, atau file yang sudah tersimpan sebelumnya.
+        if (in_array($validated['status'], ['Published', 'Granted'], true)
+            && ! $request->hasFile('file')
+            && ! $luaran->file
+        ) {
+            return back()->withErrors(['file' => 'Luaran berstatus '.$validated['status'].' wajib melampirkan file bukti.'])->withInput();
+        }
 
         $data = [
             'jenis' => $validated['jenis'],
@@ -166,8 +186,8 @@ class LuaranController extends Controller
     {
         $proposal = $luaran->proposal;
 
-        if (! $this->isOwner(auth()->user(), $proposal) || $proposal->status !== 'Disetujui') {
-            abort(403, 'Hanya pengaju pemilik proposal yang disetujui yang bisa menghapus luaran.');
+        if (! $this->isOwner(auth()->user(), $proposal) || ! $this->isDidanai($proposal)) {
+            abort(403, 'Hanya pengaju pemilik proposal yang didanai yang bisa menghapus luaran.');
         }
 
         if ($luaran->file && Storage::disk('public')->exists($luaran->file)) {
@@ -222,12 +242,13 @@ class LuaranController extends Controller
     }
 
     /**
-     * Query proposal Disetujui yang boleh dilihat user login.
+     * Query proposal yang didanai yang boleh dilihat user login.
      * Reviewer / verifikator / role lain: 403.
      */
     protected function queryDisetujui($user)
     {
-        $query = Proposal::where('status', 'Disetujui');
+        $query = Proposal::where('status', 'Disetujui')
+            ->where('status_pendanaan', 'Disetujui');
 
         if ($user->role === 'pengaju') {
             $query->where('user_id', $user->id);
@@ -243,11 +264,21 @@ class LuaranController extends Controller
     }
 
     /**
+     * Apakah proposal ini didanai (keputusan pendanaan Disetujui)?
+     * Kedua kolom dicek: status alur saja tidak cukup (bug #10).
+     */
+    protected function isDidanai(Proposal $proposal): bool
+    {
+        return $proposal->status === 'Disetujui'
+            && $proposal->status_pendanaan === 'Disetujui';
+    }
+
+    /**
      * Apakah user boleh melihat luaran proposal ini (baca + unduh)?
      */
     protected function canView($user, Proposal $proposal): bool
     {
-        if ($proposal->status !== 'Disetujui') {
+        if (! $this->isDidanai($proposal)) {
             return false;
         }
 

@@ -11,12 +11,16 @@ use Illuminate\Support\Facades\Storage;
 /**
  * Logbook pasca-hibah (Fase 5, story 9).
  *
- * Hanya untuk proposal berstatus 'Disetujui' (kolom status; keputusan
- * pendanaan menulis 'Disetujui' ke status sekaligus status_pendanaan).
+ * Hanya untuk proposal yang DIDANAI: status_pendanaan = 'Disetujui'
+ * (keputusan pendanaan; kolom status alur saja tidak cukup — pelajaran
+ * bug #10: status alur 'Disetujui' tidak sama dengan didanai).
+ * Kedua kolom dicek bersamaan; keputusan() menulis keduanya sekaligus,
+ * jadi pada alur normal keduanya selalu sama, dan bila datanya
+ * menyimpang arah amannya adalah menolak.
  *
  * Kepemilikan / visibilitas:
  *  - pengaju      : hanya proposal milik sendiri (user_id = id user login).
- *  - lppm, kepala_lppm, admin : semua proposal Disetujui.
+ *  - lppm, kepala_lppm, admin : semua proposal yang didanai.
  *  - dekan        : hanya proposal di fakultasnya (fakultas_prodi =
  *    fakultas_id user); bila fakultas_id belum diisi, semua proposal
  *    (meniru RoleDashboardController::dekan()).
@@ -74,16 +78,17 @@ class LogbookController extends Controller
     }
 
     /**
-     * Simpan entri logbook baru. Hanya pengaju pemilik proposal Disetujui.
+     * Simpan entri logbook baru. Hanya pengaju pemilik proposal yang didanai.
      */
     public function store(Request $request, Proposal $proposal)
     {
-        if (! $this->isOwner(auth()->user(), $proposal) || $proposal->status !== 'Disetujui') {
-            abort(403, 'Hanya pengaju pemilik proposal yang disetujui yang bisa menambah logbook.');
+        if (! $this->isOwner(auth()->user(), $proposal) || ! $this->isDidanai($proposal)) {
+            abort(403, 'Hanya pengaju pemilik proposal yang didanai yang bisa menambah logbook.');
         }
 
         $validated = $request->validate([
-            'tanggal' => 'required|date',
+            // Tanggal kegiatan tidak boleh di masa depan.
+            'tanggal' => 'required|date|before_or_equal:today',
             'uraian_kegiatan' => 'required|string',
             'file_bukti' => 'nullable|file|mimes:pdf|max:2048',
         ]);
@@ -106,14 +111,14 @@ class LogbookController extends Controller
     }
 
     /**
-     * Form ubah entri logbook. Hanya pengaju pemilik proposal Disetujui.
+     * Form ubah entri logbook. Hanya pengaju pemilik proposal yang didanai.
      */
     public function edit(Logbook $logbook)
     {
         $proposal = $logbook->proposal;
 
-        if (! $this->isOwner(auth()->user(), $proposal) || $proposal->status !== 'Disetujui') {
-            abort(403, 'Hanya pengaju pemilik proposal yang disetujui yang bisa mengubah logbook.');
+        if (! $this->isOwner(auth()->user(), $proposal) || ! $this->isDidanai($proposal)) {
+            abort(403, 'Hanya pengaju pemilik proposal yang didanai yang bisa mengubah logbook.');
         }
 
         return view('pasca-hibah.logbook-edit', compact('logbook', 'proposal'));
@@ -126,12 +131,13 @@ class LogbookController extends Controller
     {
         $proposal = $logbook->proposal;
 
-        if (! $this->isOwner(auth()->user(), $proposal) || $proposal->status !== 'Disetujui') {
-            abort(403, 'Hanya pengaju pemilik proposal yang disetujui yang bisa mengubah logbook.');
+        if (! $this->isOwner(auth()->user(), $proposal) || ! $this->isDidanai($proposal)) {
+            abort(403, 'Hanya pengaju pemilik proposal yang didanai yang bisa mengubah logbook.');
         }
 
         $validated = $request->validate([
-            'tanggal' => 'required|date',
+            // Tanggal kegiatan tidak boleh di masa depan.
+            'tanggal' => 'required|date|before_or_equal:today',
             'uraian_kegiatan' => 'required|string',
             'file_bukti' => 'nullable|file|mimes:pdf|max:2048',
         ]);
@@ -162,8 +168,8 @@ class LogbookController extends Controller
     {
         $proposal = $logbook->proposal;
 
-        if (! $this->isOwner(auth()->user(), $proposal) || $proposal->status !== 'Disetujui') {
-            abort(403, 'Hanya pengaju pemilik proposal yang disetujui yang bisa menghapus logbook.');
+        if (! $this->isOwner(auth()->user(), $proposal) || ! $this->isDidanai($proposal)) {
+            abort(403, 'Hanya pengaju pemilik proposal yang didanai yang bisa menghapus logbook.');
         }
 
         if ($logbook->file_bukti && Storage::disk('public')->exists($logbook->file_bukti)) {
@@ -218,12 +224,13 @@ class LogbookController extends Controller
     }
 
     /**
-     * Query proposal Disetujui yang boleh dilihat user login.
+     * Query proposal yang didanai yang boleh dilihat user login.
      * Reviewer / verifikator / role lain: 403.
      */
     protected function queryDisetujui($user)
     {
-        $query = Proposal::where('status', 'Disetujui');
+        $query = Proposal::where('status', 'Disetujui')
+            ->where('status_pendanaan', 'Disetujui');
 
         if ($user->role === 'pengaju') {
             $query->where('user_id', $user->id);
@@ -239,11 +246,21 @@ class LogbookController extends Controller
     }
 
     /**
+     * Apakah proposal ini didanai (keputusan pendanaan Disetujui)?
+     * Kedua kolom dicek: status alur saja tidak cukup (bug #10).
+     */
+    protected function isDidanai(Proposal $proposal): bool
+    {
+        return $proposal->status === 'Disetujui'
+            && $proposal->status_pendanaan === 'Disetujui';
+    }
+
+    /**
      * Apakah user boleh melihat logbook proposal ini (baca + unduh)?
      */
     protected function canView($user, Proposal $proposal): bool
     {
-        if ($proposal->status !== 'Disetujui') {
+        if (! $this->isDidanai($proposal)) {
             return false;
         }
 

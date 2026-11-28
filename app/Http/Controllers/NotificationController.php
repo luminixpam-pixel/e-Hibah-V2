@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\NotificationHelper;
+use App\Helpers\PesanValidasi;
 use App\Models\MonevFinding;
 use App\Models\Notification;
 use App\Models\Proposal;
@@ -409,7 +410,11 @@ class NotificationController extends Controller
             'title' => 'required|string|max:255',
             'message' => 'nullable|string',
             'type' => 'nullable|in:info,success,warning',
-        ]);
+        ], PesanValidasi::pesan([
+            'title' => 'Judul notifikasi',
+            'message' => 'Pesan notifikasi',
+            'type' => 'Tipe notifikasi',
+        ]));
 
         NotificationHelper::sendToAll(
             $request->title,
@@ -434,7 +439,12 @@ class NotificationController extends Controller
             'title' => 'required|string|max:255',
             'message' => 'nullable|string',
             'type' => 'nullable|in:info,success,warning',
-        ]);
+        ], PesanValidasi::pesan([
+            'user_id' => 'User tujuan',
+            'title' => 'Judul notifikasi',
+            'message' => 'Pesan notifikasi',
+            'type' => 'Tipe notifikasi',
+        ]));
 
         NotificationHelper::send(
             $request->user_id,

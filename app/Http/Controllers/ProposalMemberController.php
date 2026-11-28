@@ -56,6 +56,13 @@ class ProposalMemberController extends Controller
             return redirect()->route('anggota.undangan')->with('error', 'Undangan ini sudah Anda jawab sebelumnya.');
         }
 
+        // Undangan tidak lagi berlaku bila proposalnya sudah diputuskan
+        // (Disetujui/Ditolak/Selesai): anggota baru tidak bisa masuk
+        // ke tim proposal yang sudah berjalan.
+        if ($member->proposal && in_array($member->proposal->status, ['Disetujui', 'Ditolak', 'Selesai'], true)) {
+            return redirect()->route('anggota.undangan')->with('error', 'Undangan ini sudah tidak berlaku karena proposal sudah diputuskan (status: '.$member->proposal->status.').');
+        }
+
         $member->update([
             'status_konfirmasi' => $request->aksi === 'setuju' ? 'Diterima' : 'Ditolak',
         ]);

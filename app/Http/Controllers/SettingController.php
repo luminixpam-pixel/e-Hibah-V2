@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PesanValidasi;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -26,7 +27,12 @@ class SettingController extends Controller
         $validated = $request->validate([
             'key' => ['required', 'string', 'max:100', 'regex:/^[a-z][a-z0-9_]*$/', 'unique:settings,key'],
             'value' => ['nullable', 'string'],
-        ]);
+        ], array_merge(PesanValidasi::pesan([
+            'key' => 'Key setelan',
+            'value' => 'Nilai setelan',
+        ]), [
+            'key.regex' => 'Key setelan harus snake_case (huruf kecil, diawali huruf, boleh angka dan underscore).',
+        ]));
 
         Setting::create($validated);
 
@@ -44,7 +50,12 @@ class SettingController extends Controller
         $validated = $request->validate([
             'key' => ['required', 'string', 'max:100', 'regex:/^[a-z][a-z0-9_]*$/', Rule::unique('settings', 'key')->ignore($setting->id)],
             'value' => ['nullable', 'string'],
-        ]);
+        ], array_merge(PesanValidasi::pesan([
+            'key' => 'Key setelan',
+            'value' => 'Nilai setelan',
+        ]), [
+            'key.regex' => 'Key setelan harus snake_case (huruf kecil, diawali huruf, boleh angka dan underscore).',
+        ]));
 
         $setting->update($validated);
 

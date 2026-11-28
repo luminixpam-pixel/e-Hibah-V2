@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PesanValidasi;
 use App\Models\ErrorReport;
 use Illuminate\Http\Request;
 
@@ -37,7 +38,10 @@ class ErrorReportController extends Controller
         $validated = $request->validate([
             'judul' => 'required|string|max:255',
             'deskripsi' => 'required|string',
-        ]);
+        ], PesanValidasi::pesan([
+            'judul' => 'Judul laporan',
+            'deskripsi' => 'Deskripsi error',
+        ]));
 
         ErrorReport::create([
             'user_id' => auth()->user()->id,
@@ -91,7 +95,9 @@ class ErrorReportController extends Controller
 
         $validated = $request->validate([
             'status' => 'required|in:Open,Diproses,Selesai',
-        ]);
+        ], PesanValidasi::pesan([
+            'status' => 'Status laporan',
+        ]));
 
         $laporan->update(['status' => $validated['status']]);
 

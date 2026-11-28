@@ -19,10 +19,11 @@ use Illuminate\Support\Facades\Storage;
  *    (status jadi 'In_Review').
  *  - LPPM memverifikasi: 'tutup' -> 'Closed', 'kembalikan' -> 'Open'.
  *
- * Semua fitur di sini HANYA untuk proposal berstatus 'Disetujui'
- * (kolom status; keputusan admin menulis 'Disetujui' ke kolom
- * status dan status_pendanaan — lihat ProposalController::keputusan
- * dan ProposalController::proposalDisetujui).
+ * Semua fitur di sini HANYA untuk proposal yang DIDANAI
+ * (status_pendanaan = 'Disetujui'; kolom status alur saja tidak cukup
+ * — pelajaran bug #10). Kedua kolom dicek bersamaan; keputusan()
+ * menulis keduanya sekaligus, jadi pada alur normal keduanya selalu
+ * sama, dan bila datanya menyimpang arah amannya adalah menolak.
  *
  * Catatan: jangan pakai Auth::id() / auth()->id() untuk membandingkan
  * ID angka (itu mengembalikan USERNAME string) — selalu pakai
@@ -42,6 +43,16 @@ class MonevController extends Controller
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
         ]);
+    }
+
+    /**
+     * Apakah proposal ini didanai (keputusan pendanaan Disetujui)?
+     * Kedua kolom dicek: status alur saja tidak cukup (bug #10).
+     */
+    private function isDidanai(Proposal $proposal): bool
+    {
+        return $proposal->status === 'Disetujui'
+            && $proposal->status_pendanaan === 'Disetujui';
     }
 
     /**
@@ -88,7 +99,8 @@ class MonevController extends Controller
 
         $query = MonevFinding::with(['proposal.user'])
             ->whereHas('proposal', function ($q) {
-                $q->where('status', 'Disetujui');
+                $q->where('status', 'Disetujui')
+                    ->where('status_pendanaan', 'Disetujui');
             });
 
         if ($user->role === 'pengaju') {
@@ -110,7 +122,7 @@ class MonevController extends Controller
     }
 
     /**
-     * GET /monev/{proposal} — daftar temuan satu proposal Disetujui
+     * GET /monev/{proposal} — daftar temuan satu proposal yang didanai
      * + form buat temuan (LPPM) + form kirim RTL (pengaju pemilik).
      */
     public function show(Proposal $proposal)
@@ -119,8 +131,8 @@ class MonevController extends Controller
             abort(403);
         }
 
-        if ($proposal->status !== 'Disetujui') {
-            return redirect()->back()->with('error', 'Temuan monev hanya tersedia untuk proposal yang sudah Disetujui (status saat ini: '.$proposal->status.').');
+        if (! $this->isDidanai($proposal)) {
+            return redirect()->back()->with('error', 'Temuan monev hanya tersedia untuk proposal yang sudah didanai (status pendanaan saat ini: '.$proposal->status_pendanaan.').');
         }
 
         $findings = MonevFinding::where('proposal_id', $proposal->id)
@@ -145,8 +157,8 @@ class MonevController extends Controller
             abort(403);
         }
 
-        if ($proposal->status !== 'Disetujui') {
-            return redirect()->back()->with('error', 'Temuan monev hanya bisa dibuat untuk proposal yang sudah Disetujui (status saat ini: '.$proposal->status.').');
+        if (! $this->isDidanai($proposal)) {
+            return redirect()->back()->with('error', 'Temuan monev hanya bisa dibuat untuk proposal yang sudah didanai (status pendanaan saat ini: '.$proposal->status_pendanaan.').');
         }
 
         $request->validate([
@@ -178,8 +190,8 @@ class MonevController extends Controller
     {
         $proposal = $finding->proposal;
 
-        if (! $proposal || $proposal->status !== 'Disetujui') {
-            return redirect()->back()->with('error', 'RTL hanya bisa dikirim untuk temuan pada proposal yang sudah Disetujui.');
+        if (! $proposal || ! $this->isDidanai($proposal)) {
+            return redirect()->back()->with('error', 'RTL hanya bisa dikirim untuk temuan pada proposal yang sudah didanai.');
         }
 
         // Hanya pengaju pemilik proposal terkait.
@@ -240,6 +252,12 @@ class MonevController extends Controller
         }
 
         $proposal = $finding->proposal;
+
+        // Temuan pada proposal yang pendanaannya sudah tidak Disetujui
+        // (mis. keputusan diubah) tidak lagi bisa diverifikasi.
+        if (! $proposal || ! $this->isDidanai($proposal)) {
+            return redirect()->back()->with('error', 'Temuan tidak bisa diverifikasi karena proposal sudah tidak didanai.');
+        }
 
         if ($request->keputusan === 'tutup') {
             $finding->update(['status_temuan' => 'Closed']);

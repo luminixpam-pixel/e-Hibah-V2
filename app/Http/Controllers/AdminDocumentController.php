@@ -10,6 +10,19 @@ use Illuminate\Support\Facades\Storage;
 class AdminDocumentController extends Controller
 {
     /**
+     * Tulis dokumen hanya boleh dilakukan admin. Route sudah di dalam
+     * grup middleware role:admin, tapi controller tetap memeriksa
+     * sendiri (defense in depth) agar pemindahan route di masa depan
+     * tidak membuka celah.
+     */
+    private function ensureAdmin(): void
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Hanya admin yang boleh mengelola dokumen.');
+        }
+    }
+
+    /**
      * Menampilkan halaman dokumen untuk semua role
      */
     public function index()
@@ -28,6 +41,8 @@ class AdminDocumentController extends Controller
      */
     public function store(Request $request)
     {
+        $this->ensureAdmin();
+
         $request->validate([
             'judul' => 'required|string|max:255',
             'file' => 'required|mimes:pdf,doc,docx|max:5120',
@@ -39,7 +54,9 @@ class AdminDocumentController extends Controller
             AdminDocument::create([
                 'judul' => $request->judul,
                 'file_path' => $path,
-                'uploaded_by' => Auth::id(),
+                // JANGAN pakai Auth::id(): di aplikasi ini ia
+                // mengembalikan USERNAME, bukan users.id numerik.
+                'uploaded_by' => auth()->user()->id,
                 'is_visible' => true,
             ]);
 
@@ -54,6 +71,8 @@ class AdminDocumentController extends Controller
      */
     public function toggleVisibility($id)
     {
+        $this->ensureAdmin();
+
         $doc = AdminDocument::findOrFail($id);
         $doc->is_visible = ! $doc->is_visible;
         $doc->save();
@@ -73,6 +92,8 @@ class AdminDocumentController extends Controller
      */
     public function destroy($id)
     {
+        $this->ensureAdmin();
+
         $doc = AdminDocument::findOrFail($id);
 
         if ($doc->file_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($doc->file_path)) {
@@ -93,7 +114,7 @@ class AdminDocumentController extends Controller
             abort(403);
         }
 
-        if (! Storage::disk('public')->exists($doc->file_path)) {
+        if (! $doc->file_path || ! Storage::disk('public')->exists($doc->file_path)) {
             return back()->with('error', 'Berkas fisik tidak ditemukan.');
         }
 

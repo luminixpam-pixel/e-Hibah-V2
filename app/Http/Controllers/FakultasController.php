@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PesanValidasi;
 use App\Models\Fakultas;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -20,9 +21,10 @@ use Illuminate\Validation\Rule;
  *   memuat kode_fakultas, tetapi kolom itu TIDAK ADA di tabel fakultas
  *   (diskrepansi model ↔ migrasi, sudah dicatat di analisis) — jadi
  *   sengaja tidak dipakai di sini.
- * - Menghapus fakultas aman: FK proposals.fakultas_prodi dan
- *   users.fakultas_id sama-sama onDelete set null, jadi referensi
- *   terkait menjadi null, bukan error.
+ * - Menghapus fakultas yang masih dipakai DITOLAK (lihat destroy()) —
+ *   FK proposals.fakultas_prodi dan users.fakultas_id memang onDelete
+ *   set null, tetapi membiarkan referensi menjadi null diam-diam akan
+ *   merusak jejak fakultas proposal dan filter dasbor dekan.
  */
 class FakultasController extends Controller
 {
@@ -51,7 +53,9 @@ class FakultasController extends Controller
     {
         $validated = $request->validate([
             'nama_fakultas' => ['required', 'string', 'max:255', Rule::unique('fakultas', 'nama_fakultas')],
-        ]);
+        ], PesanValidasi::pesan([
+            'nama_fakultas' => 'Nama fakultas',
+        ]));
 
         Fakultas::create($validated);
 
@@ -74,7 +78,9 @@ class FakultasController extends Controller
     {
         $validated = $request->validate([
             'nama_fakultas' => ['required', 'string', 'max:255', Rule::unique('fakultas', 'nama_fakultas')->ignore($fakultas->id)],
-        ]);
+        ], PesanValidasi::pesan([
+            'nama_fakultas' => 'Nama fakultas',
+        ]));
 
         $fakultas->update($validated);
 
@@ -82,11 +88,28 @@ class FakultasController extends Controller
     }
 
     /**
-     * Hapus fakultas. Proposal dan user yang merujuk fakultas ini tidak
-     * ikut terhapus (referensinya menjadi null via FK onDelete set null).
+     * Hapus fakultas. DITOLAK bila masih dipakai proposal atau user —
+     * referensi yang menjadi null diam-diam akan merusak filter
+     * dasbor dekan dan data fakultas pengaju.
      */
     public function destroy(Fakultas $fakultas)
     {
+        $jumlahProposal = $fakultas->proposals()->count();
+        $jumlahUser = $fakultas->users()->count();
+
+        if ($jumlahProposal > 0 || $jumlahUser > 0) {
+            $alasan = [];
+            if ($jumlahProposal > 0) {
+                $alasan[] = "{$jumlahProposal} proposal";
+            }
+            if ($jumlahUser > 0) {
+                $alasan[] = "{$jumlahUser} user";
+            }
+
+            return redirect()->route('admin.fakultas.index')
+                ->with('error', "Fakultas {$fakultas->nama_fakultas} tidak dapat dihapus karena masih dipakai oleh ".implode(' dan ', $alasan).'.');
+        }
+
         $fakultas->delete();
 
         return redirect()->route('admin.fakultas.index')->with('success', 'Fakultas berhasil dihapus.');

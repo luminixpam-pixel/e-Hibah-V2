@@ -59,6 +59,56 @@ class ProposalController extends Controller
     }
 
     /**
+     * Status proposal yang masih boleh diubah lewat form edit
+     * (edit/update). Proposal yang sudah Dikirim dan seterusnya
+     * tidak boleh lagi diubah isinya — sebelumnya update() menerima
+     * PUT untuk status apa pun selama pengirimnya pemilik, sehingga
+     * isi proposal yang sedang diverifikasi/direview bisa diubah
+     * diam-diam tanpa mengubah statusnya.
+     */
+    private const STATUS_DAPAT_DIEDIT = ['Draft', 'Revisi Administrasi'];
+
+    /**
+     * Aturan akses baca proposal (A1): ketua pengusul, anggota tim
+     * (status keanggotaan Menunggu/Diterima — yang Ditolak sudah
+     * bukan anggota lagi, selaras dengan ProposalMemberController@show),
+     * reviewer yang ditugaskan pada proposal itu, dan staf
+     * (verifikator, lppm, dekan, kepala_lppm, admin). Selain itu 403.
+     * Dipakai download(), preview(), tinjau(), dan downloadReviewPdf().
+     */
+    private function dapatMengaksesProposal(Proposal $proposal, User $user): bool
+    {
+        if (in_array($user->role, ['admin', 'verifikator', 'lppm', 'dekan', 'kepala_lppm'], true)) {
+            return true;
+        }
+
+        if ((int) $proposal->user_id === (int) $user->id) {
+            return true;
+        }
+
+        if ($proposal->members()->where('user_id', $user->id)->whereIn('status_konfirmasi', ['Menunggu', 'Diterima'])->exists()) {
+            return true;
+        }
+
+        return $proposal->reviewers()->where('proposal_reviewers.reviewer_id', $user->id)->exists();
+    }
+
+    /**
+     * Tahun filter yang aman untuk index()/dikirim(): hanya angka
+     * 4 digit yang masuk akal; nilai lain kembali ke tahun berjalan.
+     */
+    private function tahunFilter(Request $request): int
+    {
+        $tahun = (int) $request->get('tahun', date('Y'));
+
+        if ($tahun < 2000 || $tahun > 2100) {
+            $tahun = (int) date('Y');
+        }
+
+        return $tahun;
+    }
+
+    /**
      * Nomor pengajuan sementara: EH-TAHUN-ID (berurutan dari ID proposal).
      *
      * TODO: Format resmi nomor pengajuan menunggu konfirmasi LPPM.
@@ -603,7 +653,7 @@ class ProposalController extends Controller
      */
     public function index(Request $request)
     {
-        $tahun = $request->get('tahun', date('Y'));
+        $tahun = $this->tahunFilter($request);
         $user = auth()->user();
         $role = $user->role;
 
@@ -754,6 +804,17 @@ class ProposalController extends Controller
             );
         }
 
+        // Pengajuan wajib punya nilai RAB lebih dari 0: RAB yang semua
+        // komponennya 0 sebelumnya lolos (validasi hanya min:0 per
+        // komponen) sehingga proposal bernilai Rp0 bisa terkirim.
+        if (! $isDraft && $rabTotal <= 0) {
+            return $this->sertakanFileTersimpan(
+                redirect()->back()->withInput()
+                    ->with('error', 'Total RAB harus lebih dari 0. Isi minimal satu komponen RAB dengan jumlah lebih dari 0.'),
+                $filePathAwal
+            );
+        }
+
         try {
             $proposal = DB::transaction(function () use ($request, $user, $isDraft, $skema, $anggotaResolved, $rabTotal, $filePathAwal) {
                 // Berkas sudah disimpan di awal request (bug #5); bila
@@ -814,6 +875,13 @@ class ProposalController extends Controller
             abort(403, 'Anda tidak memiliki izin untuk mengubah proposal ini.');
         }
 
+        // Hanya Draft dan Revisi Administrasi yang boleh dibuka untuk
+        // diubah; proposal yang sudah Dikirim dan seterusnya tidak
+        // bisa lagi diedit isinya (lihat STATUS_DAPAT_DIEDIT).
+        if (! in_array($proposal->status, self::STATUS_DAPAT_DIEDIT, true)) {
+            return redirect()->back()->with('error', 'Proposal dengan status '.$proposal->status.' sudah tidak bisa diubah.');
+        }
+
         // 2. Ambil data dosen/pengaju (untuk list anggota di datalist) —
         // selaras dengan form buat proposal (hanya pengaju + reviewer
         // yang bisa menjadi anggota tim).
@@ -860,6 +928,14 @@ class ProposalController extends Controller
             abort(403, 'Anda tidak memiliki izin untuk mengubah proposal ini.');
         }
 
+        // Sama seperti edit(): hanya Draft dan Revisi Administrasi
+        // yang boleh diubah. Sebelumnya PUT ke proposal Dikirim /
+        // Sedang Direview / Disetujui tetap mengubah judul, berkas,
+        // RAB, anggota, dan skema tanpa mengubah statusnya.
+        if (! in_array($proposal->status, self::STATUS_DAPAT_DIEDIT, true)) {
+            return redirect()->back()->withInput()->with('error', 'Proposal dengan status '.$proposal->status.' sudah tidak bisa diubah.');
+        }
+
         $user = auth()->user();
         $aksi = $request->input('aksi', 'submit');
         // Kirim ulang hasil Revisi Administrasi dihitung sebagai pengajuan juga,
@@ -879,9 +955,9 @@ class ProposalController extends Controller
         // key 'rab_komponen_kustom'); bila key belum ada, daftar kustom kosong.
         try {
             $request->validate([
-                'judul' => 'required|string',
-                'nama_ketua' => 'required|string',
-                'fakultas_prodi' => 'required',
+                'judul' => 'required|string|max:255',
+                'nama_ketua' => 'required|string|max:255',
+                'fakultas_prodi' => 'required|exists:fakultas,id',
                 'skema_id' => 'nullable|exists:skemas,id',
                 'file' => 'nullable|file|mimes:pdf,doc,docx|max:102400',
                 'anggota' => 'nullable|array',
@@ -958,6 +1034,10 @@ class ProposalController extends Controller
         if ($kirimPengajuan && ! $hasRab) {
             return $this->sertakanFileTersimpan(redirect()->back()->withInput()->with('error', 'Isi minimal satu komponen RAB sebelum mengirim pengajuan.'), $filePathBaru);
         }
+        // RAB yang semua komponennya 0 juga ditolak (selaras dengan store()).
+        if ($kirimPengajuan && $hasRab && $rabTotal <= 0) {
+            return $this->sertakanFileTersimpan(redirect()->back()->withInput()->with('error', 'Total RAB harus lebih dari 0. Isi minimal satu komponen RAB dengan jumlah lebih dari 0.'), $filePathBaru);
+        }
         // Plafon hanya dicek saat kirim pengajuan, bukan saat simpan draft —
         // selaras dengan store() (bug #7: simpan draft di form edit dulu
         // menolak RAB di atas plafon karena cek ini tidak dijaga $kirimPengajuan).
@@ -998,8 +1078,6 @@ class ProposalController extends Controller
             if ($kirimPengajuan) {
                 $data['status'] = 'Dikirim';
                 $data['no_pengajuan'] = $this->generateNoPengajuan($proposal);
-            } elseif (in_array($proposal->status, ['Ditolak', 'Revisi'])) {
-                $data['status'] = 'Hasil Revisi';
             }
 
             $proposal->update($data);
@@ -1075,24 +1153,52 @@ class ProposalController extends Controller
             return back()->with('error', $error);
         }
 
-        if ((float) $proposal->biaya <= 0 && ! $proposal->rabItems()->exists()) {
-            return back()->with('error', 'Isi minimal satu komponen RAB sebelum mengirim pengajuan.');
+        // Total RAB harus lebih dari 0. Bila ada item RAB, pakai
+        // jumlahnya; bila tidak ada, pakai kolom biaya proposal.
+        // Sebelumnya proposal bernilai Rp0 lolos selama masih ada
+        // satu baris item RAB (berapa pun jumlahnya).
+        $totalRab = $proposal->rabItems()->exists()
+            ? (float) $proposal->rabItems()->sum('jumlah')
+            : (float) $proposal->biaya;
+
+        if ($totalRab <= 0) {
+            return back()->with('error', 'Isi minimal satu komponen RAB dengan jumlah lebih dari 0 sebelum mengirim pengajuan.');
         }
 
         if ($proposal->skema->plafon > 0 && (float) $proposal->biaya > (float) $proposal->skema->plafon) {
             return back()->with('error', 'Total RAB Rp '.number_format((float) $proposal->biaya, 0, ',', '.').' melebihi plafon skema '.$proposal->skema->label().' (Rp '.number_format((float) $proposal->skema->plafon, 0, ',', '.').').');
         }
 
-        DB::transaction(function () use ($proposal, $user) {
-            $proposal->update([
+        // Kunci baris proposal selama pengiriman dan periksa ulang
+        // statusnya di dalam transaksi: dua kirim cepat berurutan
+        // sebelumnya sama-sama membaca status Draft sebelum salah
+        // satunya menulis, sehingga pengiriman ganda (undangan dan
+        // notifikasi dobel) bisa lolos. Bila status sudah berubah,
+        // kembalikan pesan yang sama seperti penjaga di atas.
+        $gagal = null;
+
+        DB::transaction(function () use ($proposal, $user, &$gagal) {
+            $terkunci = Proposal::where('id', $proposal->id)->lockForUpdate()->firstOrFail();
+
+            if (! in_array($terkunci->status, ['Draft', 'Revisi Administrasi'], true)) {
+                $gagal = 'Proposal ini sudah tidak bisa dikirim (status: '.$terkunci->status.').';
+
+                return;
+            }
+
+            $terkunci->update([
                 'status' => 'Dikirim',
-                'no_pengajuan' => $this->generateNoPengajuan($proposal),
+                'no_pengajuan' => $this->generateNoPengajuan($terkunci),
             ]);
 
-            $this->sendMemberInvitations($proposal);
+            $this->sendMemberInvitations($terkunci);
             NotificationController::notifyProposalSubmitted($user->id);
             $this->logActivity("Mengirim proposal ID {$proposal->id} (status: Dikirim)");
         });
+
+        if ($gagal) {
+            return back()->with('error', $gagal);
+        }
 
         return redirect()->route('monitoring.proposalDikirim')
             ->with('success', 'Proposal berhasil diajukan! Nomor pengajuan: '.$proposal->fresh()->no_pengajuan);
@@ -1105,8 +1211,17 @@ class ProposalController extends Controller
     {
         $proposal = \App\Models\Proposal::findOrFail($id);
 
+        // A1: berkas proposal hanya boleh diunduh pihak yang berhak
+        // atas proposal itu (ketua, anggota tim, reviewer yang
+        // ditugaskan, verifikator, lppm, dekan, kepala_lppm, admin).
+        // Sebelumnya user login mana pun bisa mengunduh berkas
+        // proposal orang lain hanya dengan menebak ID-nya.
+        if (! $this->dapatMengaksesProposal($proposal, auth()->user())) {
+            abort(403, 'Anda tidak memiliki izin untuk mengunduh berkas proposal ini.');
+        }
+
         // Cek apakah file ada di disk public
-        if (! \Storage::disk('public')->exists($proposal->file_path)) {
+        if (! $proposal->file_path || ! \Storage::disk('public')->exists($proposal->file_path)) {
             return back()->with('error', 'File tidak ditemukan di server.');
         }
 
@@ -1118,11 +1233,16 @@ class ProposalController extends Controller
 
     /**
      * Preview File Proposal (inline bila PDF/gambar, unduh bila bukan).
-     * Otorisasi sama seperti download(): hanya auth, tanpa cek tambahan.
+     * Otorisasi sama seperti download() (A1) — sebelumnya preview
+     * juga terbuka untuk user login mana pun tanpa cek kepemilikan.
      */
     public function preview($id)
     {
         $proposal = \App\Models\Proposal::findOrFail($id);
+
+        if (! $this->dapatMengaksesProposal($proposal, auth()->user())) {
+            abort(403, 'Anda tidak memiliki izin untuk melihat berkas proposal ini.');
+        }
 
         if (! $proposal->file_path) {
             return back()->with('error', 'File tidak ditemukan di server.');
@@ -1157,6 +1277,14 @@ class ProposalController extends Controller
         ]);
 
         // Proteksi tambahan
+        // Hanya proposal yang Lolos Administrasi yang boleh di-plotting.
+        // Sebelumnya plotting bisa dilakukan pada proposal Draft /
+        // Dikirim / bahkan yang sudah direview, sehingga proposal
+        // bisa meloncat langsung ke Sedang Direview tanpa verifikasi.
+        if ($proposal->status !== 'Lolos Administrasi') {
+            return back()->withInput()->with('error', 'Hanya proposal yang Lolos Administrasi yang bisa di-plotting (status: '.$proposal->status.').');
+        }
+
         if ($request->reviewer_1 == $request->reviewer_2) {
             return back()->withInput()->with('error', 'Reviewer 1 dan 2 tidak boleh orang yang sama.');
         }
@@ -1169,6 +1297,18 @@ class ProposalController extends Controller
         $memberIds = $proposal->members()->whereNotNull('user_id')->pluck('user_id')->all();
         if (in_array((int) $request->reviewer_1, $memberIds, true) || in_array((int) $request->reviewer_2, $memberIds, true)) {
             return back()->withInput()->with('error', 'Anggota tim proposal tidak boleh menjadi reviewer proposal itu sendiri.');
+        }
+
+        // Kedua yang ditugaskan harus benar-benar berperan reviewer.
+        // Sebelumnya validasi hanya exists:users,id sehingga pengaju,
+        // admin, atau peran lain bisa ditugaskan sebagai reviewer.
+        // Dicek di sini (bukan di Rule validasi) agar pesan errornya
+        // tetap berupa flash 'error' seperti penjaga lain di atas.
+        $calonReviewer = User::whereIn('id', [$request->reviewer_1, $request->reviewer_2])
+            ->where('role', 'reviewer')
+            ->count();
+        if ($calonReviewer !== 2) {
+            return back()->withInput()->with('error', 'Reviewer yang dipilih harus memiliki peran reviewer.');
         }
 
         // Eksekusi Simpan
@@ -1212,19 +1352,24 @@ class ProposalController extends Controller
         $proposal = Proposal::findOrFail($id);
         $user = auth()->user();
 
-        // 1. Jalur Khusus Admin (Admin bisa hapus siapa saja)
-        if ($user->role === 'admin') {
-            return $this->prosesHapus($proposal);
+        // 1. Jalur Khusus Admin (Admin bisa hapus siapa saja) dan
+        // 2. Jalur Pengaju/Reviewer (Hanya bisa hapus milik sendiri).
+        // Gunakan != (bukan !==) untuk menghindari bug tipe data String vs Integer.
+        $bolehHapus = $user->role === 'admin' || $proposal->user_id == $user->id;
+
+        if (! $bolehHapus) {
+            return back()->with('error', "Anda tidak diizinkan menghapus proposal ini (Milik ID: {$proposal->user_id}).");
         }
 
-        // 2. Jalur Pengaju/Reviewer (Hanya bisa hapus milik sendiri)
-        // Gunakan != (bukan !==) untuk menghindari bug tipe data String vs Integer
-        if ($proposal->user_id == $user->id) {
-            return $this->prosesHapus($proposal);
+        // Hanya Draft yang boleh dihapus. Proposal yang sudah berjalan
+        // (Dikirim dan seterusnya) punya riwayat verifikasi, review,
+        // dan keputusan — sebelumnya pemilik (dan admin) bisa
+        // menghapus proposal berstatus apa pun beserta berkasnya.
+        if ($proposal->status !== 'Draft') {
+            return back()->with('error', 'Proposal dengan status '.$proposal->status.' tidak bisa dihapus.');
         }
 
-        // 3. Jika gagal semua, beri pesan error detail
-        return back()->with('error', "Anda tidak diizinkan menghapus proposal ini (Milik ID: {$proposal->user_id}).");
+        return $this->prosesHapus($proposal);
     }
 
     /**
@@ -1243,11 +1388,19 @@ class ProposalController extends Controller
     }
 
     /**
-     * Cetak Review ke PDF
+     * Cetak Review ke PDF — hanya pihak yang berhak atas proposal
+     * itu (aturan yang sama dengan download berkas proposal).
+     * Sebelumnya user login mana pun bisa mengunduh PDF hasil review
+     * proposal orang lain hanya dengan menebak ID review-nya.
      */
     public function downloadReviewPdf($id)
     {
         $review = Review::with(['reviewer', 'proposal'])->findOrFail($id);
+
+        if (! $review->proposal || ! $this->dapatMengaksesProposal($review->proposal, auth()->user())) {
+            abort(403, 'Anda tidak memiliki izin untuk melihat hasil review ini.');
+        }
+
         $data = ['reviews' => collect([$review]), 'is_pdf' => true];
 
         $pdf = Pdf::loadView('proposal.admin.hasil-review', $data);
@@ -1374,10 +1527,27 @@ class ProposalController extends Controller
     {
         $proposal = Proposal::findOrFail($id);
 
-        // 1. Tambahkan 'Disetujui' di sini
+        // Nilai 'Review Selesai' dikeluarkan dari pilihan yang sah:
+        // itu status alur, bukan keputusan pendanaan, dan sebelumnya
+        // bisa dipakai untuk menandai review selesai tanpa ada review.
         $request->validate([
-            'status_pendanaan' => 'required|string|in:Disetujui,Ditolak,Direvisi,Review Selesai',
+            'status_pendanaan' => 'required|string|in:Disetujui,Ditolak,Direvisi',
         ]);
+
+        // Keputusan pendanaan hanya boleh diberikan setelah review
+        // selesai. Sebelumnya admin bisa memutuskan proposal Draft /
+        // Dikirim / Sedang Direview, termasuk sebelum reviewer mana
+        // pun mengirim review.
+        if ($proposal->status !== 'Review Selesai') {
+            return redirect()->back()->with('error', 'Keputusan pendanaan hanya bisa diberikan setelah review selesai (status saat ini: '.$proposal->status.').');
+        }
+
+        // Kedua reviewer yang ditugaskan harus sudah mengirim review.
+        $jumlahReviewer = $proposal->reviewers()->count();
+        $jumlahReview = $proposal->reviews()->count();
+        if ($jumlahReview < 1 || $jumlahReview < $jumlahReviewer) {
+            return redirect()->back()->with('error', 'Keputusan pendanaan menunggu semua reviewer mengirim review ('.$jumlahReview.' dari '.$jumlahReviewer.' review masuk).');
+        }
 
         // 2. Update status utama agar tidak hilang dari query 'whereIn' halaman Selesai
         $proposal->status = $request->status_pendanaan;
@@ -1398,6 +1568,22 @@ class ProposalController extends Controller
     {
         $proposal = Proposal::findOrFail($id);
 
+        // Route ini tidak punya middleware role (hanya auth), sehingga
+        // sebelumnya user login mana pun bisa memindahkan proposal
+        // apa pun ke Sedang Direview. Hanya admin/LPPM yang boleh.
+        if (! in_array(auth()->user()->role, ['admin', 'lppm'], true)) {
+            abort(403, 'Hanya admin atau LPPM yang boleh memindahkan proposal ke tahap review.');
+        }
+
+        // Hanya dari status pra-review. Pemindahan ini tetap melewati
+        // plotting (tidak menugaskan reviewer) — lihat laporan audit
+        // bila alur ini masih dipakai, karena proposal Sedang Direview
+        // tanpa reviewer tidak akan pernah selesai direview.
+        if (! in_array($proposal->status, ['Lolos Administrasi', 'Perlu Direview'], true)) {
+            return redirect()->route('monitoring.proposalPerluDireview')
+                ->with('error', 'Hanya proposal yang Lolos Administrasi yang bisa dipindahkan ke tahap review (status: '.$proposal->status.').');
+        }
+
         // Ubah status agar masuk ke kategori "Perlu Direview"
         $proposal->status = 'Sedang Direview';
         $proposal->save();
@@ -1410,6 +1596,13 @@ class ProposalController extends Controller
     public function tinjau($id)
     {
         $proposal = Proposal::with(['user', 'reviewers', 'reviews.reviewer', 'verifications.verifikator'])->findOrFail($id);
+
+        // Halaman detail proposal sebelumnya terbuka untuk user login
+        // mana pun tanpa cek kepemilikan — pakai aturan akses yang
+        // sama dengan download/preview berkas (A1).
+        if (! $this->dapatMengaksesProposal($proposal, auth()->user())) {
+            abort(403, 'Anda tidak memiliki izin untuk melihat proposal ini.');
+        }
 
         // Riwayat keputusan pendanaan dari log aktivitas admin. Pola LIKE
         // dengan ' menjadi:' tepat setelah ID mencegah kecocokan dengan ID
@@ -1443,46 +1636,12 @@ class ProposalController extends Controller
         return view('admin.daftar_review', compact('proposals'));
     }
 
-    public function uploadLaporanKemajuan(Request $request, $id)
-    {
-        $request->validate([
-            'laporan_kemajuan' => 'required|mimes:pdf|max:2048',
-        ]);
-
-        $proposal = Proposal::findOrFail($id);
-
-        $file = $request->file('laporan_kemajuan');
-        $filename = 'laporan_kemajuan_'.time().'.'.$file->getClientOriginalExtension();
-        $file->storeAs('laporan', $filename, 'public');
-
-        $proposal->update(['laporan_kemajuan' => $filename]);
-
-        return back()->with('success', 'Laporan Kemajuan berhasil diunggah.');
-    }
-
-    public function uploadLaporanAkhir(Request $request, $id)
-    {
-        $request->validate([
-            'laporan_akhir' => 'required|mimes:pdf|max:2048',
-        ]);
-
-        $proposal = Proposal::findOrFail($id);
-
-        $file = $request->file('laporan_akhir');
-        $filename = 'laporan_akhir_'.time().'.'.$file->getClientOriginalExtension();
-        $file->storeAs('laporan', $filename, 'public');
-
-        $proposal->update(['laporan_akhir' => $filename]);
-
-        return back()->with('success', 'Laporan Akhir berhasil diunggah.');
-    }
-
     // ===============================
     // ✅ FIX ROUTE MONITORING
     // ===============================
     public function dikirim(Request $request)
     {
-        $tahun = $request->get('tahun', date('Y'));
+        $tahun = $this->tahunFilter($request);
         $user = auth()->user();
         $role = $user->role;
 

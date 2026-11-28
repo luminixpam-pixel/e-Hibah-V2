@@ -2,6 +2,7 @@
 
 use App\Models\Fakultas;
 use App\Models\Proposal;
+use App\Models\Review;
 use App\Models\Skema;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -39,11 +40,43 @@ function f4cProposalDikirim(User $user, Skema $skema, array $attrs = []): Propos
     ], $attrs));
 }
 
+/**
+ * Proposal yang sudah selesai direview oleh 2 reviewer — satu-satunya
+ * keadaan sah untuk keputusan pendanaan (keputusan() menolak status
+ * lain dan menolak bila belum semua reviewer mengirim review).
+ */
+function f4cProposalSiapDiputuskan(User $user, Skema $skema, array $attrs = []): Proposal
+{
+    $proposal = f4cProposalDikirim($user, $skema, array_merge(['status' => 'Review Selesai'], $attrs));
+
+    $reviewer1 = f4cUser('reviewer', ['name' => 'Sinta']);
+    $reviewer2 = f4cUser('reviewer', ['name' => 'Dewi']);
+    $proposal->reviewers()->sync([$reviewer1->id, $reviewer2->id]);
+
+    foreach ([$reviewer1, $reviewer2] as $reviewer) {
+        Review::create([
+            'proposal_id' => $proposal->id,
+            'reviewer_id' => $reviewer->id,
+            'nilai_1' => 4,
+            'nilai_2' => 4,
+            'nilai_3' => 4,
+            'nilai_4' => 4,
+            'nilai_5' => 4,
+            'nilai_6' => 4,
+            'nilai_7' => 4,
+            'total_score' => 400,
+            'catatan' => 'Bagus.',
+        ]);
+    }
+
+    return $proposal;
+}
+
 test('keputusan yang dicatat admin tampil di halaman tinjau proposal', function () {
     $pengaju = f4cUser('pengaju', ['name' => 'Dr. Andi']);
     $admin = f4cUser('admin', ['name' => 'Admin Utama']);
     $skema = f4cSkema();
-    $proposal = f4cProposalDikirim($pengaju, $skema, ['judul' => 'Proposal diputuskan']);
+    $proposal = f4cProposalSiapDiputuskan($pengaju, $skema, ['judul' => 'Proposal diputuskan']);
 
     $response = $this->actingAs($admin)
         ->patch(route('proposal.keputusan', $proposal->id), ['status_pendanaan' => 'Disetujui']);
@@ -63,8 +96,8 @@ test('keputusan proposal lain tidak muncul di halaman tinjau proposal pertama', 
     $pengaju = f4cUser('pengaju', ['name' => 'Dr. Andi']);
     $admin = f4cUser('admin', ['name' => 'Admin Utama']);
     $skema = f4cSkema();
-    $pertama = f4cProposalDikirim($pengaju, $skema, ['judul' => 'Proposal pertama']);
-    $kedua = f4cProposalDikirim($pengaju, $skema, ['judul' => 'Proposal kedua']);
+    $pertama = f4cProposalSiapDiputuskan($pengaju, $skema, ['judul' => 'Proposal pertama']);
+    $kedua = f4cProposalSiapDiputuskan($pengaju, $skema, ['judul' => 'Proposal kedua']);
 
     $this->actingAs($admin)
         ->patch(route('proposal.keputusan', $pertama->id), ['status_pendanaan' => 'Disetujui']);

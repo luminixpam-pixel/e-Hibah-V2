@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\Proposal;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -22,6 +23,32 @@ class LaporanKemajuanController extends Controller
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
         ]);
+    }
+
+    /**
+     * Apakah user boleh mengakses (baca/unduh/preview) laporan kemajuan
+     * proposal ini? Sama seperti laporan akhir: pemilik, reviewer
+     * yang di-plot, dekan fakultasnya, atau peran pengelola.
+     */
+    private function canAccess(User $user, Proposal $proposal): bool
+    {
+        if (in_array($user->role, ['verifikator', 'lppm', 'kepala_lppm', 'admin'], true)) {
+            return true;
+        }
+
+        if ($user->role === 'pengaju') {
+            return (int) $proposal->user_id === (int) $user->id;
+        }
+
+        if ($user->role === 'reviewer') {
+            return $proposal->reviewers()->where('users.id', $user->id)->exists();
+        }
+
+        if ($user->role === 'dekan') {
+            return ! $user->fakultas_id || (int) $proposal->fakultas_prodi === (int) $user->fakultas_id;
+        }
+
+        return false;
     }
 
     public function index(Request $request)
@@ -89,13 +116,13 @@ class LaporanKemajuanController extends Controller
 
         if ($request->hasFile('file')) {
 
-            // ✅ ambil proposal yang dipilih + pastikan milik user login
-            $proposal = Proposal::where('id', $request->proposal_id)
-                ->whereHas('user', function ($q) {
-                    $q->where('username', Auth::user()->username);
-                })->first();
+            // ✅ ambil proposal yang dipilih + pastikan milik user login.
+            // Bandingkan user_id angka dengan auth()->user()->id —
+            // JANGAN pakai Auth::id() / username (Auth::id() di aplikasi
+            // ini mengembalikan username, bukan users.id).
+            $proposal = Proposal::where('id', $request->proposal_id)->first();
 
-            if (! $proposal) {
+            if (! $proposal || (int) $proposal->user_id !== (int) Auth::user()->id) {
                 return redirect()->back()->with('error', 'Proposal tidak valid / bukan milik Anda.');
             }
 
@@ -128,10 +155,16 @@ class LaporanKemajuanController extends Controller
 
     /**
      * ✅ DOWNLOAD LAPORAN KEMAJUAN (dipakai oleh route laporan.kemajuan.download)
+     * Hanya yang berhak atas proposal ini — sebelumnya tanpa cek akses
+     * sama sekali (siapa pun yang login bisa mengunduh laporan siapa pun).
      */
     public function downloadLaporan($id)
     {
         $proposal = Proposal::findOrFail($id);
+
+        if (! $this->canAccess(Auth::user(), $proposal)) {
+            abort(403, 'Anda tidak berhak mengunduh laporan kemajuan proposal ini.');
+        }
 
         if (! $proposal->file_laporan) {
             return redirect()->back()->with('error', 'File laporan belum tersedia.');
@@ -147,10 +180,15 @@ class LaporanKemajuanController extends Controller
     /**
      * ✅ PREVIEW LAPORAN KEMAJUAN (dipakai oleh route laporan.kemajuan.preview)
      * Pesan error bila tidak ada file sama seperti downloadLaporan().
+     * Otorisasi sama seperti downloadLaporan() — sebelumnya tanpa cek.
      */
     public function preview($id)
     {
         $proposal = Proposal::findOrFail($id);
+
+        if (! $this->canAccess(Auth::user(), $proposal)) {
+            abort(403, 'Anda tidak berhak melihat laporan kemajuan proposal ini.');
+        }
 
         if (! $proposal->file_laporan) {
             return redirect()->back()->with('error', 'File laporan belum tersedia.');

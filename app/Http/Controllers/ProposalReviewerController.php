@@ -82,8 +82,16 @@ class ProposalReviewerController extends Controller
     // 🔍 SEARCH REVIEWER (buat autocomplete)
     public function search(Request $request)
     {
+        // Batasi panjang kata kunci agar LIKE tidak menerima input
+        // tak terbatas; parameterisasi query-nya sendiri sudah aman.
+        $q = trim((string) $request->input('q', ''));
+
+        if (mb_strlen($q) > 100) {
+            return response()->json([]);
+        }
+
         return User::where('role', 'reviewer')
-            ->where('name', 'like', '%'.$request->q.'%')
+            ->where('name', 'like', '%'.$q.'%')
             ->limit(10)
             ->get(['id', 'name', 'penempatan']);
     }

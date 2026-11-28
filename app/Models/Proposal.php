@@ -11,6 +11,18 @@ class Proposal extends Model
 
     protected $table = 'proposals';
 
+    /**
+     * Kolom yang boleh diisi massal. PERHATIAN: 'status', 'user_id',
+     * 'file_path', 'review_deadline', dan 'biaya' ada di sini karena
+     * dipakai kode internal (ProposalController@store/update,
+     * assignReviewer, keputusan) — BUKAN karena boleh diisi dari
+     * request. store()/update() membangun array datanya secara
+     * eksplisit dari field yang diizinkan dan tidak pernah memakai
+     * $request->all(), sehingga kiriman status/user_id/file_path dari
+     * client tidak berpengaruh (diuji KeamananProposalTest).
+     * Jangan tambahkan pemakaian $request->all()/fill() di controller
+     * proposal tanpa menghapus field sensitif dari daftar ini dulu.
+     */
     protected $fillable = [
         'nama_ketua',
         'anggota',
